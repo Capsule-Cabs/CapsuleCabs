@@ -69,7 +69,8 @@ class Server {
 
     const allowedOrigins = [
       'http://localhost:8080',
-      'http://127.0.0.1:8080'
+      'http://127.0.0.1:8080',
+      'https://capsulecabs-production.up.railway.app'
     ];
     // Security middlewares
     this.app.use(helmet({
