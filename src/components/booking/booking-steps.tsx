@@ -170,46 +170,92 @@ export const BookingSteps = () => {
     : [];
 
   const renderSeatLayout = () => {
-    if (!selectedCab) return null;
-    const cab = availableCabs.find(c => c.id === selectedCab);
-    if (!cab) return null;
-    const seats = cab.seatsAvailable || [];
-    return (
-      <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
-        {seats.map(seat => {
-          const isBooked = seat.status === "booked";
-          const isSelected = selectedSeats.includes(seat.seatNumber);
-          const isLocked = seat.status === "locked";
-          return (
-            <button
-              key={seat.seatNumber}
-              onClick={() => {
-                if (!isBooked && !isLocked) {
-                  setSelectedSeats(prev =>
-                    prev.includes(seat.seatNumber)
-                      ? prev.filter(s => s !== seat.seatNumber)
-                      : [...prev, seat.seatNumber]
-                  );
-                }
-              }}
-              className={`p-4 rounded-lg border-2 transition-smooth font-semibold ${
-                isBooked
-                  ? "seat-booked"
-                  : isSelected
-                  ? "seat-selected"
-                  : isLocked
-                  ? "seat-locked"
-                  : "seat-available"
-              }`}
-              disabled={isBooked || isLocked}
+  if (!selectedCab) return null;
+  const cab = availableCabs.find(c => c.id === selectedCab);
+  if (!cab) return null;
+  const seats = cab.seatsAvailable || [];
+
+  // Create a mapping for quick status lookup by seat number
+  const seatByNum: Record<string, SeatAvailability | undefined> = {};
+  seats.forEach(seat => { seatByNum[seat.seatNumber] = seat; });
+
+  // Define layout order (ensure these match backend seatNumber strings)
+  const layoutRows = [
+    ["A1", null, "Driver"],         // Front row
+    ["B1", "B2", "B3"],       // Middle row
+    ["C1", null, "C2"],             // Last row
+  ];
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      {/* Front Row */}
+      <div className="flex flex-row gap-4 justify-center">
+        {layoutRows[0].map((seatNum, idx) =>
+          seatNum === "Driver" ? (
+            <div
+              key={seatNum}
+              className="bg-muted p-2 rounded text-xs font-medium opacity-70 flex items-center justify-center min-w-[52px] min-h-[42px]"
             >
-              {seat.seatNumber}
-            </button>
-          );
-        })}
+              Driver
+            </div>
+          ) : (
+            <SeatButton key={seatNum} seatNum={seatNum} seatObj={seatByNum[seatNum]} />
+          )
+        )}
       </div>
-    );
-  };
+      {/* Middle Row */}
+      <div className="flex flex-row gap-4 justify-center">
+        {layoutRows[1].map(seatNum => (
+          <SeatButton key={seatNum} seatNum={seatNum} seatObj={seatByNum[seatNum]} />
+        ))}
+      </div>
+      {/* Last Row */}
+      <div className="flex flex-row gap-4 justify-center">
+        {layoutRows[2].map(seatNum => (
+          <SeatButton key={seatNum} seatNum={seatNum} seatObj={seatByNum[seatNum]} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Helper component (place inside your file)
+function SeatButton({ seatNum, seatObj }: { seatNum: string, seatObj?: SeatAvailability }) {
+  // Seat not in map: render as empty slot
+  if (!seatObj)
+    return <div className="min-w-[52px] min-h-[42px]" />;
+
+  const isBooked = seatObj.status === "booked";
+  const isSelected = selectedSeats.includes(seatNum);
+  const isLocked = seatObj.status === "locked";
+  
+  return (
+    <button
+      className={`min-w-[52px] min-h-[42px] rounded-lg border-2 transition-smooth font-semibold
+        ${isBooked
+          ? "seat-booked"
+          : isSelected
+            ? "seat-selected"
+            : isLocked
+              ? "seat-locked"
+              : "seat-available"
+        }`}
+      disabled={isBooked || isLocked}
+      onClick={() => {
+        if (!isBooked && !isLocked) {
+          setSelectedSeats(prev =>
+            prev.includes(seatNum)
+              ? prev.filter(s => s !== seatNum)
+              : [...prev, seatNum]
+          );
+        }
+      }}
+    >
+      {seatNum}
+    </button>
+  );
+}
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -303,9 +349,6 @@ export const BookingSteps = () => {
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-center">Select Your Seat</h3>
             <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="bg-muted p-2 rounded text-sm font-medium">Driver</div>
-              </div>
               {renderSeatLayout()}
               <div className="flex justify-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
