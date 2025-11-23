@@ -60,28 +60,6 @@ const bookingSchema = new Schema({
       type: String,
       required: true,
       match: [/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format']
-    },
-    pickupPoint: {
-      name: {
-        type: String,
-        required: true
-      },
-      address: {
-        type: String,
-        required: true
-      },
-      coordinates: [Number] // [longitude, latitude]
-    },
-    dropPoint: {
-      name: {
-        type: String,
-        required: true
-      },
-      address: {
-        type: String,
-        required: true
-      },
-      coordinates: [Number] // [longitude, latitude]
     }
   },
   passengers: [{
@@ -125,7 +103,9 @@ const bookingSchema = new Schema({
         enum: ['aadhar', 'passport', 'driving-license', 'voter-id', 'pan']
       },
       number: String
-    }
+    },
+    pickupPoint: String,
+    dropPoint: String,
   }],
   payment: {
     totalAmount: {

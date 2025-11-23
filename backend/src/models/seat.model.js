@@ -83,7 +83,7 @@ seatAvailabilitySchema.methods.lockSeats = async function(seatNumbers, userId, l
   const unavailableSeats = [];
   seatNumbers.forEach(seatNumber => {
     const seat = this.seatsAvailable.find(s => s.seatNumber === seatNumber);
-    if (!seat || seat.status !== 'available') {
+    if ((!seat || seat.status !== 'available') && !seat.lockedBy.equals(userId)) {
       unavailableSeats.push(seatNumber);
     }
   });

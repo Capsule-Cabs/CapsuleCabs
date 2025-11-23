@@ -26,6 +26,7 @@ import routeRoutes from './routes/circuit.route.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import routeOptimizationRoutes from './routes/routeOptimizationRoute.js';
 
 // Import socket handlers
 import socketHandler from './sockets/socketHandler.js';
@@ -135,6 +136,7 @@ class Server {
     this.app.use('/api/v1/bookings', bookingRoutes);
     this.app.use('/api/v1/payments', paymentRoutes);
     this.app.use('/api/v1/notifications', notificationRoutes);
+    this.app.use('/api/v1/route-optimization', routeOptimizationRoutes);
 
     // API documentation
     this.app.get('/api/v1', (req, res) => {

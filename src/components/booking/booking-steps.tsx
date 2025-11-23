@@ -179,6 +179,7 @@ export const BookingSteps = () => {
 
   const lockSeats = async () => {
     if (!selectedCab || !selectedDate || selectedSeats.length === 0) return;
+    console.log('SELECTED DATE: ', selectedDate);
     const travelDateStr = format(selectedDate, "yyyy-MM-dd");
     await api.post("/bookings/lock", {
       routeId: selectedCab,
@@ -186,6 +187,34 @@ export const BookingSteps = () => {
       seatNumbers: selectedSeats,
     });
   };
+
+  const createBooking = async () => {
+    const payload = {
+      routeId: selectedCab, // or route.id depending on your variable naming
+      travelDate: format(selectedDate, "yyyy-MM-dd"),
+      passengers: passengers.map(p => ({
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        seatNumber: p.seatNumber,
+        fare: p.fare,
+        pickupPoint: p.pickupPoint,
+        dropPoint: p.dropPoint
+      })),
+      paymentMethod: "card", // or use the user's selection if available
+    };
+    try {
+      const { data } = await api.post("/bookings", payload);
+      console.log('BOOKING RESPONSE: ', data);
+      if(data?.success) {
+        setCurrentStep((prev) => prev + 1);
+      } else {
+        alert(data?.message || 'Booking failed, please try again')
+      }
+    } catch (err) {
+      alert('Error creating booking');
+    } 
+  }
 
   const nextStep = async () => {
     if (currentStep === 3) {
@@ -214,6 +243,12 @@ export const BookingSteps = () => {
           err?.response?.data?.message ||
             "Failed to lock seats. Please try again or select different seats."
         );
+      }
+    } else if (currentStep === 5) {
+      try {
+        await createBooking();
+      } catch (err) {
+
       }
     } else if (currentStep < 6) {
       setCurrentStep((prev) => prev + 1);

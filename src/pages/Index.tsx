@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Shield, Clock, MapPin, Star, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-cab.jpg";
+import { AuthContext } from "@/contexts/AuthContext";
+import { useContext } from "react";
 
 const FEATURES = [
   {
@@ -51,6 +53,7 @@ const TESTIMONIALS = [
 ];
 
 const Index = () => {
+  const { isAuthenticated } = useContext(AuthContext);
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -166,7 +169,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
                 {index < 4 && (
                   <div className="hidden md:block absolute top-8 left-full w-full">
-                    <ArrowRight className="h-6 w-6 text-primary mx-auto" />
+                    <ArrowRight className="h-6 w-6 text-primary ml-0 mr-auto" />
                   </div>
                 )}
               </div>
@@ -221,11 +224,11 @@ const Index = () => {
                 Start Booking Now
               </Button>
             </Link>
-            <Link to="/login">
+            {!isAuthenticated && <Link to="/login">
               <Button size="lg" variant="outline" className="text-lg px-8 bg-white/20 border-white/30 text-white hover:bg-white/30">
                 Sign In
               </Button>
-            </Link>
+            </Link>}
           </div>
         </div>
       </section>

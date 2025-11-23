@@ -87,9 +87,7 @@ const createBooking = asyncHandler(async (req, res) => {
     routeId, 
     travelDate, 
     passengers, 
-    paymentMethod,
-    pickupPoint,
-    dropPoint 
+    paymentMethod
   } = req.body;
   const userId = req.user._id;
 
@@ -142,17 +140,7 @@ const createBooking = asyncHandler(async (req, res) => {
       journey: {
         travelDate: new Date(travelDate),
         departureTime: route.schedule[0].departureTime, // Use first schedule
-        estimatedArrivalTime: route.schedule[0].arrivalTime,
-        pickupPoint: {
-          name: pickupPoint.name,
-          address: pickupPoint.address,
-          coordinates: pickupPoint.coordinates
-        },
-        dropPoint: {
-          name: dropPoint.name,
-          address: dropPoint.address,
-          coordinates: dropPoint.coordinates
-        }
+        estimatedArrivalTime: route.schedule[0].arrivalTime
       },
       passengers,
       payment: {
@@ -430,6 +418,32 @@ const releaseLocks = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc Fetch bookins based on the date and routeid
+ * @route GET /api/v1/bookings/query
+ * @access Private
+ */
+
+const fetchBookings = asyncHandler(async (req, res) => {
+  const { routeId, travelDate, departureTime} = req?.query;
+  console.log('QUERY: ', req?.query);
+  if (!routeId || !travelDate || !departureTime) {
+    return res.status(400).json({
+      success: false,
+      message: 'routeId, travelDate and departureTime are required'
+    });
+  }
+
+  const dateObj = new Date(travelDate);
+  const bookings = await Booking.find({
+    'route.routeId': routeId,
+    'journey.travelDate': dateObj,
+    'journey.departureTime': departureTime
+  }).sort({ createdAt: -1 });
+
+  res.status(200).json({ success: true, bookings });
+});
+
 // Validation middleware
 const validateLockSeats = [
   body('routeId').isMongoId().withMessage('Invalid route ID'),
@@ -448,16 +462,15 @@ const validateCreateBooking = [
   body('passengers.*.seatNumber').notEmpty().withMessage('Seat number required'),
   body('passengers.*.fare').isNumeric().withMessage('Valid fare required'),
   body('paymentMethod').isIn(['card', 'wallet', 'upi', 'netbanking']).withMessage('Valid payment method required'),
-  body('pickupPoint.name').notEmpty().withMessage('Pickup point name required'),
-  body('pickupPoint.address').notEmpty().withMessage('Pickup point address required'),
-  body('dropPoint.name').notEmpty().withMessage('Drop point name required'),
-  body('dropPoint.address').notEmpty().withMessage('Drop point address required')
+  body('passengers.*.pickupPoint').notEmpty().withMessage('Pickup point required for each passenger'),
+  body('passengers.*.dropPoint').notEmpty().withMessage('Drop point name required for each passenger')
 ];
 
 // Routes
 router.post('/lock', protect, validateLockSeats, handleValidationErrors, lockSeats);
 router.post('/', protect, validateCreateBooking, handleValidationErrors, createBooking);
 router.get('/mine', protect, getMyBookings);
+router.get('/fetchBookings', protect, fetchBookings);
 router.get('/:bookingId', protect, getBooking);
 router.put('/:bookingId/cancel', protect, [
   param('bookingId').notEmpty().withMessage('Booking ID required'),
