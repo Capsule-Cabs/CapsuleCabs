@@ -32,7 +32,7 @@ const userSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['passenger', 'operator', 'admin'],
+    enum: ['passenger', 'operator', 'admin', 'driver'],
     default: 'passenger'
   },
   profileImage: {

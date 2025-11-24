@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, CreditCard, X } from "lucide-react";
 import api from "@/services/api";
 import { toast } from "react-toastify";
+import { AuthContext } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
   const [bookings, setBookings] = useState<any[]>([]);

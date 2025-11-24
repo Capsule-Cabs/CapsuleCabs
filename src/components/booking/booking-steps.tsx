@@ -14,6 +14,10 @@ import {
 import { format } from "date-fns";
 import api from "@/services/api";
 import { AuthContext } from "@/contexts/AuthContext";
+import { useJsApiLoader, StandaloneSearchBox } from "@react-google-maps/api";
+import React, { useRef } from "react";
+
+// const GOOGLE_MAPS_API_KEY = import.meta.env.REACT_APP_GOOGLE_MAPS_API_KEY as string;
 
 interface BookingStep {
   id: number;
@@ -118,6 +122,32 @@ export const BookingSteps = () => {
   const [pickupOptions, setPickupOptions] = useState<PickupPoint[]>([]);
   const [dropOptions, setDropOptions] = useState<DropPoint[]>([]);
 
+  const [pickupAddress, setPickupAddress] = useState<string>('');
+  const [dropAddress, setDropAddress] = useState<string>('');
+  const pickupBoxRef = useRef<google.maps.places.SearchBox | null>(null);
+  const dropBoxRef = useRef<google.maps.places.SearchBox | null>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ["places"]
+  });
+
+
+  const handlePickupChanged = () => {
+    const places = pickupBoxRef.current?.getPlaces();
+    if (places && places.length > 0) {
+      setPickupAddress(places[0].formatted_address ?? "");
+      // Optionally update your passenger details state here
+    }
+  };
+  const handleDropChanged = () => {
+    const places = dropBoxRef.current?.getPlaces();
+    if (places && places.length > 0) {
+      setDropAddress(places[0].formatted_address ?? "");
+      // Optionally update your passenger details state here
+    }
+  };
+
   useEffect(() => {
     const fetchRoutesAndAvailability = async () => {
       try {
@@ -152,9 +182,8 @@ export const BookingSteps = () => {
             capacity: route.vehicle?.capacity || 6,
             price: route.pricing?.baseFare || 550,
             image: "🚘",
-            route: `${route.origin?.city || ""} to ${
-              route.destination?.city || ""
-            }`,
+            route: `${route.origin?.city || ""} to ${route.destination?.city || ""
+              }`,
             available,
             seatsAvailable,
           };
@@ -206,14 +235,14 @@ export const BookingSteps = () => {
     try {
       const { data } = await api.post("/bookings", payload);
       console.log('BOOKING RESPONSE: ', data);
-      if(data?.success) {
+      if (data?.success) {
         setCurrentStep((prev) => prev + 1);
       } else {
         alert(data?.message || 'Booking failed, please try again')
       }
     } catch (err) {
       alert('Error creating booking');
-    } 
+    }
   }
 
   const nextStep = async () => {
@@ -241,7 +270,7 @@ export const BookingSteps = () => {
       } catch (err) {
         alert(
           err?.response?.data?.message ||
-            "Failed to lock seats. Please try again or select different seats."
+          "Failed to lock seats. Please try again or select different seats."
         );
       }
     } else if (currentStep === 5) {
@@ -347,15 +376,14 @@ export const BookingSteps = () => {
     return (
       <button
         className={`min-w-[52px] min-h-[42px] rounded-lg border-2 transition-smooth font-semibold
-        ${
-          isBooked
+        ${isBooked
             ? "seat-booked"
             : isSelected
-            ? "seat-selected"
-            : isLocked
-            ? "seat-locked"
-            : "seat-available"
-        }`}
+              ? "seat-selected"
+              : isLocked
+                ? "seat-locked"
+                : "seat-available"
+          }`}
         disabled={isBooked || isLocked}
         onClick={() => {
           if (!isBooked && !isLocked) {
@@ -417,9 +445,8 @@ export const BookingSteps = () => {
               {availableCabs.map((cab) => (
                 <Card
                   key={cab.id}
-                  className={`cursor-pointer transition-smooth ${
-                    selectedCab === cab.id ? "ring-2 ring-primary" : ""
-                  } ${!cab.available ? "opacity-50" : ""}`}
+                  className={`cursor-pointer transition-smooth ${selectedCab === cab.id ? "ring-2 ring-primary" : ""
+                    } ${!cab.available ? "opacity-50" : ""}`}
                   onClick={() => cab.available && setSelectedCab(cab.id)}
                 >
                   <CardContent className="p-4">
@@ -496,105 +523,142 @@ export const BookingSteps = () => {
         );
       case 4:
         return (
-          <div>
-            <h3 className="text-xl font-semibold text-center mb-4">
+          <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 my-10">
+            <h3 className="text-2xl font-bold text-center mb-8 text-gray-700">
               Enter Passenger Details
             </h3>
-            {passengers.map((passenger, idx) => (
-              <div
-                key={passenger.seatNumber}
-                className="border rounded p-4 mb-4"
-              >
-                <h4 className="font-semibold mb-2">
-                  Seat {passenger.seatNumber}
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={passenger.name}
-                    onChange={(e) => {
-                      const newPax = [...passengers];
-                      newPax[idx].name = e.target.value;
-                      setPassengers(newPax);
-                    }}
-                    className="border p-2 rounded"
-                  />
-                  <input
-                    type="number"
-                    min={1}
-                    placeholder="Age"
-                    value={passenger.age}
-                    onChange={(e) => {
-                      const newPax = [...passengers];
-                      newPax[idx].age = Number(e.target.value) || "";
-                      setPassengers(newPax);
-                    }}
-                    className="border p-2 rounded"
-                  />
-                  <select
-                    value={passenger.gender}
-                    onChange={(e) => {
-                      const newPax = [...passengers];
-                      newPax[idx].gender = e.target.value;
-                      setPassengers(newPax);
-                    }}
-                    className="border p-2 rounded w-auto"
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-
-                  <select
-                    value={passenger.pickupPoint || ""}
-                    onChange={(e) => {
-                      const newPax = [...passengers];
-                      newPax[idx].pickupPoint = e.target.value;
-                      setPassengers(newPax);
-                    }}
-                    className="border p-2 rounded"
-                  >
-                    <option value="">Select Pickup</option>
-                    {pickupOptions.map((point) => (
-                      <option value={point.name}>
-                        {point.name} ({point.address})
-                      </option> 
-                    ))}
-                  </select>
-
-                  <select
-                    value={passenger.dropPoint || ""}
-                    onChange={(e) => {
-                      const newPax = [...passengers];
-                      newPax[idx].dropPoint = e.target.value;
-                      setPassengers(newPax);
-                    }}
-                    className="border p-2 rounded"
-                  >
-                    <option value="">Select Drop</option>
-                    {dropOptions.map((point) => (
-                      <option value={point.name}>
-                        {point.name} ({point.address})
-                      </option>
-                    ))}
-                  </select>
+            <div className="space-y-8">
+              {passengers.map((passenger, idx) => (
+                <div
+                  key={passenger.seatNumber}
+                  className="border border-blue-100 bg-blue-50 rounded-lg p-6 shadow-sm"
+                >
+                  <h4 className="font-semibold mb-5 text-lg text-blue-700">
+                    Seat {passenger.seatNumber}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-600">Name</label>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={passenger.name}
+                        onChange={(e) => {
+                          const newPax = [...passengers];
+                          newPax[idx].name = e.target.value;
+                          setPassengers(newPax);
+                        }}
+                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-600">Age</label>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="Age"
+                        value={passenger.age}
+                        onChange={(e) => {
+                          const newPax = [...passengers];
+                          newPax[idx].age = Number(e.target.value) || "";
+                          setPassengers(newPax);
+                        }}
+                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-600">Gender</label>
+                      <select
+                        value={passenger.gender}
+                        onChange={(e) => {
+                          const newPax = [...passengers];
+                          newPax[idx].gender = e.target.value;
+                          setPassengers(newPax);
+                        }}
+                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-600">Pickup</label>
+                      {isLoaded ? (
+                        <StandaloneSearchBox
+                          onLoad={ref => (pickupBoxRef.current = ref)}
+                          onPlacesChanged={handlePickupChanged}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Pickup Address"
+                            value={pickupAddress}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].pickupPoint = e.target.value;
+                              setPassengers(newPax);
+                              setPickupAddress(e.target.value);
+                            }}
+                            className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </StandaloneSearchBox>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Pickup Address"
+                          disabled
+                          className="border px-4 py-3 rounded w-full bg-gray-100"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-sm font-medium text-gray-600">Drop</label>
+                      {isLoaded ? (
+                        <StandaloneSearchBox
+                          onLoad={ref => (dropBoxRef.current = ref)}
+                          onPlacesChanged={handleDropChanged}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Drop Address"
+                            value={dropAddress}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].dropPoint = e.target.value;
+                              setPassengers(newPax);
+                              setDropAddress(e.target.value);
+                            }}
+                            className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </StandaloneSearchBox>
+                      ) : (
+                        <input
+                          type="text"
+                          placeholder="Drop Address"
+                          disabled
+                          className="border px-4 py-3 rounded w-full bg-gray-100"
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <div className="text-center">
+              ))}
+            </div>
+            <div className="flex justify-center mt-10">
               <Button
                 disabled={passengers.some(
                   (p) => !p.name || !p.age || !p.gender
                 )}
                 onClick={nextStep}
+                className="px-10 py-4 text-lg rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition"
               >
                 Continue
               </Button>
             </div>
           </div>
         );
+
       case 5:
         return (
           <div className="space-y-6">
@@ -674,19 +738,17 @@ export const BookingSteps = () => {
           {BOOKING_STEPS.map((step, index) => (
             <div key={step.id} className="flex items-center">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-smooth ${
-                  currentStep >= step.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground border-border"
-                }`}
+                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-smooth ${currentStep >= step.id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border"
+                  }`}
               >
                 {step.icon}
               </div>
               {index < BOOKING_STEPS.length - 1 && (
                 <div
-                  className={`w-16 h-0.5 mx-2 transition-smooth ${
-                    currentStep > step.id ? "bg-primary" : "bg-border"
-                  }`}
+                  className={`w-16 h-0.5 mx-2 transition-smooth ${currentStep > step.id ? "bg-primary" : "bg-border"
+                    }`}
                 />
               )}
             </div>
