@@ -1,8 +1,9 @@
-import { useState, useEffect, useContext } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
+import {
+  useJsApiLoader,
+  StandaloneSearchBox,
+} from "@react-google-maps/api";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -10,14 +11,18 @@ import {
   CreditCard,
   CheckCircle,
   User,
+  ArrowRight,
 } from "lucide-react";
-import { format } from "date-fns";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+
 import api from "@/services/api";
 import { AuthContext } from "@/contexts/AuthContext";
-import { useJsApiLoader, StandaloneSearchBox } from "@react-google-maps/api";
-import React, { useRef } from "react";
 
-// const GOOGLE_MAPS_API_KEY = import.meta.env.REACT_APP_GOOGLE_MAPS_API_KEY as string;
+const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
 interface BookingStep {
   id: number;
@@ -31,7 +36,7 @@ interface SeatAvailability {
   status: "available" | "booked" | "locked" | "blocked";
   price: number;
   seatType: string;
-  lockedBy: string;
+  lockedBy?: string;
 }
 
 interface CabWithAvailability {
@@ -52,8 +57,8 @@ interface Passenger {
   gender: string;
   seatNumber: string;
   fare: number;
-  pickupPoint?: string;
-  dropPoint?: string;
+  pickupAddress?: string;
+  dropAddress?: string;
 }
 
 interface PickupPoint {
@@ -75,7 +80,7 @@ const BOOKING_STEPS: BookingStep[] = [
   },
   {
     id: 2,
-    title: "Choose Cab & Time",
+    title: "Choose Cab Time",
     icon: <Clock className="h-4 w-4" />,
     completed: false,
   },
@@ -105,46 +110,46 @@ const BOOKING_STEPS: BookingStep[] = [
   },
 ];
 
-const TIME_SLOTS_BY_ROUTE: Record<string, string[]> = {
+const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
   "AGR-GUR-001": ["6:00"],
   "GUR-AGR-001": ["22:00"],
 };
 
-export const BookingSteps = () => {
-  const [currentStep, setCurrentStep] = useState(1);
+export const BookingSteps: React.FC = () => {
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedCab, setSelectedCab] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [availableCabs, setAvailableCabs] = useState<CabWithAvailability[]>([]);
+
   const { user } = useContext(AuthContext);
+
   const [pickupOptions, setPickupOptions] = useState<PickupPoint[]>([]);
   const [dropOptions, setDropOptions] = useState<DropPoint[]>([]);
+  const [pickupAddress, setPickupAddress] = useState<string>("");
+  const [dropAddress, setDropAddress] = useState<string>("");
 
-  const [pickupAddress, setPickupAddress] = useState<string>('');
-  const [dropAddress, setDropAddress] = useState<string>('');
   const pickupBoxRef = useRef<google.maps.places.SearchBox | null>(null);
   const dropBoxRef = useRef<google.maps.places.SearchBox | null>(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ["places"]
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+    libraries: ["places"],
   });
-
 
   const handlePickupChanged = () => {
     const places = pickupBoxRef.current?.getPlaces();
     if (places && places.length > 0) {
       setPickupAddress(places[0].formatted_address ?? "");
-      // Optionally update your passenger details state here
     }
   };
+
   const handleDropChanged = () => {
     const places = dropBoxRef.current?.getPlaces();
     if (places && places.length > 0) {
       setDropAddress(places[0].formatted_address ?? "");
-      // Optionally update your passenger details state here
     }
   };
 
@@ -153,41 +158,46 @@ export const BookingSteps = () => {
       try {
         const routesRes = await api.get("/routes/my-routes");
         const routes = routesRes.data.data.routes;
-        const cabsWithAvailabilityPromises = routes.map(async (route) => {
+
+        const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
           let seatsAvailable: SeatAvailability[] = [];
           let available = false;
+
           if (selectedDate) {
-            if (route._id === selectedCab) {
-              setPickupOptions(route.origin?.pickupPoints || []);
-              setDropOptions(route.destination?.dropPoints || []);
+            if (route.id === selectedCab) {
+              setPickupOptions(route.origin?.pickupPoints);
+              setDropOptions(route.destination?.dropPoints);
             }
+
             const dateStr = format(selectedDate, "yyyy-MM-dd");
+
             try {
               const seatAvailRes = await api.get(
-                `/routes/${route._id}/availability?travelDate=${dateStr}`
+                `/routes/${route.id}/availability?travelDate=${dateStr}`
               );
-              seatsAvailable = seatAvailRes.data.data.seatsAvailable || [];
+              seatsAvailable = seatAvailRes.data.data.seatsAvailable;
               available = seatsAvailable.some(
-                (seat) => seat.status === "available"
+                (seat: SeatAvailability) => seat.status === "available"
               );
-            } catch {
+            } catch (e) {
               seatsAvailable = [];
               available = false;
             }
           }
+
           return {
-            id: route._id,
+            id: route.id,
             routeCode: route.routeCode,
-            name: route.vehicle?.type || "Cab",
-            capacity: route.vehicle?.capacity || 6,
-            price: route.pricing?.baseFare || 550,
-            image: "🚘",
-            route: `${route.origin?.city || ""} to ${route.destination?.city || ""
-              }`,
+            name: route?.vehicle?.type || "Cab",
+            capacity: route?.vehicle?.capacity || 6,
+            price: route?.pricing?.baseFare || 550,
+            image: "",
+            route: `${route?.origin?.city} to ${route?.destination?.city}`,
             available,
             seatsAvailable,
-          };
+          } as CabWithAvailability;
         });
+
         const cabsWithAvailability = await Promise.all(
           cabsWithAvailabilityPromises
         );
@@ -196,20 +206,24 @@ export const BookingSteps = () => {
         console.error("Failed to fetch route or availability data", error);
       }
     };
+
     fetchRoutesAndAvailability();
   }, [selectedCab, selectedDate]);
 
   useEffect(() => {
     if (availableCabs.length > 0 && !selectedCab) {
       const firstAvailableCab = availableCabs.find((cab) => cab.available);
-      if (firstAvailableCab) setSelectedCab(firstAvailableCab.id);
+      if (firstAvailableCab) {
+        setSelectedCab(firstAvailableCab.id);
+      }
     }
   }, [availableCabs, selectedCab]);
 
   const lockSeats = async () => {
     if (!selectedCab || !selectedDate || selectedSeats.length === 0) return;
-    console.log('SELECTED DATE: ', selectedDate);
+
     const travelDateStr = format(selectedDate, "yyyy-MM-dd");
+
     await api.post("/bookings/lock", {
       routeId: selectedCab,
       travelDate: travelDateStr,
@@ -219,65 +233,78 @@ export const BookingSteps = () => {
 
   const createBooking = async () => {
     const payload = {
-      routeId: selectedCab, // or route.id depending on your variable naming
+      routeId: selectedCab,
       travelDate: format(selectedDate, "yyyy-MM-dd"),
-      passengers: passengers.map(p => ({
+      passengers: passengers.map((p) => ({
         name: p.name,
         age: p.age,
         gender: p.gender,
         seatNumber: p.seatNumber,
         fare: p.fare,
-        pickupPoint: p.pickupPoint,
-        dropPoint: p.dropPoint
+        pickupPoint: p.pickupAddress,
+        dropPoint: p.dropAddress,
       })),
-      paymentMethod: "card", // or use the user's selection if available
+      paymentMethod: "card",
     };
+
     try {
-      const { data } = await api.post("/bookings", payload);
-      console.log('BOOKING RESPONSE: ', data);
-      if (data?.success) {
+      const data = await api.post("/bookings", payload);
+      console.log("BOOKING RESPONSE", data);
+
+      if (data?.data?.success) {
         setCurrentStep((prev) => prev + 1);
       } else {
-        alert(data?.message || 'Booking failed, please try again')
+        alert(data?.data?.message || "Booking failed, please try again.");
       }
     } catch (err) {
-      alert('Error creating booking');
+      alert("Error creating booking");
     }
-  }
+  };
 
   const nextStep = async () => {
     if (currentStep === 3) {
       try {
         await lockSeats();
+
         const newPassengers: Passenger[] = selectedSeats.map((seatNum) => {
           const existing = passengers.find((p) => p.seatNumber === seatNum);
-          return (
-            existing || {
-              name: "",
-              age: "",
-              gender: "",
-              seatNumber: seatNum,
-              fare:
-                availableCabs
-                  .find((cab) => cab.id === selectedCab)
-                  ?.seatsAvailable.find((seat) => seat.seatNumber === seatNum)
-                  ?.price || 550,
-            }
+
+          if (existing) {
+            return { ...existing };
+          }
+
+          const cab = availableCabs.find((c) => c.id === selectedCab);
+          const seatObj = cab?.seatsAvailable.find(
+            (s) => s.seatNumber === seatNum
           );
+
+          return {
+            name: "",
+            age: "",
+            gender: "",
+            seatNumber: seatNum,
+            fare:
+              seatObj?.price ||
+              availableCabs.find((c) => c.id === selectedCab)?.price ||
+              550,
+            pickupAddress,
+            dropAddress,
+          };
         });
+
         setPassengers(newPassengers);
         setCurrentStep((prev) => prev + 1);
-      } catch (err) {
+      } catch (err: any) {
         alert(
           err?.response?.data?.message ||
-          "Failed to lock seats. Please try again or select different seats."
+            "Failed to lock seats. Please try again or select different seats."
         );
       }
     } else if (currentStep === 5) {
       try {
         await createBooking();
       } catch (err) {
-
+        console.error(err);
       }
     } else if (currentStep < 6) {
       setCurrentStep((prev) => prev + 1);
@@ -285,260 +312,337 @@ export const BookingSteps = () => {
   };
 
   const prevStep = () => {
-    if (currentStep > 1) setCurrentStep((prev) => prev - 1);
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+    }
   };
 
   const selectedCabObj = availableCabs.find((cab) => cab.id === selectedCab);
+
   const dynamicTimeSlots = selectedCabObj
-    ? TIME_SLOTS_BY_ROUTE[selectedCabObj.routeCode] || []
+    ? TIMESLOTS_BY_ROUTE[selectedCabObj.routeCode]
     : [];
 
   const renderSeatLayout = () => {
     if (!selectedCab) return null;
-    const cab = availableCabs.find((c) => c.id === selectedCab);
-    if (!cab) return null;
-    const seats = cab.seatsAvailable || [];
 
-    // Create a mapping for quick status lookup by seat number
+    const cab = availableCabs.find((c) => c.id === selectedCab);
+
+    if (!cab) return null;
+
+    const seats = cab.seatsAvailable;
+
     const seatByNum: Record<string, SeatAvailability | undefined> = {};
     seats.forEach((seat) => {
       seatByNum[seat.seatNumber] = seat;
     });
 
-    // Define layout order (ensure these match backend seatNumber strings)
-    const layoutRows = [
-      ["A1", null, "Driver"], // Front row
-      ["B1", "B2", "B3"], // Middle row
-      ["C1", null, "C2"], // Last row
+    const layoutRows: (string | null)[][] = [
+      ["A1", null, "Driver"],
+      ["B1", "B2", "B3"],
+      ["C1", null, "C2"],
     ];
 
     return (
-      <div className="flex flex-col items-center gap-3">
-        {/* Front Row */}
-        <div className="flex flex-row gap-4 justify-center">
-          {layoutRows[0].map((seatNum, idx) =>
-            seatNum === "Driver" ? (
-              <div
-                key={seatNum}
-                className="bg-muted p-2 rounded text-xs font-medium opacity-70 flex items-center justify-center min-w-[52px] min-h-[42px]"
-              >
-                Driver
-              </div>
-            ) : (
-              <SeatButton
-                key={seatNum}
-                seatNum={seatNum}
-                seatObj={seatByNum[seatNum]}
-              />
-            )
-          )}
+      <div className="flex flex-col items-center gap-6">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-zinc-900 to-black px-8 py-6 shadow-lg shadow-black/40 w-full max-w-md">
+          <div className="text-xs text-white/50 mb-4 uppercase tracking-[0.2em]">
+            {cab.route} · {cab.capacity} seats
+          </div>
+
+          <div className="flex flex-col gap-4 items-center">
+            <div className="text-[11px] text-white/40 uppercase tracking-[0.2em]">
+              Front
+            </div>
+
+            {/* Front Row */}
+            <div className="flex flex-row gap-4 justify-center">
+              {layoutRows[0].map((seatNum, idx) =>
+                seatNum === "Driver" ? (
+                  <div
+                    key={seatNum}
+                    className="min-w-[52px] min-h-[42px] rounded-lg border border-white/15 bg-white/5 text-[11px] flex items-center justify-center text-white/70"
+                  >
+                    Driver
+                  </div>
+                ) : seatNum ? (
+                  <SeatButton
+                    key={seatNum}
+                    seatNum={seatNum}
+                    seatObj={seatByNum[seatNum]}
+                  />
+                ) : (
+                  <div key={idx} className="min-w-[52px] min-h-[42px]" />
+                )
+              )}
+            </div>
+
+            {/* Middle row */}
+            <div className="flex flex-row gap-4 justify-center">
+              {layoutRows[1].map((seatNum, idx) =>
+                seatNum ? (
+                  <SeatButton
+                    key={seatNum}
+                    seatNum={seatNum}
+                    seatObj={seatByNum[seatNum]}
+                  />
+                ) : (
+                  <div key={idx} className="min-w-[52px] min-h-[42px]" />
+                )
+              )}
+            </div>
+
+            {/* Last row */}
+            <div className="flex flex-row gap-4 justify-center">
+              {layoutRows[2].map((seatNum, idx) =>
+                seatNum ? (
+                  <SeatButton
+                    key={seatNum}
+                    seatNum={seatNum}
+                    seatObj={seatByNum[seatNum]}
+                  />
+                ) : (
+                  <div key={idx} className="min-w-[52px] min-h-[42px]" />
+                )
+              )}
+            </div>
+          </div>
         </div>
-        {/* Middle Row */}
-        <div className="flex flex-row gap-4 justify-center">
-          {layoutRows[1].map((seatNum) => (
-            <SeatButton
-              key={seatNum}
-              seatNum={seatNum}
-              seatObj={seatByNum[seatNum]}
-            />
-          ))}
-        </div>
-        {/* Last Row */}
-        <div className="flex flex-row gap-4 justify-center">
-          {layoutRows[2].map((seatNum) => (
-            <SeatButton
-              key={seatNum}
-              seatNum={seatNum}
-              seatObj={seatByNum[seatNum]}
-            />
-          ))}
+
+        {/* Legend */}
+        <div className="flex justify-center gap-6 text-[11px] text-white/60">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-white/20 bg-white/10" />
+            <span>Available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-emerald-400/80 bg-emerald-500/30" />
+            <span>Selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-amber-500/80 bg-amber-500/30" />
+            <span>Locked</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-red-500/80 bg-red-500/30" />
+            <span>Booked</span>
+          </div>
         </div>
       </div>
     );
   };
 
-  // Helper component (place inside your file)
-  function SeatButton({
-    seatNum,
-    seatObj,
-  }: {
+  const SeatButton: React.FC<{
     seatNum: string;
     seatObj?: SeatAvailability;
-  }) {
-    // Seat not in map: render as empty slot
-    if (!seatObj) return <div className="min-w-[52px] min-h-[42px]" />;
+  }> = ({ seatNum, seatObj }) => {
+    if (!seatObj) {
+      return <div className="min-w-[52px] min-h-[42px]" />;
+    }
 
     const isBooked = seatObj.status === "booked";
     const isSelected = selectedSeats.includes(seatNum);
     const isLocked =
-      seatObj.status === "locked" && seatObj.lockedBy !== user.id;
+      seatObj.status === "locked" &&
+      seatObj.lockedBy &&
+      seatObj.lockedBy !== user?.id;
 
     return (
       <button
-        className={`min-w-[52px] min-h-[42px] rounded-lg border-2 transition-smooth font-semibold
-        ${isBooked
-            ? "seat-booked"
+        type="button"
+        className={[
+          "min-w-[52px] min-h-[42px] rounded-lg border-2 text-xs font-semibold flex items-center justify-center transition-all shadow-sm",
+          isBooked
+            ? "border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed"
+            : isLocked
+            ? "border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed"
             : isSelected
-              ? "seat-selected"
-              : isLocked
-                ? "seat-locked"
-                : "seat-available"
-          }`}
+            ? "border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30"
+            : "border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10",
+        ].join(" ")}
         disabled={isBooked || isLocked}
         onClick={() => {
-          if (!isBooked && !isLocked) {
-            setSelectedSeats((prev) =>
-              prev.includes(seatNum)
-                ? prev.filter((s) => s !== seatNum)
-                : [...prev, seatNum]
-            );
-          }
+          if (isBooked || isLocked) return;
+          setSelectedSeats((prev) =>
+            prev.includes(seatNum)
+              ? prev.filter((s) => s !== seatNum)
+              : [...prev, seatNum]
+          );
         }}
       >
         {seatNum}
       </button>
     );
-  }
+  };
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-center">
-              Select Your Travel Date
+            <h3 className="text-xl font-semibold text-center text-white">
+              Select your travel date
             </h3>
             <div className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    const localDate = new Date(
-                      date.getFullYear(),
-                      date.getMonth(),
-                      date.getDate()
-                    );
-                    setSelectedDate(localDate);
-                  }
-                }}
-                disabled={(date) =>
-                  date < new Date(new Date().setHours(0, 0, 0, 0))
-                }
-                className="rounded-md border"
-              />
+              <Card className="bg-gradient-to-b from-zinc-900 to-black border-white/10 text-white">
+                <CardContent className="p-4 sm:p-6 flex flex-col items-center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        const localDate = new Date(
+                          date.getFullYear(),
+                          date.getMonth(),
+                          date.getDate()
+                        );
+                        setSelectedDate(localDate);
+                      }
+                    }}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
+                    className="rounded-md border border-white/10 bg-black"
+                  />
+                  {selectedDate && (
+                    <p className="mt-4 text-sm text-white/70">
+                      Selected:{" "}
+                      <span className="font-medium">
+                        {format(selectedDate, "PPP")}
+                      </span>
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-            {selectedDate && (
-              <p className="text-center text-muted-foreground">
-                Selected: {format(selectedDate, "PPP")}
-              </p>
-            )}
           </div>
         );
+
       case 2:
         return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-center">
-              Choose Your Cab & Time
+          <div className="space-y-8">
+            <h3 className="text-xl font-semibold text-center text-white">
+              Choose your cab & time
             </h3>
+
             <div className="grid gap-4">
               {availableCabs.map((cab) => (
                 <Card
                   key={cab.id}
-                  className={`cursor-pointer transition-smooth ${selectedCab === cab.id ? "ring-2 ring-primary" : ""
-                    } ${!cab.available ? "opacity-50" : ""}`}
+                  className={[
+                    "cursor-pointer transition-all bg-gradient-to-r from-zinc-900 to-black border",
+                    selectedCab === cab.id
+                      ? "border-emerald-400/70 shadow-lg shadow-emerald-500/20 scale-[1.01]"
+                      : "border-white/10 hover:border-emerald-300/50 hover:-translate-y-[2px]",
+                    !cab.available ? "opacity-60" : "",
+                  ].join(" ")}
                   onClick={() => cab.available && setSelectedCab(cab.id)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{cab.image}</span>
-                        <div>
-                          <h4 className="font-semibold">{cab.name}</h4>
-                          <h5 className="text-sm">{cab.route}</h5>
-                          <p className="text-sm text-muted-foreground">
-                            {cab.capacity} seats • ₹{cab.price}/trip
-                          </p>
-                        </div>
+                  <CardContent className="p-4 sm:p-5 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 text-xl font-semibold">
+                        {cab.image || cab.name[0]}
                       </div>
-                      <Badge variant={cab.available ? "default" : "secondary"}>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-white">{cab.name}</h4>
+                        <p className="text-xs sm:text-sm text-white/60">
+                          {cab.route}
+                        </p>
+                        <p className="text-xs text-white/50">
+                          {cab.capacity} seats • ₹{cab.price}/trip
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge
+                        variant={cab.available ? "default" : "secondary"}
+                        className={
+                          cab.available
+                            ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/50"
+                            : "bg-white/10 text-white/60 border-white/20"
+                        }
+                      >
                         {cab.available ? "Available" : "Full"}
                       </Badge>
+                      {selectedCab === cab.id && (
+                        <span className="text-[11px] text-emerald-300 uppercase tracking-[0.18em]">
+                          Selected
+                        </span>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
             <div className="space-y-4">
-              <h4 className="font-semibold">Available Time Slots</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {dynamicTimeSlots.length > 0 ? (
-                  dynamicTimeSlots.map((time) => (
+              <h4 className="text-sm font-semibold text-white">
+                Available time slots
+              </h4>
+              {dynamicTimeSlots && dynamicTimeSlots.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {dynamicTimeSlots.map((time) => (
                     <Button
                       key={time}
                       variant={selectedTime === time ? "default" : "outline"}
                       onClick={() => setSelectedTime(time)}
-                      className="transition-smooth"
+                      className={[
+                        "w-full justify-center rounded-full text-sm",
+                        selectedTime === time
+                          ? "bg-emerald-500 text-black border-emerald-400"
+                          : "bg-transparent text-white/80 border-white/20 hover:bg-white/10",
+                      ].join(" ")}
                     >
                       {time}
                     </Button>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground">
-                    Select route to get the time slots
-                  </p>
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-white/50">
+                  Select route to get the time slots
+                </p>
+              )}
             </div>
           </div>
         );
+
       case 3:
         return (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-center">
-              Select Your Seat
+            <h3 className="text-xl font-semibold text-center text-white">
+              Select your seat
             </h3>
-            <div className="space-y-4">
-              {renderSeatLayout()}
-              <div className="flex justify-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-muted rounded border"></div>
-                  <span>Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary rounded"></div>
-                  <span>Selected</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-locked rounded"></div>
-                  <span>Locked</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-destructive rounded"></div>
-                  <span>Booked</span>
-                </div>
-              </div>
-            </div>
+            {renderSeatLayout()}
           </div>
         );
+
       case 4:
         return (
-          <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 my-10">
-            <h3 className="text-2xl font-bold text-center mb-8 text-gray-700">
+          <div className="max-w-3xl mx-auto bg-gradient-to-b from-zinc-900 to-black rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8">
+            <h3 className="text-2xl font-semibold text-center mb-6 text-white">
               Enter Passenger Details
             </h3>
-            <div className="space-y-8">
+
+            <div className="space-y-6">
               {passengers.map((passenger, idx) => (
                 <div
                   key={passenger.seatNumber}
-                  className="border border-blue-100 bg-blue-50 rounded-lg p-6 shadow-sm"
+                  className="border border-white/10 bg-white/5 rounded-xl p-5 sm:p-6 shadow-sm"
                 >
-                  <h4 className="font-semibold mb-5 text-lg text-blue-700">
-                    Seat {passenger.seatNumber}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-white">
+                      Seat {passenger.seatNumber}
+                    </h4>
+                    <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/50">
+                      ₹{passenger.fare}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600">Name</label>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Name
+                      </label>
                       <input
                         type="text"
                         placeholder="Name"
@@ -548,11 +652,14 @@ export const BookingSteps = () => {
                           newPax[idx].name = e.target.value;
                           setPassengers(newPax);
                         }}
-                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
                       />
                     </div>
+
                     <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600">Age</label>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Age
+                      </label>
                       <input
                         type="number"
                         min={1}
@@ -560,14 +667,17 @@ export const BookingSteps = () => {
                         value={passenger.age}
                         onChange={(e) => {
                           const newPax = [...passengers];
-                          newPax[idx].age = Number(e.target.value) || "";
+                          newPax[idx].age = Number(e.target.value);
                           setPassengers(newPax);
                         }}
-                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
                       />
                     </div>
+
                     <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600">Gender</label>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Gender
+                      </label>
                       <select
                         value={passenger.gender}
                         onChange={(e) => {
@@ -575,7 +685,7 @@ export const BookingSteps = () => {
                           newPax[idx].gender = e.target.value;
                           setPassengers(newPax);
                         }}
-                        className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
                       >
                         <option value="">Select Gender</option>
                         <option value="male">Male</option>
@@ -583,24 +693,29 @@ export const BookingSteps = () => {
                         <option value="other">Other</option>
                       </select>
                     </div>
+
                     <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600">Pickup</label>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Pickup Address
+                      </label>
                       {isLoaded ? (
                         <StandaloneSearchBox
-                          onLoad={ref => (pickupBoxRef.current = ref)}
+                          onLoad={(ref) => {
+                            pickupBoxRef.current = ref;
+                          }}
                           onPlacesChanged={handlePickupChanged}
                         >
                           <input
                             type="text"
                             placeholder="Pickup Address"
-                            value={pickupAddress}
+                            value={passenger.pickupAddress}
                             onChange={(e) => {
                               const newPax = [...passengers];
-                              newPax[idx].pickupPoint = e.target.value;
+                              newPax[idx].pickupAddress = e.target.value;
                               setPassengers(newPax);
                               setPickupAddress(e.target.value);
                             }}
-                            className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
                           />
                         </StandaloneSearchBox>
                       ) : (
@@ -608,28 +723,33 @@ export const BookingSteps = () => {
                           type="text"
                           placeholder="Pickup Address"
                           disabled
-                          className="border px-4 py-3 rounded w-full bg-gray-100"
+                          className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
                         />
                       )}
                     </div>
+
                     <div>
-                      <label className="block mb-1 text-sm font-medium text-gray-600">Drop</label>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Drop Address
+                      </label>
                       {isLoaded ? (
                         <StandaloneSearchBox
-                          onLoad={ref => (dropBoxRef.current = ref)}
+                          onLoad={(ref) => {
+                            dropBoxRef.current = ref;
+                          }}
                           onPlacesChanged={handleDropChanged}
                         >
                           <input
                             type="text"
                             placeholder="Drop Address"
-                            value={dropAddress}
+                            value={passenger.dropAddress}
                             onChange={(e) => {
                               const newPax = [...passengers];
-                              newPax[idx].dropPoint = e.target.value;
+                              newPax[idx].dropAddress = e.target.value;
                               setPassengers(newPax);
                               setDropAddress(e.target.value);
                             }}
-                            className="border px-4 py-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
                           />
                         </StandaloneSearchBox>
                       ) : (
@@ -637,7 +757,7 @@ export const BookingSteps = () => {
                           type="text"
                           placeholder="Drop Address"
                           disabled
-                          className="border px-4 py-3 rounded w-full bg-gray-100"
+                          className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
                         />
                       )}
                     </div>
@@ -645,13 +765,12 @@ export const BookingSteps = () => {
                 </div>
               ))}
             </div>
-            <div className="flex justify-center mt-10">
+
+            <div className="flex justify-center mt-6">
               <Button
-                disabled={passengers.some(
-                  (p) => !p.name || !p.age || !p.gender
-                )}
+                disabled={passengers.some((p) => !p.name || !p.age || !p.gender)}
                 onClick={nextStep}
-                className="px-10 py-4 text-lg rounded bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition"
+                className="px-10 py-3 text-base rounded-full bg-emerald-500 text-black font-semibold shadow-lg shadow-emerald-500/25 hover:bg-emerald-400"
               >
                 Continue
               </Button>
@@ -662,125 +781,181 @@ export const BookingSteps = () => {
       case 5:
         return (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-center">
+            <h3 className="text-xl font-semibold text-center text-white">
               Payment Details
             </h3>
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Summary</CardTitle>
+            <Card className="bg-gradient-to-b from-zinc-900 to-black border-white/10 text-white max-w-xl mx-auto">
+              <CardHeader className="border-b border-white/10">
+                <CardTitle className="text-lg">Booking Summary</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span>Date:</span>
-                  <span>
-                    {selectedDate
-                      ? format(selectedDate, "PPP")
-                      : "Not selected"}
+              <CardContent className="space-y-3 text-sm pt-6">
+                <div className="flex justify-between pb-3 border-b border-white/10">
+                  <span className="text-white/60">Date</span>
+                  <span className="font-medium">
+                    {selectedDate ? format(selectedDate, "PPP") : "Not selected"}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Time:</span>
-                  <span>{selectedTime || "Not selected"}</span>
+                <div className="flex justify-between pb-3 border-b border-white/10">
+                  <span className="text-white/60">Time</span>
+                  <span className="font-medium">
+                    {selectedTime || "Not selected"}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Seats:</span>
-                  <span>{selectedSeats.join(", ") || "None selected"}</span>
+                <div className="flex justify-between pb-3 border-b border-white/10">
+                  <span className="text-white/60">Seats</span>
+                  <span className="font-medium">
+                    {selectedSeats.join(", ") || "None selected"}
+                  </span>
                 </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span>₹{(selectedSeats.length * 550).toFixed(2)}</span>
+                <div className="flex justify-between pt-3 font-semibold text-base">
+                  <span>Total Fare</span>
+                  <span className="text-emerald-300">
+                    ₹
+                    {selectedSeats.length
+                      ? (selectedSeats.length * 550).toFixed(2)
+                      : "0.00"}
+                  </span>
+                </div>
+                <Button
+                  className="w-full mt-6 rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-3"
+                  onClick={() => alert("Payment flow not yet implemented")}
+                >
+                  Proceed to Payment
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-6 text-center">
+            <div className="text-7xl text-emerald-400 font-bold">✓</div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-semibold text-white">
+                Booking Confirmed!
+              </h3>
+              <p className="text-sm text-white/60">
+                Your ride has been successfully booked
+              </p>
+            </div>
+            <Card className="bg-gradient-to-b from-zinc-900 to-black border-white/10 text-white max-w-md mx-auto">
+              <CardContent className="p-6 space-y-4 text-sm">
+                <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                  <span className="text-white/60">Booking ID</span>
+                  <span className="font-mono font-semibold">CB123456</span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                  <span className="text-white/60">Date</span>
+                  <span className="font-medium">
+                    {selectedDate ? format(selectedDate, "PPP") : ""}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                  <span className="text-white/60">Time</span>
+                  <span className="font-medium">{selectedTime}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60">Seats</span>
+                  <span className="font-medium">{selectedSeats.join(", ")}</span>
                 </div>
               </CardContent>
             </Card>
             <Button
-              className="w-full"
-              onClick={() => alert("Payment flow not yet implemented")}
+              onClick={() => {
+                setCurrentStep(1);
+                setSelectedSeats([]);
+                setPassengers([]);
+              }}
+              className="rounded-full bg-white text-black hover:bg-zinc-100 font-semibold py-3 px-6"
             >
-              Proceed to Payment
+              Book Another Ride
             </Button>
           </div>
         );
-      case 6:
-        return (
-          <div className="space-y-6 text-center">
-            <div className="text-success text-6xl">✅</div>
-            <h3 className="text-xl font-semibold">Booking Confirmed!</h3>
-            <Card>
-              <CardContent className="p-6 space-y-2">
-                <p>
-                  <strong>Booking ID:</strong> #CB123456
-                </p>
-                <p>
-                  <strong>Date:</strong>{" "}
-                  {selectedDate ? format(selectedDate, "PPP") : ""}
-                </p>
-                <p>
-                  <strong>Time:</strong> {selectedTime}
-                </p>
-                <p>
-                  <strong>Seats:</strong> {selectedSeats.join(", ")}
-                </p>
-              </CardContent>
-            </Card>
-            <Button onClick={() => setCurrentStep(1)}>Book Another Ride</Button>
-          </div>
-        );
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Step Progress */}
-      <div className="flex justify-center">
-        <div className="flex items-center space-x-4">
-          {BOOKING_STEPS.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-smooth ${currentStep >= step.id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border"
-                  }`}
-              >
-                {step.icon}
-              </div>
-              {index < BOOKING_STEPS.length - 1 && (
-                <div
-                  className={`w-16 h-0.5 mx-2 transition-smooth ${currentStep > step.id ? "bg-primary" : "bg-border"
-                    }`}
-                />
-              )}
-            </div>
-          ))}
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6">
+        {/* Step Progress */}
+        <div className="flex justify-center mb-4">
+          <div className="flex items-center space-x-2 sm:space-x-3 pb-2 scrollbar-hide">
+            {BOOKING_STEPS.map((step, index) => {
+              const isActive = currentStep === step.id;
+              const isCompleted = currentStep > step.id;
+
+              return (
+                <div key={step.id} className="flex items-center flex-shrink-0">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={[
+                        "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 text-xs font-medium transition-all",
+                        isActive
+                          ? "bg-emerald-500 text-black border-emerald-300 shadow shadow-emerald-500/40 scale-110"
+                          : isCompleted
+                          ? "bg-white text-black border-white"
+                          : "bg-black border-white/20 text-white/60",
+                      ].join(" ")}
+                    >
+                      {isCompleted ? "✓" : step.id}
+                    </div>
+                    <span className="mt-1 text-[10px] sm:text-[11px] text-white/60 text-center w-12">
+                      {step.title}
+                    </span>
+                  </div>
+                  {index < BOOKING_STEPS.length - 1 && (
+                    <div
+                      className={[
+                        "h-px mx-1 sm:mx-2 transition-colors",
+                        currentStep > step.id ? "bg-emerald-400" : "bg-white/15",
+                        "w-8 sm:w-12",
+                      ].join(" ")}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-      {/* Step Content */}
-      <Card className="max-w-2xl mx-auto">
-        <CardContent className="p-8">{renderStepContent()}</CardContent>
-      </Card>
-      {/* Navigation Buttons */}
-      <div className="flex justify-between max-w-2xl mx-auto">
-        <Button
-          variant="outline"
-          onClick={prevStep}
-          disabled={currentStep === 1}
-        >
-          Previous
-        </Button>
-        <Button
-          onClick={nextStep}
-          disabled={
-            currentStep === 6 ||
-            (currentStep === 1 && !selectedDate) ||
-            (currentStep === 2 && (!selectedCab || !selectedTime)) ||
-            (currentStep === 3 && selectedSeats.length === 0) ||
-            (currentStep === 4 &&
-              passengers.some((p) => !p.name || !p.age || !p.gender))
-          }
-        >
-          {currentStep === 6 ? "Complete" : "Next"}
-        </Button>
+
+        {/* Step Content */}
+        <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white flex-1">
+          <CardContent className="p-5 sm:p-7">
+            {renderStepContent()}
+          </CardContent>
+        </Card>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between gap-4 max-w-5xl mx-auto w-full pt-2">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={nextStep}
+            disabled={
+              currentStep === 6 ||
+              (currentStep === 1 && !selectedDate) ||
+              (currentStep === 2 && (!selectedCab || !selectedTime)) ||
+              (currentStep === 3 && selectedSeats.length === 0) ||
+              (currentStep === 4 &&
+                passengers.some((p) => !p.name || !p.age || !p.gender))
+            }
+            className="rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {currentStep === 6 ? "Complete" : "Next"}
+            {currentStep < 6 && <ArrowRight className="ml-2 h-4 w-4" />}
+          </Button>
+        </div>
       </div>
     </div>
   );

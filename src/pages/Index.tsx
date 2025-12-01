@@ -1,281 +1,457 @@
+import { useContext } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  Shield,
+  Clock,
+  MapPin,
+  Star,
+  Users,
+  Smartphone,
+  Car,
+} from "lucide-react";
+
 import { Navigation } from "@/components/ui/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Shield, Clock, MapPin, Star, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+
 import heroImage from "@/assets/hero-cab.jpg";
 import { AuthContext } from "@/contexts/AuthContext";
-import { useContext } from "react";
+import DriverDashboard from "./DriverDashboard";
 
 const FEATURES = [
   {
-    icon: <Clock className="h-6 w-6" />,
-    title: "All week Service",
-    description: "Book your ride anytime, anywhere with our all days week service"
+    icon: Shield,
+    title: "Trusted & Safe",
+    description:
+      "Verified drivers, live tracking, and secure payments for every ride.",
   },
   {
-    icon: <Shield className="h-6 w-6" />,
-    title: "Safe & Secure",
-    description: "All our drivers are verified and vehicles undergo regular safety checks"
+    icon: Clock,
+    title: "Always On Time",
+    description:
+      "Smart routing and live traffic data help you reach on time, every time.",
   },
   {
-    icon: <MapPin className="h-6 w-6" />,
-    title: "Choose Your Pick and Drop",
-    description: "Select from multiple pick and drop and time slots that work best for you"
+    icon: MapPin,
+    title: "Smart Routing",
+    description:
+      "Optimized pickup and drop points to reduce detours and save time.",
   },
   {
-    icon: <Star className="h-6 w-6" />,
-    title: "Premium Experience",
-    description: "Enjoy comfortable rides with professional drivers and clean vehicles"
-  }
+    icon: Users,
+    title: "Shared & Private",
+    description:
+      "Choose solo or shared rides with guaranteed seats and clear pricing.",
+  },
+];
+
+const STEPS = [
+  {
+    step: "01",
+    title: "Choose route & time",
+    desc: "Select your origin, destination, travel date, and preferred time slot.",
+  },
+  {
+    step: "02",
+    title: "Pick your seat",
+    desc: "View live seat layout, lock your seat, and enjoy transparent pricing.",
+  },
+  {
+    step: "03",
+    title: "Enter passenger details",
+    desc: "Add passenger information and pickup / drop addresses with ease.",
+  },
+  {
+    step: "04",
+    title: "Pay & ride",
+    desc: "Complete payment securely and track your ride in real time.",
+  },
+];
+
+const STATS = [
+  { label: "Happy riders", value: "25k+" },
+  { label: "Trips completed", value: "120k+" },
+  { label: "Average rating", value: "4.8★" },
 ];
 
 const TESTIMONIALS = [
   {
-    name: "Sarah Johnson",
-    rating: 5,
-    comment: "Excellent service! The booking process was smooth and the driver was very professional.",
-    avatar: "👩‍💼"
+    name: "Amit Verma",
+    role: "Daily commuter",
+    comment:
+      "CapsuleCabs has made my Gurgaon–Agra commute predictable and stress-free. Seat selection is a game changer.",
   },
   {
-    name: "Mike Chen",
-    rating: 5,
-    comment: "Love the seat selection feature. Makes traveling with friends so much easier to coordinate.",
-    avatar: "👨‍💻"
+    name: "Priya Sharma",
+    role: "Frequent traveler",
+    comment:
+      "The UI is clean, booking is fast, and the routes are well planned. Feels premium without a premium price tag.",
   },
-  {
-    name: "Emma Davis",
-    rating: 5,
-    comment: "Reliable, affordable, and comfortable. My go-to choice for daily commuting.",
-    avatar: "👩‍🎓"
-  }
 ];
 
 const Index = () => {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
+
+  if (user?.role === "driver") {
+    return <DriverDashboard />;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      {/* Hero Section */}
-      <section className="relative">
-        <div className="hero-gradient-subtle min-h-[80vh] flex items-center">
-          <div className="container mx-auto px-4 py-20">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <Badge variant="outline" className="w-fit">
-                  Premium Cab Booking Service
-                </Badge>
-                <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                  Book Your Perfect
-                  <span className="text-primary block">Ride Today</span>
-                </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed">
-                  Experience comfortable, safe, and reliable transportation with our premium cab booking service. 
-                  Choose your preferred seat, time, and route for the perfect journey.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Link to="/booking">
-                    <Button size="lg" className="text-lg px-8 group">
-                      Book a Cab Now
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-smooth" />
-                    </Button>
-                  </Link>
-                  <Link to="/dashboard">
-                    <Button variant="outline" size="lg" className="text-lg px-8">
-                      View Dashboard
-                    </Button>
-                  </Link>
-                </div>
-                {/* <div className="flex items-center gap-8 pt-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">10K+</div>
-                    <div className="text-sm text-muted-foreground">Happy Customers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">4.9</div>
-                    <div className="text-sm text-muted-foreground">Rating</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">24/7</div>
-                    <div className="text-sm text-muted-foreground">Support</div>
-                  </div>
-                </div> */}
-              </div>
-              <div className="relative">
-                <div className="float-animation">
-                  <img 
-                    src={heroImage} 
-                    alt="Premium cab service" 
-                    className="rounded-2xl shadow-2xl w-full max-w-lg mx-auto"
-                  />
-                </div>
-              </div>
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      {/* Top Navigation */}
+      <div className="border-b border-white/5 bg-black/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-3">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-lime-400 flex items-center justify-center text-black font-bold text-lg">
+              C
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-semibold tracking-tight text-white">
+                CapsuleCabs
+              </span>
+              <span className="text-[11px] text-white/60 uppercase tracking-[0.18em]">
+                Smart commute
+              </span>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-surface-elevated">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose CapsuleCabs?</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              We provide premium transportation services with features designed for your comfort and convenience
-            </p>
+          <div className="hidden md:flex items-center gap-6 text-sm text-white/70">
+            <a href="#features" className="hover:text-white transition-colors">
+              Features
+            </a>
+            <a href="#how-it-works" className="hover:text-white transition-colors">
+              How it works
+            </a>
+            <a href="#testimonials" className="hover:text-white transition-colors">
+              Stories
+            </a>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {FEATURES.map((feature, index) => (
-              <Card key={index} className="text-center transition-smooth hover:shadow-lg hover:-translate-y-1">
-                <CardHeader>
-                  <div className="mx-auto mb-4 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
-                    {feature.icon}
+          <div className="flex items-center gap-3">
+            {user ? (
+              <Link to="/dashboard">
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-white/5 text-white hover:bg-white hover:text-black transition-colors"
+                  size="sm"
+                >
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    Log in
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button
+                    size="sm"
+                    className="bg-white text-black hover:bg-zinc-100 transition-colors"
+                  >
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Page Content */}
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          {/* Glow background */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -top-32 -left-32 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-lime-500/15 blur-3xl" />
+          </div>
+
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24">
+            <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 items-center">
+              {/* Left: Text */}
+              <div className="space-y-6">
+                <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] border border-white/15 text-white/80 rounded-full px-3 py-1">
+                  New · Smart intercity commute
+                </Badge>
+
+                <h1 className="text-3.5xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight">
+                  Book your{" "}
+                  <span className="inline-block bg-gradient-to-r from-emerald-400 to-lime-300 bg-clip-text text-transparent">
+                    next cab
+                  </span>
+                  <br className="hidden sm:block" /> in a few taps.
+                </h1>
+
+                <p className="text-base sm:text-lg text-white/60 max-w-xl">
+                  Experience reliable, comfortable, and predictable rides between
+                  cities. Choose your exact seat, time slot, and pickup points in a
+                  modern, fluid interface.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <Link to="/booking">
+                    <Button className="group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15">
+                      Book a ride
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Button>
+                  </Link>
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
+                    <div className="flex -space-x-2">
+                      <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
+                      <div className="h-7 w-7 rounded-full border border-black bg-lime-400/80" />
+                      <div className="h-7 w-7 rounded-full border border-black bg-white/80" />
+                    </div>
+                    <span>Trusted by 25k+ riders</span>
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-xl text-muted-foreground">
-              Book your ride in just a few simple steps
-            </p>
-          </div>
-          <div className="grid md:grid-cols-5 gap-8 items-center">
-            {[
-              { step: 1, title: "Select Date", desc: "Choose your travel date" },
-              { step: 2, title: "Pick Cab & Time", desc: "Select your preferred vehicle and time slot" },
-              { step: 3, title: "Choose Seat", desc: "Pick your seat from the layout" },
-              { step: 4, title: "Make Payment", desc: "Secure payment process" },
-              { step: 5, title: "Enjoy Ride", desc: "Relax and enjoy your journey" }
-            ].map((item, index) => (
-              <div key={item.step} className="text-center relative">
-                <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-                  {item.step}
                 </div>
-                <h3 className="font-semibold mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
-                {index < 4 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full">
-                    <ArrowRight className="h-6 w-6 text-primary ml-0 mr-auto" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Testimonials Section
-      <section className="py-20 bg-surface-elevated">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">What Our Customers Say</h2>
-            <p className="text-xl text-muted-foreground">
-              Join thousands of satisfied customers who trust CapsuleCabs
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((testimonial, index) => (
-              <Card key={index} className="transition-smooth hover:shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <span className="text-3xl mr-3">{testimonial.avatar}</span>
-                    <div>
-                      <h4 className="font-semibold">{testimonial.name}</h4>
-                      <div className="flex">
-                        {[...Array(testimonial.rating)].map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-current text-yellow-400" />
-                        ))}
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-md pt-6">
+                  {STATS.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4 backdrop-blur-sm transition-transform hover:-translate-y-0.5 hover:border-emerald-400/60"
+                    >
+                      <div className="text-sm text-white/50">{item.label}</div>
+                      <div className="mt-1 text-lg sm:text-xl font-semibold">
+                        {item.value}
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: Image + card */}
+              <div className="space-y-4 lg:space-y-6">
+                <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-zinc-900 to-black shadow-2xl shadow-black/60">
+                  <img
+                    src={heroImage}
+                    alt="CapsuleCabs"
+                    className="h-64 sm:h-72 w-full object-cover opacity-90 scale-105 transition-transform duration-700 hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs sm:text-sm text-white">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-emerald-400" />
+                        <span className="font-medium">Gurugram → Agra</span>
+                      </div>
+                      <p className="text-white/60">
+                        Live seat availability · Smart pickup points
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs">
+                        <Star className="h-3 w-3 mr-1 text-emerald-300" />
+                        4.8 rating
+                      </span>
+                      <span className="text-[11px] text-white/60">
+                        Avg. commute saved: 18 min
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-muted-foreground italic">"{testimonial.comment}"</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section> */}
+                </div>
 
-      {/* CTA Section */}
-      <section className="py-20 hero-gradient text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Book Your Ride?</h2>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers and experience the best in class cab booking service
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/booking">
-              <Button size="lg" variant="secondary" className="text-lg px-8">
-                <Users className="mr-2 h-5 w-5" />
-                Start Booking Now
-              </Button>
-            </Link>
-            {!isAuthenticated && <Link to="/login">
-              <Button size="lg" variant="outline" className="text-lg px-8 bg-white/20 border-white/30 text-white hover:bg-white/30">
-                Sign In
-              </Button>
-            </Link>}
+                <Card className="bg-white/5 border-white/10 backdrop-blur-sm text-white">
+                  <CardContent className="flex items-center justify-between gap-4 py-4 px-4 sm:px-5">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <Smartphone className="h-5 w-5 text-emerald-300" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-white/50">
+                          Live seat map
+                        </p>
+                        <p className="text-sm text-white/80">
+                          Lock your seat before you even start.
+                        </p>
+                      </div>
+                    </div>
+                    <Link to="/booking">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full"
+                      >
+                        Start now
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="bg-foreground text-background py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">CapsuleCabs</h3>
-              <p className="text-sm opacity-80">
-                Premium cab booking service providing safe, comfortable, and reliable transportation.
-              </p>
+        {/* Features */}
+        <section
+          id="features"
+          className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-12 sm:py-16"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                  Built for daily riders.
+                </h2>
+                <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
+                  We designed CapsuleCabs for real people who commute every day.
+                  No clutter, just the things you need—fast and fluid.
+                </p>
+              </div>
+              <Badge className="bg-white/10 text-white/70 border border-white/15 rounded-full px-3 py-1">
+                Live beta · New routes coming soon
+              </Badge>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Services</h4>
-              <ul className="space-y-2 text-sm opacity-80">
-                <li>Premium Sedan</li>
-                <li>SUV Comfort</li>
-                <li>Luxury Premium</li>
-                <li>24/7 Support</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm opacity-80">
-                <li>About Us</li>
-                <li>Contact</li>
-                <li>Careers</li>
-                <li>Safety</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm opacity-80">
-                <li>Help Center</li>
-                <li>Terms of Service</li>
-                <li>Privacy Policy</li>
-                <li>Refund Policy</li>
-              </ul>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {FEATURES.map((feature) => (
+                <Card
+                  key={feature.title}
+                  className="group bg-white/5 border-white/10 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20"
+                >
+                  <CardContent className="pt-4 pb-5 px-4 space-y-3">
+                    <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 group-hover:bg-emerald-500/25 transition-colors">
+                      <feature.icon className="h-4 w-4" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-medium">{feature.title}</h3>
+                      <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
-          <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm opacity-80">
-            <p>&copy; 2025 Capsule Cabs LLP. All rights reserved.</p>
+        </section>
+
+        {/* How it works */}
+        <section
+          id="how-it-works"
+          className="border-t border-white/5 bg-black py-12 sm:py-16"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                  Book in four smooth steps.
+                </h2>
+                <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
+                  A booking flow designed to be fast on mobile and desktop
+                  alike—no unnecessary fields or friction.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white hover:text-black rounded-full"
+                asChild
+              >
+                <Link to="/booking">
+                  Try the booking flow
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {STEPS.map((item, index) => (
+                <Card
+                  key={item.step}
+                  className="bg-white/5 border-white/10 overflow-hidden group"
+                >
+                  <CardContent className="px-4 py-5 flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs text-white/50">
+                      <span className="font-mono text-[11px]">
+                        Step {item.step}
+                      </span>
+                      <span className="h-1.5 w-8 rounded-full bg-emerald-400/60 group-hover:w-10 transition-all" />
+                    </div>
+                    <h3 className="text-sm font-semibold">{item.title}</h3>
+                    <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
+                      {item.desc}
+                    </p>
+                    {index < 3 && (
+                      <div className="mt-2 text-[11px] text-emerald-300/80 uppercase tracking-[0.15em]">
+                        Smooth & intuitive
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
+        </section>
+
+        {/* Testimonials */}
+        <section
+          id="testimonials"
+          className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-12 sm:py-16"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                  Loved by commuters.
+                </h2>
+                <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
+                  Join thousands of riders who rely on CapsuleCabs for predictable
+                  and comfortable intercity travel.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-5">
+              {TESTIMONIALS.map((t) => (
+                <Card
+                  key={t.name}
+                  className="bg-white/5 border-white/10 relative overflow-hidden"
+                >
+                  <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl" />
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center justify-between text-base">
+                      <span>{t.name}</span>
+                      <span className="flex items-center gap-1 text-xs text-emerald-300">
+                        <Star className="h-3 w-3 fill-emerald-300 text-emerald-300" />
+                        4.8
+                      </span>
+                    </CardTitle>
+                    <p className="text-xs text-white/50">{t.role}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      “{t.comment}”
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Bottom Nav on mobile (optional) */}
+      <div className="md:hidden border-t border-white/10 bg-black/90 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-xs text-white/60">
+          <span>CapsuleCabs · Smart commute</span>
+          <Link to="/booking">
+            <Button
+              size="sm"
+              className="bg-white text-black hover:bg-zinc-100 rounded-full"
+            >
+              Book now
+            </Button>
+          </Link>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };
