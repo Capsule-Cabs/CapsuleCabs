@@ -26,111 +26,142 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Navigation />
-      <section className="relative">
-        <div className="hero-gradient-subtle min-h-[60vh] flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16">
-            <div className="max-w-md mx-auto w-full px-4 sm:px-0">
-              <div className="text-center mb-6 sm:mb-8">
-                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <Car className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                  <h1 className="text-2xl sm:text-3xl font-bold">Welcome Back</h1>
+
+      <main className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="max-w-4xl w-full grid md:grid-cols-[1.1fr_1fr] gap-8 items-center">
+          {/* Left: Form */}
+          <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white shadow-2xl">
+            <CardHeader className="pb-4">
+              <Badge className="w-fit mb-2 bg-white/10 border border-white/15 text-xs uppercase tracking-[0.2em] text-white/70 rounded-full px-3 py-1">
+                Welcome back
+              </Badge>
+              <CardTitle className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                Sign in to your account
+              </CardTitle>
+              <p className="text-sm text-white/60 mt-2">
+                Enter your credentials to access your account and manage your rides.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-xs text-white/70">
+                    Phone Number
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                      <Phone className="h-4 w-4" />
+                    </span>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                    />
+                  </div>
                 </div>
-                <Badge variant="outline" className="w-fit text-xs sm:text-sm">
-                  🚗 Sign in to your CapsuleCabs account
-                </Badge>
-              </div>
 
-              <Card className="shadow-xl border-0">
-                <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
-                  <CardTitle className="text-xl sm:text-2xl">Sign In</CardTitle>
-                  <p className="text-muted-foreground text-sm sm:text-base">
-                    Enter your credentials to access your account
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs text-white/70">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                      <Lock className="h-4 w-4" />
+                    </span>
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="pl-9 pr-10 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <span>Use the phone number you registered with.</span>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-2.5"
+                >
+                  Sign In
+                </Button>
+
+                <div className="text-center text-xs text-white/60">
+                  Don&apos;t have an account?{" "}
+                  <Link
+                    to="/signup"
+                    className="text-emerald-300 hover:text-emerald-200 underline-offset-4 hover:underline"
+                  >
+                    Create one
+                  </Link>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Right: Info */}
+          <div className="hidden md:flex flex-col gap-4">
+            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-6 shadow-xl">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-emerald-300" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/50">
+                    CapsuleCabs
                   </p>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6 pb-6">
-                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                      </div>
-                    </div>
+                  <p className="text-sm text-white/80">
+                    Seamless intercity cab experience
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2 text-sm text-white/65">
+                <li>• View and manage all your bookings in one place.</li>
+                <li>• Save frequent routes and passenger details.</li>
+                <li>• Faster checkout with stored preferences.</li>
+              </ul>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="pl-10 pr-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-smooth"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="remember"
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
-                        />
-                        <Label htmlFor="remember" className="text-sm">
-                          Remember me
-                        </Label>
-                      </div>
-                      <Link
-                        to="/forgot-password"
-                        className="text-sm text-primary hover:text-primary-hover transition-smooth"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-
-                    <Button type="submit" className="w-full h-12 text-base sm:text-lg" size="lg">
-                      Sign In
-                    </Button>
-
-                    <div className="text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Don't have an account?{" "}
-                        <Link
-                          to="/signup"
-                          className="text-primary hover:text-primary-hover font-semibold transition-smooth"
-                        >
-                          Sign up here
-                        </Link>
-                      </p>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/70">
+              <p className="font-medium mb-1 text-white">
+                New to CapsuleCabs?
+              </p>
+              <p className="text-xs text-white/60 mb-3">
+                Create an account in less than a minute and start booking rides.
+              </p>
+              <Link to="/signup">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full border-white/30 text-black hover:bg-white hover:text-black"
+                >
+                  Create account
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
-      </section>
+      </main>
     </div>
   );
 };

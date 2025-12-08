@@ -694,7 +694,8 @@ export const BookingSteps: React.FC = () => {
                       </select>
                     </div>
 
-                    <div>
+                    {/* Uncomment for  dynamic address*/}
+                    {/* <div>
                       <label className="block mb-1 text-xs font-medium text-white/60">
                         Pickup Address
                       </label>
@@ -726,9 +727,52 @@ export const BookingSteps: React.FC = () => {
                           className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
                         />
                       )}
+                    </div> */}
+                    <div>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Pickup Address
+                      </label>
+                      <select
+                        value={passenger.pickupAddress || ""}
+                        onChange={(e) => {
+                          const newPax = [...passengers];
+                          newPax[idx].pickupAddress = e.target.value;
+                          setPassengers(newPax);
+                        }}
+                        className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+                      >
+                        <option value="">Select Pickup</option>
+                        {pickupOptions.map((point) => (
+                          <option value={point.name}>
+                            {point.name} ({point.address})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
+                      <label className="block mb-1 text-xs font-medium text-white/60">
+                        Drop Address
+                      </label>
+                      <select
+                        value={passenger.dropAddress || ""}
+                        onChange={(e) => {
+                          const newPax = [...passengers];
+                          newPax[idx].dropAddress = e.target.value;
+                          setPassengers(newPax);
+                        }}
+                        className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
+                      >
+                        <option value="">Select Drop</option>
+                        {dropOptions.map((point) => (
+                          <option value={point.name}>
+                            {point.name} ({point.address})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                       
+                    {/* <div>
                       <label className="block mb-1 text-xs font-medium text-white/60">
                         Drop Address
                       </label>
@@ -760,7 +804,7 @@ export const BookingSteps: React.FC = () => {
                           className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
                         />
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               ))}

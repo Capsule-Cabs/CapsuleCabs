@@ -11,14 +11,11 @@ const Booking = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="mb-8">
-            <h1 className="text-3xl sm:text-4xl font-semibold text-white mb-2">
+          {/* <div className="mb-8">
+            <h1 className="text-2xl sm:text-2xl font-semibold text-white mb-2">
               Complete your booking
             </h1>
-            <p className="text-sm sm:text-base text-white/60">
-              Complete your booking in just a few simple steps. Choose your date, cab, seat, and provide passenger details.
-            </p>
-          </div>
+          </div> */}
 
           {/* Booking Steps Component */}
           <BookingSteps />

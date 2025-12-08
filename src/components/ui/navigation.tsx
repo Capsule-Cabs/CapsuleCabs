@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { Button } from "@/components/ui/button";
-import { Car, Menu, User, LogOut, Home, MapPin, Phone, Mail } from "lucide-react";
+import { Car, Menu, User, LogOut, Home, MapPin, Phone, Mail, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AuthContext } from "@/contexts/AuthContext";
+import logo from "@/assets/C.jpg"
 
 export const Navigation = () => {
   const { user, isAuthenticated, logout, isLoading } = useContext(AuthContext);
@@ -28,9 +29,7 @@ export const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-lime-400 flex items-center justify-center text-black font-bold text-lg">
-              C
-            </div>
+            <img src={logo} className="h-12 w-8 rounded-full flex items-center justify-center text-black font-bold text-lg" />
             <div className="hidden sm:flex flex-col leading-tight">
               <span className="font-semibold tracking-tight text-white text-sm">
                 CapsuleCabs
@@ -58,6 +57,13 @@ export const Navigation = () => {
                 >
                   <MapPin className="h-4 w-4" />
                   Book Ride
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="text-white/70 hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
                 </Link>
               </div>
             )}
@@ -143,36 +149,27 @@ export const Navigation = () => {
             )}
 
             {/* Mobile Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild className="md:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-white/20 bg-white/5 text-white hover:bg-white/10"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
-                <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
-                  <Link to="/">Home</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
-                  <Link to="/booking">Book Ride</Link>
-                </DropdownMenuItem>
-                {!isAuthenticated && (
-                  <>
-                    <DropdownMenuSeparator className="bg-white/10" />
-                    <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
-                      <Link to="/login">Sign In</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
-                      <Link to="/signup">Sign Up</Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+            {isAuthenticated ? <DropdownMenu>
+                <DropdownMenuTrigger asChild className="md:hidden">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-white/20 bg-white/5 text-white hover:bg-white/10"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10 text-white">
+                  <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
+                    <Link to="/">Home</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="hover:bg-white/10 cursor-pointer">
+                    <Link to="/booking">Book Ride</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>: ""}
+            </>
           </div>
         </div>
       </div>

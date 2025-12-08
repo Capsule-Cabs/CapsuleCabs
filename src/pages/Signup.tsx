@@ -4,7 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Lock, Eye, EyeOff, Car, User, Phone } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Car,
+  User,
+  Phone as PhoneIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import React, { useState, useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -18,12 +26,13 @@ const Signup = () => {
     email: "",
     phone: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
+
   const { register } = useContext(AuthContext);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +47,7 @@ const Signup = () => {
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        password: formData.password
+        password: formData.password,
       });
       window.location.href = "/";
     } catch (err: any) {
@@ -47,167 +56,185 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       <Navigation />
 
-      <section className="relative">
-        <div className="hero-gradient-subtle min-h-[60vh] flex items-center">
-          <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-16">
-            <div className="max-w-lg mx-auto w-full px-4 sm:px-0">
-              <div className="text-center mb-6 sm:mb-8">
-                <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <Car className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                  <h1 className="text-2xl sm:text-3xl font-bold">Join CapsuleCabs</h1>
-                </div>
-                <Badge variant="outline" className="w-fit text-xs sm:text-sm">
-                  Create your account and start booking rides
-                </Badge>
-              </div>
-
-              <Card className="shadow-xl border-0">
-                <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
-                  <CardTitle className="text-xl sm:text-2xl">Create Account</CardTitle>
-                  <p className="text-muted-foreground text-sm sm:text-base">
-                    Fill in your details to get started
-                  </p>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6 pb-6">
-                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="firstName">First Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="firstName"
-                            type="text"
-                            placeholder="First name"
-                            value={formData.firstName}
-                            onChange={(e) => handleInputChange("firstName", e.target.value)}
-                            className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="lastName">Last Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="lastName"
-                            type="text"
-                            placeholder="Last name"
-                            value={formData.lastName}
-                            onChange={(e) => handleInputChange("lastName", e.target.value)}
-                            className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={formData.email}
-                          onChange={(e) => handleInputChange("email", e.target.value)}
-                          className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={formData.phone}
-                          onChange={(e) => handleInputChange("phone", e.target.value)}
-                          className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Create a password"
-                          value={formData.password}
-                          onChange={(e) => handleInputChange("password", e.target.value)}
-                          className="pl-10 pr-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-smooth"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="confirmPassword"
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm your password"
-                          value={formData.confirmPassword}
-                          onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                          className="pl-10 pr-10 h-11 sm:h-12 text-sm sm:text-base"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-smooth"
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-2">
-                      <input
-                        type="checkbox"
-                        id="terms"
-                        className="rounded border-gray-300 text-primary focus:ring-primary mt-1"
-                        required
+      <main className="flex-1 flex items-center justify-center px-4 py-1">
+        <div className="max-w-5xl w-full grid lg:grid-cols-[1.1fr_1fr] gap-8 items-start">
+          {/* Left: Form */}
+          <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white shadow-2xl">
+            <CardHeader className="pb-4">
+              {/* <Badge className="w-fit mb-2 bg-white/10 border border-white/15 text-xs uppercase tracking-[0.2em] text-white/70 rounded-full px-3 py-1">
+                Create account
+              </Badge> */}
+              <CardTitle className="text-2xl sm:text-3xl font-semibold tracking-tight">
+                Join CapsuleCabs
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-xs text-white/70">
+                      First Name
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                        <User className="h-4 w-4" />
+                      </span>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) =>
+                          handleInputChange("firstName", e.target.value)
+                        }
+                        placeholder="First name"
+                        className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
                       />
-                      <Label htmlFor="terms" className="text-xs sm:text-sm leading-relaxed">
-                        I agree to the{" "}
-                        <Link to="/terms" className="text-primary hover:text-primary-hover underline">
-                          Terms of Service
-                        </Link>{" "}
-                        and{" "}
-                        <Link to="/privacy" className="text-primary hover:text-primary-hover underline">
-                          Privacy Policy
-                        </Link>
-                      </Label>
                     </div>
+                  </div>
 
-                    <Button type="submit" className="w-full h-12 text-base sm:text-lg" size="lg">
-                      Create Account
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-xs text-white/70">
+                      Last Name
+                    </Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        handleInputChange("lastName", e.target.value)
+                      }
+                      placeholder="Last name"
+                      className="bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                    />
+                  </div>
+                </div>
 
-                    <div className="text-center">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-xs text-white/70">
+                    Email Address
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                      <Mail className="h-4 w-4" />
+                    </span>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
+                      placeholder="you@example.com"
+                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-xs text-white/70">
+                    Phone Number
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                      <PhoneIcon className="h-4 w-4" />
+                    </span>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
+                      placeholder="Enter your phone number"
+                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-xs text-white/70">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={(e) =>
+                          handleInputChange("password", e.target.value)
+                        }
+                        placeholder="Create a password"
+                        className="pl-9 pr-10 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-xs text-white/70"
+                    >
+                      Confirm Password
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                        <Lock className="h-4 w-4" />
+                      </span>
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          handleInputChange("confirmPassword", e.target.value)
+                        }
+                        placeholder="Re-enter password"
+                        className="pl-9 pr-10 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword((prev) => !prev)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xs text-white/60">
+                  Use at least 8 characters, including a number and a symbol.
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-2.5"
+                >
+                  Create account
+                </Button>
+
+                <div className="text-center">
                       <p className="text-sm text-muted-foreground">
                         Already have an account?{" "}
                         <Link to="/login" className="text-primary hover:text-primary-hover font-semibold transition-smooth">
@@ -215,33 +242,48 @@ const Signup = () => {
                         </Link>
                       </p>
                     </div>
-                  </form>
-                </CardContent>
-              </Card>
 
-              <div className="mt-6 sm:mt-8 text-center">
-                <h3 className="font-semibold mb-3 sm:mb-4 text-foreground text-base sm:text-lg">
-                  Why join CapsuleCabs?
-                </h3>
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-primary">🚗</div>
-                    <div className="text-muted-foreground">Premium Rides</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-primary">⭐</div>
-                    <div className="text-muted-foreground">Best Prices</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-primary">🔒</div>
-                    <div className="text-muted-foreground">Safe Travel</div>
-                  </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Right: Info */}
+          <div className="hidden lg:flex flex-col gap-4 mt-20">
+            <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-6 shadow-xl">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-10 w-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-emerald-300" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/50">
+                    CapsuleCabs
+                  </p>
+                  <p className="text-sm text-white/80">
+                    Built for your daily commute
+                  </p>
                 </div>
               </div>
+              <ul className="space-y-2 text-sm text-white/65">
+                <li>• Save your favourite routes and passengers.</li>
+                <li>• Access bookings and tickets anytime.</li>
+                <li>• Get a smoother, faster checkout experience.</li>
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/70">
+              <p className="font-medium mb-1 text-white">
+                Why sign up?
+              </p>
+              <p className="text-xs text-white/60 mb-2">
+                Your details are securely stored and make every future booking much faster.
+              </p>
+              <p className="text-xs text-white/50">
+                You can update your profile and preferences anytime from your dashboard.
+              </p>
             </div>
           </div>
         </div>
-      </section>
+      </main>
     </div>
   );
 };

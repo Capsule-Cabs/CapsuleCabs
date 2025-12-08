@@ -102,65 +102,7 @@ const Index = () => {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Navigation */}
       <div className="border-b border-white/5 bg-black/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-3">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-lime-400 flex items-center justify-center text-black font-bold text-lg">
-              C
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-semibold tracking-tight text-white">
-                CapsuleCabs
-              </span>
-              <span className="text-[11px] text-white/60 uppercase tracking-[0.18em]">
-                Smart commute
-              </span>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-6 text-sm text-white/70">
-            <a href="#features" className="hover:text-white transition-colors">
-              Features
-            </a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">
-              How it works
-            </a>
-            <a href="#testimonials" className="hover:text-white transition-colors">
-              Stories
-            </a>
-          </div>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link to="/dashboard">
-                <Button
-                  variant="outline"
-                  className="border-white/20 bg-white/5 text-white hover:bg-white hover:text-black transition-colors"
-                  size="sm"
-                >
-                  Go to Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/80 hover:text-white hover:bg-white/10"
-                  >
-                    Log in
-                  </Button>
-                </Link>
-                <Link to="/signup">
-                  <Button
-                    size="sm"
-                    className="bg-white text-black hover:bg-zinc-100 transition-colors"
-                  >
-                    Sign up
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
+        <Navigation/>
       </div>
 
       {/* Page Content */}
@@ -352,7 +294,7 @@ const Index = () => {
               </div>
               <Button
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white hover:text-black rounded-full"
+                className="border-white/20 text-black hover:bg-white hover:text-black rounded-full"
                 asChild
               >
                 <Link to="/booking">
