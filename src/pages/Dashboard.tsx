@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   CalendarDays,
@@ -16,13 +16,160 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// TODO: keep/merge your existing dashboard state, effects, and API calls here
-// Example placeholders:
-const upcomingTrips: any[] = []; // replace with your real data
-const pastTrips: any[] = []; // replace with your real data
+type BookingStatus = "booked" | "ongoing" | "completed" | "cancelled";
+
+interface Booking {
+  _id: string;
+  origin: string;
+  destination: string;
+  fare: number;
+  status: BookingStatus;
+  startTime: string;
+  travelDate: string;
+  departureTime: string;
+  arrivalTime?: string;
+  seatNumbers: string[];
+  totalPassengers: number;
+}
+
+
+const upcomingTrips: any[] = [];
+const pastTrips: any[] = [];
 
 const Dashboard: React.FC = () => {
   const { user } = useContext(AuthContext);
+  const [upcomingTrips, setUpcomingTrips] = useState<Booking[]>([]);
+  const [pastTrips, setPastTrips] = useState<Booking[]>([]);
+  const [loadingTrips, setLoadingTrips] = useState(false);
+  const [tripError, setTripError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      try {
+        setLoadingTrips(true);
+        setTripError(null);
+
+        const res = await fetch("http://localhost:5000/api/v1/bookings/mine", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MGM0NGYzYTI0MjY1MDM5MTIzZjhiNyIsInJvbGUiOiJwYXNzZW5nZXIiLCJpYXQiOjE3NjUyMTQxNDQsImV4cCI6MTc2NTgxODk0NH0.sK839S9_bUFRHeUlZ1cuGsxqf4-9Ew-_YALP6TwHNaQ",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch bookings (${res.status})`);
+        }
+
+        const json = await res.json();
+        const bookings = (json?.data?.bookings ?? []) as any[];
+
+        const mapped: Booking[] = bookings.map((b) => {
+          const routeOrigin =
+            b?.route?.origin ??
+            b?.route?.routeId?.origin?.city ??
+            b?.route?.routeId?.origin?.location ??
+            "Unknown";
+
+          const routeDestination =
+            b?.route?.destination ??
+            b?.route?.routeId?.destination?.city ??
+            b?.route?.routeId?.destination?.location ??
+            "Unknown";
+
+          const travelDateIso = b?.journey?.travelDate as string | undefined; // "2025-12-09T00:00:00.000Z"
+          const departureTime = b?.journey?.departureTime ?? "";              // "06:00"
+          const estimatedArrivalTime = b?.journey?.estimatedArrivalTime ?? ""; // "10:00"
+
+          // Build a proper ISO startTime using travelDate + departure time
+          let startTimeIso = new Date().toISOString();
+          if (travelDateIso && departureTime) {
+            const d = new Date(travelDateIso);
+            const [hh, mm] = departureTime.split(":");
+            d.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+            startTimeIso = d.toISOString();
+          } else if (travelDateIso) {
+            startTimeIso = new Date(travelDateIso).toISOString();
+          }
+
+          const fare =
+            b?.payment?.totalAmount ??
+            b?.payment?.baseFare ??
+            0;
+
+          // map backend status -> dashboard status
+          let status: BookingStatus = "booked";
+          if (b.status === "cancelled") status = "cancelled";
+          if (b.status === "completed") status = "completed";
+          if (b.status === "confirmed") status = "booked";
+
+          const seatNumbers: string[] =
+            Array.isArray(b?.seatNumbers) && b.seatNumbers.length > 0
+              ? b.seatNumbers
+              : (Array.isArray(b?.passengers)
+                ? b.passengers
+                  .map((p: any) => p.seatNumber)
+                  .filter(Boolean)
+                : []);
+
+          const totalPassengers: number =
+            typeof b?.totalPassengers === "number"
+              ? b.totalPassengers
+              : Array.isArray(b?.passengers)
+                ? b.passengers.length
+                : 0;
+
+          // human-readable date
+          const travelDateFormatted = travelDateIso
+            ? new Date(travelDateIso).toLocaleDateString(undefined, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+            : "";
+
+          return {
+            _id: b._id,
+            origin: routeOrigin,
+            destination: routeDestination,
+            fare,
+            status,
+            startTime: startTimeIso,
+            travelDate: travelDateFormatted,
+            departureTime,
+            arrivalTime: estimatedArrivalTime,
+            seatNumbers,
+            totalPassengers,
+          };
+        });
+
+        const now = new Date();
+
+        const upcoming = mapped.filter((trip) => {
+          const start = new Date(trip.startTime);
+          return (trip.status === "booked" || trip.status === "ongoing") && start >= now;
+        });
+
+        const past = mapped.filter((trip) => {
+          const start = new Date(trip.startTime);
+          return start < now || trip.status === "completed";
+        });
+
+        setUpcomingTrips(upcoming);
+        setPastTrips(past);
+      } catch (err: any) {
+        setTripError(err.message || "Something went wrong fetching bookings");
+      } finally {
+        setLoadingTrips(false);
+      }
+    };
+
+    fetchMyBookings();
+  }, []);
+
+
+
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
@@ -116,17 +263,16 @@ const Dashboard: React.FC = () => {
                     : "No trips scheduled"}
                 </span>
               </h2>
-              {upcomingTrips.length > 0 && (
+              {/* {upcomingTrips.length > 0 && (
                 <Link to="/bookings">
                   <Button
-                    variant="outline"
                     size="sm"
                     className="rounded-full border-white/20 text-white hover:bg-white/10"
                   >
                     View all
                   </Button>
                 </Link>
-              )}
+              )} */}
             </div>
 
             {upcomingTrips.length === 0 ? (
@@ -172,18 +318,19 @@ const Dashboard: React.FC = () => {
                                 : "Upcoming"}
                             </Badge>
                           </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-white/60">
+                          <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-white/60">
                             <span className="flex items-center gap-1">
-                              <CalendarDays className="h-3 w-3" />
                               {trip.date}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {trip.time}
+                              <p className="trip-time">
+                                {trip.travelDate} • {trip.departureTime}–{trip.arrivalTime}
+                              </p>
                             </span>
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
-                              Seat {trip.seat}
+                              Seat {trip.seatNumbers}
                             </span>
                           </div>
                         </div>
@@ -192,15 +339,14 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm font-semibold">
                           ₹{trip.fare?.toFixed ? trip.fare.toFixed(2) : trip.fare}
                         </p>
-                        <Link to={`/bookings/${trip.id}`}>
+                        {/* <Link to={`/bookings/${trip.id}`}>
                           <Button
-                            variant="outline"
                             size="sm"
                             className="rounded-full border-white/20 text-white hover:bg-white/10"
                           >
                             View ticket
                           </Button>
-                        </Link>
+                        </Link> */}
                       </div>
                     </CardContent>
                   </Card>
@@ -209,23 +355,21 @@ const Dashboard: React.FC = () => {
             )}
           </section>
 
-          {/* Past trips */}
           <section className="space-y-4 pb-6">
             <div className="flex items-center justify-between gap-2">
               <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
                 Travel History
               </h2>
-              {pastTrips.length > 0 && (
+              {/* {pastTrips.length > 0 && (
                 <Link to="/bookings">
                   <Button
-                    variant="outline"
                     size="sm"
                     className="rounded-full border-white/20 text-white hover:bg-white/10"
                   >
                     View all
                   </Button>
                 </Link>
-              )}
+              )} */}
             </div>
 
             {pastTrips.length === 0 ? (
