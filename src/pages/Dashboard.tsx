@@ -49,7 +49,7 @@ const Dashboard: React.FC = () => {
         setLoadingTrips(true);
         setTripError(null);
 
-        const res = await fetch("http://localhost:5000/api/v1/bookings/mine", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/bookings/mine`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

@@ -269,7 +269,6 @@ const getMyBookings = asyncHandler(async (req, res) => {
     .populate('route.routeId', 'routeCode origin destination');
 
   const totalBookings = await Booking.countDocuments(query);
-
   res.status(200).json(
     ApiResponse.success({
       bookings,
