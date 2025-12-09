@@ -925,7 +925,8 @@ export const BookingSteps: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col">
-      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6">
+      {/* <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6"> */}
+      <div>
         {/* Step Progress */}
         {/* <div className="flex justify-center mb-4">
           <div className="flex items-center space-x-2 sm:space-x-3 pb-2 scrollbar-hide">
