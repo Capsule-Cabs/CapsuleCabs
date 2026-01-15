@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-cab.jpg";
 import { AuthContext } from "@/contexts/AuthContext";
 import DriverDashboard from "./DriverDashboard";
+import { AboutUs } from "@/components/sections/AboutUs";
+import { Footer } from "@/components/sections/Footer";
 
 const FEATURES = [
   {
@@ -71,7 +73,7 @@ const STEPS = [
 ];
 
 const STATS = [
-  { label: "Happy riders", value: "25k+" },
+  { label: "", value: "25k+" },
   { label: "Trips completed", value: "120k+" },
   { label: "Average rating", value: "4.8★" },
 ];
@@ -81,7 +83,7 @@ const TESTIMONIALS = [
     name: "Amit Verma",
     role: "Daily commuter",
     comment:
-      "CapsuleCabs has made my Gurgaon–Agra commute predictable and stress-free. Seat selection is a game changer.",
+      "CapsuleCabs will surely made my Gurgaon–Agra commute predictable and stress-free. Fixed pricing is a game changer.",
   },
   {
     name: "Priya Sharma",
@@ -92,7 +94,7 @@ const TESTIMONIALS = [
 ];
 
 const Index = () => {
-  const { user } = useContext(AuthContext);
+  const { user, isAuthenticated } = useContext(AuthContext);
 
   if (user?.role === "driver") {
     return <DriverDashboard />;
@@ -102,7 +104,7 @@ const Index = () => {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Top Navigation */}
       <div className="border-b border-white/5 bg-black/80 backdrop-blur-sm sticky top-0 z-40">
-        <Navigation/>
+        <Navigation />
       </div>
 
       {/* Page Content */}
@@ -120,42 +122,50 @@ const Index = () => {
               {/* Left: Text */}
               <div className="space-y-6">
                 <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] border border-white/15 text-white/80 rounded-full px-3 py-1">
-                  New · Smart intercity commute
+                  NOW LIVE | Gurugram ↔ Agra
                 </Badge>
-
                 <h1 className="text-3.5xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight">
-                  Book your{" "}
+                  The intercity{" "}
                   <span className="inline-block bg-gradient-to-r from-emerald-400 to-lime-300 bg-clip-text text-transparent">
-                    next cab
+                    commute you've
                   </span>
-                  <br className="hidden sm:block" /> in a few taps.
+                  <br className="hidden sm:block" /> been waiting for.
                 </h1>
 
                 <p className="text-base sm:text-lg text-white/60 max-w-xl">
-                  Experience reliable, comfortable, and predictable rides between
-                  cities. Choose your exact seat, time slot, and pickup points in a
-                  modern, fluid interface.
+                  Premium intercity travel with guaranteed seats, live tracking,
+                  and transparent pricing. Starting with daily rides between
+                  Gurugram and Agra — more routes coming soon.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                  <Link to="/booking">
-                    <Button className="group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15">
-                      Book a ride
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
+                  {isAuthenticated ? (
+                    <Link to="/booking">
+                      <Button className="group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15">
+                        Book your first ride
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to="/login">
+                      <Button className="group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15">
+                        Book your first ride
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                  )}
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
                     <div className="flex -space-x-2">
                       <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
                       <div className="h-7 w-7 rounded-full border border-black bg-lime-400/80" />
                       <div className="h-7 w-7 rounded-full border border-black bg-white/80" />
                     </div>
-                    <span>Trusted by 25k+ riders</span>
+                    <span>See how it works</span>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-md pt-6">
+                {/* <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-md pt-6">
                   {STATS.map((item) => (
                     <div
                       key={item.label}
@@ -167,7 +177,7 @@ const Index = () => {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
 
               {/* Right: Image + card */}
@@ -216,15 +226,27 @@ const Index = () => {
                         </p>
                       </div>
                     </div>
-                    <Link to="/booking">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full"
-                      >
-                        Start now
-                      </Button>
-                    </Link>
+                    {isAuthenticated ? (
+                      <Link to="/booking">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full"
+                        >
+                          Start now
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link to="/login">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full"
+                        >
+                          Start now
+                        </Button>
+                      </Link>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -235,16 +257,19 @@ const Index = () => {
         {/* Features */}
         <section
           id="features"
-          className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-12 sm:py-16"
+          className="border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-1 sm:py-12"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
               <div>
+                <span className="text-xs uppercase tracking-wider text-white/50">
+                  How we're different
+                </span>
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
                   Built for daily riders.
                 </h2>
                 <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
-                  We designed CapsuleCabs for real people who commute every day.
+                  We designed CapsuleCabs for real people who commute frequently.
                   No clutter, just the things you need—fast and fluid.
                 </p>
               </div>
@@ -277,7 +302,7 @@ const Index = () => {
         </section>
 
         {/* How it works */}
-        <section
+        {/* <section
           id="how-it-works"
           className="border-t border-white/5 bg-black py-12 sm:py-16"
         >
@@ -297,10 +322,17 @@ const Index = () => {
                 className="border-white/20 text-black hover:bg-white hover:text-black rounded-full"
                 asChild
               >
-                <Link to="/booking">
-                  Try the booking flow
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+                {isAuthenticated ? (
+                  <Link to="/booking">
+                    Try the booking flow
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                ) : (
+                  <Link to="/login">
+                    Try the booking flow
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                )}
               </Button>
             </div>
 
@@ -321,17 +353,12 @@ const Index = () => {
                     <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
                       {item.desc}
                     </p>
-                    {index < 3 && (
-                      <div className="mt-2 text-[11px] text-emerald-300/80 uppercase tracking-[0.15em]">
-                        Smooth & intuitive
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Testimonials */}
         <section
@@ -342,11 +369,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                  Loved by commuters.
+                  Loved by Surveyee.
                 </h2>
                 <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
-                  Join thousands of riders who rely on CapsuleCabs for predictable
-                  and comfortable intercity travel.
+                  Early riders are already rethinking intercity travel with CapsuleCabs.
                 </p>
               </div>
             </div>
@@ -378,7 +404,10 @@ const Index = () => {
             </div>
           </div>
         </section>
+        <AboutUs />
       </main>
+
+      <Footer />
 
       {/* Bottom Nav on mobile (optional) */}
       <div className="md:hidden border-t border-white/10 bg-black/90 backdrop-blur-sm">

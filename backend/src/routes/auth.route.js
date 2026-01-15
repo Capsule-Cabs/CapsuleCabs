@@ -430,11 +430,11 @@ const changePassword = async (req, res) => {
  */
 const register = asyncHandler(async (req, res) => {
   console.log('BODY: ', req?.body);
-  const { phone, firstName, lastName, email, password } = req.body;
+  const { phone, firstName, lastName, email, password, role } = req.body;
   // OTP verified earlier
   let user = await User.findOne({ phone });
   if (!user) {
-    user = await User.create({ phone, firstName, lastName, email, isVerified: true, password });
+    user = await User.create({ phone, firstName, lastName, email, isVerified: true, password, role });
   } else {
     return res.status(409).json({
       success: false,

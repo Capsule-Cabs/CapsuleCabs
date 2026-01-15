@@ -57,7 +57,7 @@ const lockSeats = asyncHandler(async (req, res) => {
       travelDate,
       seatNumbers,
       userId,
-      15 // 15 minutes lock duration
+      2
     );
 
     res.status(200).json(
@@ -66,7 +66,7 @@ const lockSeats = asyncHandler(async (req, res) => {
         routeId,
         travelDate,
         userId,
-        lockDurationMinutes: 15
+        lockDurationMinutes: 2
       }, 'Seats locked successfully')
     );
   } catch (error) {

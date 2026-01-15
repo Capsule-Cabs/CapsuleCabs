@@ -35,7 +35,7 @@ const Login = () => {
           <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white shadow-2xl">
             <CardHeader className="pb-4">
               <Badge className="w-fit mb-2 bg-white/10 border border-white/15 text-xs uppercase tracking-[0.2em] text-white/70 rounded-full px-3 py-1">
-                Welcome back
+                Welcome
               </Badge>
               <CardTitle className="text-2xl sm:text-3xl font-semibold tracking-tight">
                 Sign in to your account

@@ -184,7 +184,7 @@ const Dashboard: React.FC = () => {
                 My Dashboard
               </p>
               <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
-                Welcome back{user?.firstName ? `, ${user.firstName}` : ""}.
+                Welcome{user?.firstName ? `, ${user.firstName}` : ""}.
               </h1>
               <p className="mt-1 text-sm text-white/60">
                 Manage your bookings and view your travel history.

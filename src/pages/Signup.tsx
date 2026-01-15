@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Mail,
   Lock,
   Eye,
@@ -12,6 +19,7 @@ import {
   Car,
   User,
   Phone as PhoneIcon,
+  UserCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import React, { useState, useContext } from "react";
@@ -25,6 +33,7 @@ const Signup = () => {
     lastName: "",
     email: "",
     phone: "",
+    role: "",
     password: "",
     confirmPassword: "",
   });
@@ -47,6 +56,7 @@ const Signup = () => {
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
+        role: formData.role,
         password: formData.password,
       });
       window.location.href = "/";
@@ -64,9 +74,6 @@ const Signup = () => {
           {/* Left: Form */}
           <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white shadow-2xl">
             <CardHeader className="pb-4">
-              {/* <Badge className="w-fit mb-2 bg-white/10 border border-white/15 text-xs uppercase tracking-[0.2em] text-white/70 rounded-full px-3 py-1">
-                Create account
-              </Badge> */}
               <CardTitle className="text-2xl sm:text-3xl font-semibold tracking-tight">
                 Join CapsuleCabs
               </CardTitle>
@@ -131,24 +138,54 @@ const Signup = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-xs text-white/70">
-                    Phone Number
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
-                      <PhoneIcon className="h-4 w-4" />
-                    </span>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      placeholder="Enter your phone number"
-                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
-                    />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-xs text-white/70">
+                      Phone Number
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                        <PhoneIcon className="h-4 w-4" />
+                      </span>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) =>
+                          handleInputChange("phone", e.target.value)
+                        }
+                        placeholder="Enter your phone number"
+                        className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="role" className="text-xs text-white/70">
+                      Role
+                    </Label>
+                    <Select
+                      value={formData.role}
+                      onValueChange={(value) => handleInputChange("role", value)}
+                    >
+                      <SelectTrigger className="bg-black/40 border-white/20 text-white focus:ring-emerald-400/70">
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-white/20 text-white">
+                        <SelectItem value="passenger" className="focus:bg-white/10 focus:text-white">
+                          Passenger
+                        </SelectItem>
+                        {/* <SelectItem value="operator" className="focus:bg-white/10 focus:text-white">
+                          Operator
+                        </SelectItem>
+                        <SelectItem value="admin" className="focus:bg-white/10 focus:text-white">
+                          Admin
+                        </SelectItem> */}
+                        <SelectItem value="driver" className="focus:bg-white/10 focus:text-white">
+                          Driver
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -235,13 +272,13 @@ const Signup = () => {
                 </Button>
 
                 <div className="text-center">
-                      <p className="text-sm text-muted-foreground">
-                        Already have an account?{" "}
-                        <Link to="/login" className="text-primary hover:text-primary-hover font-semibold transition-smooth">
-                          Sign in here
-                        </Link>
-                      </p>
-                    </div>
+                  <p className="text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <Link to="/login" className="text-primary hover:text-primary-hover font-semibold transition-smooth">
+                      Sign in here
+                    </Link>
+                  </p>
+                </div>
 
               </form>
             </CardContent>

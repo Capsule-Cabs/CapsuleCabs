@@ -21,6 +21,7 @@ interface AuthContextType {
     firstName: string;
     lastName: string;
     email: string;
+    role: string;
     password: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     lastName: string;
     email: string;
     password: string;
+    role: string;
   }) => {
     const { data } = await api.post('/auth/register', payload);
     
