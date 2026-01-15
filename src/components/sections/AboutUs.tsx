@@ -3,20 +3,20 @@ import { Linkedin, Mail } from "lucide-react";
 
 const FOUNDERS = [
   {
-    name: "Vishwas Sharma",
+    name: "Shekhar Sharma",
     role: "Co-Founder & CEO",
     bio: "Software Engineer turned entrepreneur. Passionate about solving real-world problems through technology and creating seamless travel experiences.",
     image: "VS",
     linkedin: "https://www.linkedin.com/in/vishxwas-sharma/",
-    email: "vishwassharma332@gmail.com",
+    email: "shekharsharma@gmail.com",
   },
   {
-    name: "Vishal Solanki",
+    name: "Priya Sharma",
     role: "Co-Founder & CTO",
     bio: "Engineer → founder. Building the future of intercity travel, reimagine how people travel—starting with the problems commuters face every day.",
     image: "PS",
     linkedin: "https://www.linkedin.com/in/vishal-solanki-147a1b1a9/",
-    email: "vishalsolanki14002@capsulecabs.com",
+    email: "priyasharma@gmail.com",
   },
 ];
 
@@ -103,7 +103,7 @@ export const AboutUs = () => {
                 journey."
               </p>
               <p className="mt-4 text-sm text-white/60 font-semibold">
-                — Vishal & Vishwas
+                — Shekhar & Priya
               </p>
             </CardContent>
           </Card>
