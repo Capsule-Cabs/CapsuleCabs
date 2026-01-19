@@ -15,6 +15,7 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import api from "@/services/api";
 
 type BookingStatus = "booked" | "ongoing" | "completed" | "cancelled";
 
@@ -49,21 +50,9 @@ const Dashboard: React.FC = () => {
         setLoadingTrips(true);
         setTripError(null);
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/bookings/mine`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization:
-              "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MGM0NGYzYTI0MjY1MDM5MTIzZjhiNyIsInJvbGUiOiJwYXNzZW5nZXIiLCJpYXQiOjE3NjUyMTQxNDQsImV4cCI6MTc2NTgxODk0NH0.sK839S9_bUFRHeUlZ1cuGsxqf4-9Ew-_YALP6TwHNaQ",
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Failed to fetch bookings (${res.status})`);
-        }
-
-        const json = await res.json();
-        const bookings = (json?.data?.bookings ?? []) as any[];
+        const json = await api.get(`/bookings/mine`);
+        console.log("Bookings response:", json);
+        const bookings = (json?.data?.data?.bookings ?? []) as any[];
 
         const mapped: Booking[] = bookings.map((b) => {
           const routeOrigin =

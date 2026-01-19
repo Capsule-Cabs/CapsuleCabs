@@ -45,7 +45,7 @@ const FEATURES = [
     icon: Users,
     title: "Shared & Private",
     description:
-      "Choose solo or shared rides with guaranteed seats and clear pricing.",
+      "Choose shared rides with guaranteed seats and clear pricing.",
   },
 ];
 
@@ -122,7 +122,7 @@ const Index = () => {
               {/* Left: Text */}
               <div className="space-y-6">
                 <Badge className="bg-white/10 text-xs uppercase tracking-[0.2em] border border-white/15 text-white/80 rounded-full px-3 py-1">
-                  NOW LIVE | Gurugram ↔ Agra
+                  Constant Fares. Consitent Care.
                 </Badge>
                 <h1 className="text-3.5xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight">
                   The intercity{" "}
@@ -156,11 +156,11 @@ const Index = () => {
                   )}
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
                     <div className="flex -space-x-2">
-                      <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
+                      {/* <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
                       <div className="h-7 w-7 rounded-full border border-black bg-lime-400/80" />
-                      <div className="h-7 w-7 rounded-full border border-black bg-white/80" />
+                      <div className="h-7 w-7 rounded-full border border-black bg-white/80" /> */}
                     </div>
-                    <span>See how it works</span>
+                    {/* <span>See how it works</span> */}
                   </div>
                 </div>
 
