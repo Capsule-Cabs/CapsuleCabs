@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AuthContext } from "@/contexts/AuthContext";
-import logo from "@/assets/C.jpg"
+import logo from "@/assets/capsulecabs-final-Logo.png"
 
 export const Navigation = () => {
   const { user, isAuthenticated, logout, isLoading } = useContext(AuthContext);
@@ -29,15 +29,15 @@ export const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={logo} className="h-12 w-8 rounded-full flex items-center justify-center text-black font-bold text-lg" />
-            <div className="hidden sm:flex flex-col leading-tight">
+            <img src={logo} className="h-8 w-40 flex items-center justify-center text-black font-bold text-lg" />
+            {/* <div className="hidden sm:flex flex-col leading-tight">
               <span className="font-semibold tracking-tight text-white text-sm">
                 CapsuleCabs
               </span>
               <span className="text-[10px] text-white/60 uppercase tracking-[0.15em]">
                 Smart commute
               </span>
-            </div>
+            </div> */}
           </Link>
 
           {/* Desktop Navigation */}

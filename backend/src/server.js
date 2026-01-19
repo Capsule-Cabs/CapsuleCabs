@@ -10,6 +10,7 @@ import hpp from 'hpp';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import dotenv from 'dotenv';
+import { startSeatLockCleanupJob } from './jobs/seatLockCleanup.job.js';
 
 dotenv.config();
 
@@ -33,12 +34,13 @@ import driverBookingRoutes from './routes/driverBookingsRoute.js';
 import socketHandler from './sockets/socketHandler.js';
 
 // Import scheduled jobs
-import './jobs/scheduledJobs.js';
+// import './jobs/scheduledJobs.js';
 
 class Server {
   constructor() {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:8080'];
     this.app = express();
+    startSeatLockCleanupJob();
     this.server = createServer(this.app);
     this.io = new SocketIOServer(this.server, {
       cors: {

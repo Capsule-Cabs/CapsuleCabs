@@ -83,137 +83,77 @@ const lockSeats = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const createBooking = asyncHandler(async (req, res) => {
-  const { 
-    routeId, 
-    travelDate, 
-    passengers, 
-    paymentMethod
-  } = req.body;
+  const { routeId, travelDate, passengers, paymentMethod } = req.body;
   const userId = req.user._id;
-
-  // Validate route
-  const route = await Route.findById(routeId);
-  if (!route || route.status !== 'active') {
-    return res.status(404).json(
-      ApiResponse.error('Route not found or inactive', 404, 'ROUTE_NOT_FOUND')
-    );
-  }
-
-  // Get seat availability
-  const availability = await SeatAvailability.findOne({
-    routeId,
-    travelDate: new Date(travelDate)
-  });
-
-  if (!availability) {
-    return res.status(404).json(
-      ApiResponse.error('Seat availability not found', 404, 'AVAILABILITY_NOT_FOUND')
-    );
-  }
 
   const seatNumbers = passengers.map(p => p.seatNumber);
 
+  const route = await Route.findById(routeId);
+  if (!route || route.status !== 'active') {
+    return res.status(404).json(ApiResponse.error('Route not found'));
+  }
+
+  const totalAmount = passengers.reduce((s, p) => s + p.fare, 0);
+
+  const booking = new Booking({
+    user: {
+      userId,
+      phone: req.user.phone,
+      email: req.user.email,
+      name: req.user.fullName
+    },
+    route: {
+      routeId,
+      routeCode: route.routeCode,
+      origin: route.origin.city,
+      destination: route.destination.city,
+      operatorName: route.operator.name,
+      vehicleNumber: route.vehicle.vehicleNumber
+    },
+    journey: {
+      travelDate: new Date(travelDate),
+      departureTime: route.schedule[0].departureTime,
+      estimatedArrivalTime: route.schedule[0].arrivalTime
+    },
+    passengers,
+    payment: {
+      totalAmount,
+      baseFare: totalAmount,
+      paymentMethod,
+      status: 'completed',
+      paidAt: new Date()
+    },
+    status: 'confirmed'
+  });
+
+  await booking.save();
+
   try {
-    // Confirm seat locks (convert locked seats to booked)
-    // await availability.confirmBooking(seatNumbers, userId, null); // bookingId will be set after save
-
-    // Calculate total amount
-    const totalAmount = passengers.reduce((sum, p) => sum + p.fare, 0);
-    const baseFare = totalAmount; // Simplified - no taxes for now
-    
-    // Create booking document
-    const bookingData = {
-      user: {
-        userId: req.user._id,
-        phone: req.user.phone,
-        email: req.user.email,
-        name: req.user.fullName
-      },
-      route: {
-        routeId,
-        routeCode: route.routeCode,
-        origin: route.origin.city,
-        destination: route.destination.city,
-        operatorName: route.operator.name,
-        vehicleNumber: route.vehicle.vehicleNumber
-      },
-      journey: {
-        travelDate: new Date(travelDate),
-        departureTime: route.schedule[0].departureTime, // Use first schedule
-        estimatedArrivalTime: route.schedule[0].arrivalTime
-      },
-      passengers,
-      payment: {
-        totalAmount,
-        baseFare,
-        taxes: 0,
-        convenienceFee: 0,
-        discount: 0,
-        paymentMethod,
-        status: 'pending'
-      },
-      status: 'confirmed', // Will be confirmed after payment
-      metadata: {
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        platform: 'web'
-      }
-    };
-
-    const booking = new Booking(bookingData);
-    await booking.save();
-
-    // Update seat availability with booking ID
-    console.log('SEAT numbers, userId, bookingID: ', seatNumbers, " ", userId, " ", booking.bookingId);
-    await availability.confirmBooking(seatNumbers, userId, booking.bookingId);
-
-    // TODO: Integrate with payment gateway
-    // For now, mark payment as completed for development
-    booking.payment.status = 'completed';
-    booking.payment.paidAt = new Date();
-    await booking.save();
-
-    // Clear user's seat locks from cache
-    await seatLockingService.releaseSeats(routeId, travelDate, seatNumbers, userId);
-
-    res.status(201).json(
-      ApiResponse.success({
-        booking: {
-          bookingId: booking.bookingId,
-          status: booking.status,
-          totalAmount: booking.payment.totalAmount,
-          passengers: booking.passengers.length,
-          seatNumbers: booking.passengers.map(p => p.seatNumber),
-          travelDate: booking.journey.travelDate,
-          route: `${booking.route.origin} to ${booking.route.destination}`
-        },
-        payment: {
-          status: booking.payment.status,
-          paymentMethod: booking.payment.paymentMethod,
-          paidAt: booking.payment.paidAt
-        }
-      }, 'Booking created successfully')
+    await seatLockingService.confirmBooking(
+      routeId,
+      travelDate,
+      seatNumbers,
+      userId,
+      booking.bookingId
     );
 
-  } catch (error) {
-    logger.error('Create booking error:', error);
-    
-    // Try to release seats if booking failed
-    try {
-      await availability.releaseLocks(seatNumbers, userId);
-    } catch (releaseError) {
-      logger.error('Failed to release seats after booking error:', releaseError);
-    }
+    res.status(201).json(ApiResponse.success({ bookingId: booking.bookingId }));
 
-    res.status(500).json(
-      ApiResponse.error(
-        error.message || 'Failed to create booking', 
-        500, 
-        'BOOKING_CREATION_FAILED'
-      )
+  } catch (err) {
+    await Booking.deleteOne({ _id: booking._id });
+
+    await seatLockingService.releaseSeats(
+      routeId,
+      travelDate,
+      seatNumbers,
+      userId
     );
+
+    throw err;
   }
 });
+
+
 
 /**
  * @desc    Get booking by ID

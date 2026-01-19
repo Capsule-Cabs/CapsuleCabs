@@ -78,35 +78,43 @@ seatAvailabilitySchema.index({ 'seatsAvailable.lockExpiry': 1 });
 // Method to lock seats
 seatAvailabilitySchema.methods.lockSeats = async function(seatNumbers, userId, lockDurationMinutes = 15) {
   const lockExpiry = new Date(Date.now() + lockDurationMinutes * 60 * 1000);
-  
+
   // Check if seats are available
   const unavailableSeats = [];
   seatNumbers.forEach(seatNumber => {
     const seat = this.seatsAvailable.find(s => s.seatNumber === seatNumber);
-    if ((!seat || seat.status !== 'available') && !seat.lockedBy.equals(userId)) {
+    if (!seat) {
       unavailableSeats.push(seatNumber);
+    } else if (seat.status !== 'available') {
+      // Allow re-locking if already locked by same user
+      if (seat.status !== 'locked' || !seat.lockedBy || !seat.lockedBy.equals(userId)) {
+        unavailableSeats.push(seatNumber);
+      }
     }
   });
-  
+
   if (unavailableSeats.length > 0) {
     throw new Error(`Seats ${unavailableSeats.join(', ')} are not available`);
   }
-  
+
   // Lock the seats
+  let lockedCount = 0;
   seatNumbers.forEach(seatNumber => {
     const seat = this.seatsAvailable.find(s => s.seatNumber === seatNumber);
-    if (seat) {
+    if (seat && (seat.status === 'available' || (seat.status === 'locked' && seat.lockedBy && seat.lockedBy.equals(userId)))) {
+      const wasAvailable = seat.status === 'available';
       seat.status = 'locked';
       seat.lockedBy = userId;
       seat.lockedAt = new Date();
       seat.lockExpiry = lockExpiry;
+      if (wasAvailable) lockedCount++;
     }
   });
-  
+
   // Update counts
-  this.summary.lockedCount += seatNumbers.length;
-  this.summary.availableCount -= seatNumbers.length;
-  
+  this.summary.lockedCount += lockedCount;
+  this.summary.availableCount -= lockedCount;
+
   await this.save();
   return { success: true, lockExpiry };
 };
@@ -201,19 +209,6 @@ seatAvailabilitySchema.methods.cancelBooking = async function(bookingId) {
 seatAvailabilitySchema.statics.releaseExpiredLocks = async function() {
   const now = new Date();
   
-  const result = await this.updateMany(
-    { 'seatsAvailable.lockExpiry': { $lt: now }, 'seatsAvailable.status': 'locked' },
-    {
-      $set: {
-        'seatsAvailable.$.status': 'available',
-        'seatsAvailable.$.lockedBy': null,
-        'seatsAvailable.$.lockedAt': null,
-        'seatsAvailable.$.lockExpiry': null
-      }
-    }
-  );
-  
-  // Update counts for affected documents
   const expiredLockDocs = await this.find({
     'seatsAvailable': {
       $elemMatch: {
@@ -222,21 +217,33 @@ seatAvailabilitySchema.statics.releaseExpiredLocks = async function() {
       }
     }
   });
-  
+
+  let totalReleased = 0;
+
   for (const doc of expiredLockDocs) {
     const expiredSeats = doc.seatsAvailable.filter(
       s => s.lockExpiry && s.lockExpiry < now && s.status === 'locked'
     );
-    
+
     if (expiredSeats.length > 0) {
+      expiredSeats.forEach(seat => {
+        seat.status = 'available';
+        seat.lockedBy = undefined;
+        seat.lockedAt = undefined;
+        seat.lockExpiry = undefined;
+      });
+
       doc.summary.availableCount += expiredSeats.length;
       doc.summary.lockedCount -= expiredSeats.length;
+      
       await doc.save();
+      totalReleased += expiredSeats.length;
     }
   }
-  
-  return result;
+
+  return { modifiedCount: totalReleased };
 };
+
 
 // Static method to initialize seat availability for a route and date
 seatAvailabilitySchema.statics.initializeForRoute = async function(routeId, travelDate, routeData) {
@@ -271,6 +278,19 @@ seatAvailabilitySchema.statics.initializeForRoute = async function(routeId, trav
   
   return await availability.save();
 };
+
+seatAvailabilitySchema.index({
+  routeId: 1,
+  travelDate: 1,
+  'seatsAvailable.seatNumber': 1,
+  'seatsAvailable.status': 1
+});
+
+seatAvailabilitySchema.index({
+  'seatsAvailable.status': 1,
+  'seatsAvailable.lockExpiry': 1
+});
+
 
 const SeatAvailability = mongoose.model('SeatAvailability', seatAvailabilitySchema);
 

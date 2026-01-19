@@ -410,7 +410,7 @@ const Index = () => {
       <Footer />
 
       {/* Bottom Nav on mobile (optional) */}
-      <div className="md:hidden border-t border-white/10 bg-black/90 backdrop-blur-sm">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/90 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-xs text-white/60">
           <span>CapsuleCabs · Smart commute</span>
           <Link to="/booking">
@@ -423,6 +423,7 @@ const Index = () => {
           </Link>
         </div>
       </div>
+
     </div>
   );
 };
