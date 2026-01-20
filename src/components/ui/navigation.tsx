@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AuthContext } from "@/contexts/AuthContext";
-import logo from "@/assets/capsulecabs-final-Logo.png"
+import logo from "@/assets/capsule-cabs-Pie-transparent.png"
 
 export const Navigation = () => {
   const { user, isAuthenticated, logout, isLoading } = useContext(AuthContext);
