@@ -72,9 +72,19 @@ class Server {
   initializeMiddlewares() {
 
     const allowedOrigins = [
+      'https://capsulecabs-production.up.railway.app',
+
+      // DEV
+      'http://localhost:5173',
       'http://localhost:8080',
       'http://127.0.0.1:8080',
-      'https://capsulecabs-production.up.railway.app',
+
+      // PRODUCTION
+      'capacitor://localhost',
+      'http://localhost',
+      
+      // DOMAINS
+      'https://capsulecabs.com',
       'https://www.capsulecabs.com'
     ];
     // Security middlewares
@@ -86,6 +96,8 @@ class Server {
     this.app.use(cors({
       origin: allowedOrigins,
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     }));
     
     this.app.options('*', cors());
