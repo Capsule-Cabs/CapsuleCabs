@@ -79,8 +79,9 @@ class Server {
       'http://127.0.0.1:8080',
 
       // APK PRODUCTION
+      'https://localhost', // Android APK (Capacitor 6+)
+      'http://localhost', // Android APK (older)
       'capacitor://localhost', // iOS
-      'http://localhost', // Android
 
       // PRODUCTION DOMAINS
       'https://capsulecabs-production.up.railway.app',
