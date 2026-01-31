@@ -41,16 +41,15 @@ export const Navigation = () => {
           <Link to='/' className='flex items-center gap-3 flex-shrink-0'>
             <img
               src={logo}
-              className='h-8 w-[300px] flex items-center justify-center text-black font-bold text-lg'
+              alt='Capsule Cabs'
+              className='
+                object-contain
+                h-6 w-[160px]        /* mobile default */
+                sm:h-7 sm:w-[200px]  /* tablets */
+                md:h-8 md:w-[240px]  /* small laptops */
+                lg:h-8 lg:w-[300px]  /* desktop */
+              '
             />
-            {/* <div className="hidden sm:flex flex-col leading-tight">
-              <span className="font-semibold tracking-tight text-white text-sm">
-                CapsuleCabs
-              </span>
-              <span className="text-[10px] text-white/60 uppercase tracking-[0.15em]">
-                Smart commute
-              </span>
-            </div> */}
           </Link>
 
           {/* Desktop Navigation */}
