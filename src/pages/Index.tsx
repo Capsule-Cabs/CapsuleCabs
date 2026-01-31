@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import heroImage from "@/assets/hero-cab.jpg";
+import heroImage from "@/assets/hero-cab.png";
 import { AuthContext } from "@/contexts/AuthContext";
 import DriverDashboard from "./DriverDashboard";
 import { AboutUs } from "@/components/sections/AboutUs";
@@ -101,14 +101,14 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col">
+    <div className="h-screen w-screen bg-black min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col">
       {/* Top Navigation */}
       <div className="border-b border-white/5 bg-black/80 backdrop-blur-sm sticky top-0 z-40">
         <Navigation />
       </div>
 
       {/* Page Content */}
-      <main className="flex-1">
+      <main className="flex-1 bg-black">
         {/* Hero */}
         <section className="relative overflow-hidden">
           {/* Glow background */}
@@ -282,7 +282,7 @@ const Index = () => {
               {FEATURES.map((feature) => (
                 <Card
                   key={feature.title}
-                  className="group bg-white/5 border-white/10 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20"
+                  className="group text-color-white bg-white/5 border-white/10 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20"
                 >
                   <CardContent className="pt-4 pb-5 px-4 space-y-3">
                     <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 group-hover:bg-emerald-500/25 transition-colors">
@@ -381,7 +381,7 @@ const Index = () => {
               {TESTIMONIALS.map((t) => (
                 <Card
                   key={t.name}
-                  className="bg-white/5 border-white/10 relative overflow-hidden"
+                  className="bg-white/5 text-color-white border-white/10 relative overflow-hidden"
                 >
                   <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-emerald-500/10 blur-2xl" />
                   <CardHeader className="pb-2">

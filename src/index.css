@@ -4,40 +4,93 @@
 
 /* CapsuleCabs Design System - Modern transportation theme with blue gradients */
 
+/* ========================================
+   CAPACITOR APK: PERFECT SAFE AREA FIX
+   ======================================== */
+html {
+  height: -webkit-fill-available;
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+#root {
+  height: 100vh;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Status Bar Overlay (Black for your theme) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 25px);
+  background: #000000;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* Safe area padding for content */
+@supports (padding-top: env(safe-area-inset-top)) {
+  #root {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* No left/right padding */
+  }
+}
+
+/* ========================================
+   SHADCN + CUSTOM COLORS (Fixed)
+   ======================================== */
 @layer base {
   :root {
     /* Base colors */
     --background: 0 0% 100%;
     --foreground: 215 25% 27%;
-
+    
     /* Card components */
     --card: 0 0% 100%;
     --card-foreground: 215 25% 27%;
-
+    
     /* Popover components */
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 27%;
-
+    
     /* Primary brand colors - Modern blue theme */
     --primary: 217 91% 60%;
     --primary-hover: 217 91% 55%;
     --primary-foreground: 0 0% 100%;
-
+    
     /* Secondary colors */
     --secondary: 214 32% 91%;
     --secondary-foreground: 215 25% 27%;
-
-    /* Muted colors for subtle elements */
+    
+    /* Muted colors */
     --muted: 220 14% 96%;
     --muted-foreground: 215 16% 47%;
-
+    
     /* Accent colors */
     --accent: 217 91% 95%;
     --accent-foreground: 217 91% 60%;
-
-    --locked: 39, 100%, 49%;
+    
+    /* Locked seat */
+    --locked: 39 100% 49%;
     --locked-foreground: 0 0% 100%;
-
+    
     /* Status colors */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -45,66 +98,49 @@
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-
-    /* Border and input colors */
+    
+    /* Border and input */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
     --ring: 217 91% 60%;
-
-    /* Design system specific colors */
+    
+    /* Design system */
     --hero-gradient-start: 217 91% 60%;
     --hero-gradient-end: 229 84% 70%;
     --surface-elevated: 0 0% 98%;
     --text-subtle: 215 16% 65%;
-
-    /* Radius */
     --radius: 0.75rem;
-
+    
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
-    --locked: 39, 100%, 49%;
+    --locked: 39 100% 49%;
     --locked-foreground: 215 20.2% 65.1%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -117,9 +153,7 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -129,33 +163,37 @@
   }
 }
 
+/* ========================================
+   COMPONENTS (Your existing styles preserved)
+   ======================================== */
 @layer components {
   /* Hero gradient backgrounds */
   .hero-gradient {
     background: linear-gradient(135deg, hsl(var(--hero-gradient-start)), hsl(var(--hero-gradient-end)));
   }
-  
+
   .hero-gradient-subtle {
     background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--background)));
   }
 
-  /* Glass morphism effect for modern cards */
+  /* Glass morphism */
   .glass-card {
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
 
-  /* Smooth transitions for interactive elements */
+  /* Smooth transitions */
   .transition-smooth {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Floating animation for hero elements */
+  /* Floating animation */
   .float-animation {
     animation: float 6s ease-in-out infinite;
   }
 
+  /* Locked seat */
   .bg-locked {
     background-color: hsl(var(--locked));
   }
@@ -177,11 +215,11 @@
   .seat-available {
     @apply bg-muted hover:bg-accent border-border transition-smooth cursor-pointer;
   }
-  
+
   .seat-selected {
     @apply bg-primary text-primary-foreground border-primary;
   }
-  
+
   .seat-booked {
     @apply bg-destructive text-destructive-foreground cursor-not-allowed opacity-60;
   }
