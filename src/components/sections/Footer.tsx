@@ -10,7 +10,7 @@ export const Footer = ({ Link }: FooterProps) => {
 
   return (
     <footer className='border-t border-white/5 bg-black'>
-      <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         {/* Main Footer Content */}
         <div className='py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8'>
           {/* Brand Column */}

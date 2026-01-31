@@ -109,14 +109,14 @@ const Index = () => {
       {/* Page Content */}
       <main className='flex-1 bg-black'>
         {/* Hero */}
-        <section className='relative overflow-hidden'>
+        <section className='relative overflow-hidden w-full'>
           {/* Glow background */}
           <div className='pointer-events-none absolute inset-0'>
             <div className='absolute -top-32 -left-32 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl' />
             <div className='absolute bottom-0 right-0 h-80 w-80 rounded-full bg-lime-500/15 blur-3xl' />
           </div>
 
-          <div className='relative max-w-6xl px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24'>
+          <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24'>
             <div className='grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 items-center'>
               {/* Left: Text */}
               <div className='space-y-6'>
@@ -258,7 +258,7 @@ const Index = () => {
           id='features'
           className='border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-1 sm:py-12'
         >
-          <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
             <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8'>
               <div>
                 <span className='text-xs uppercase tracking-wider text-white/50'>
@@ -306,7 +306,7 @@ const Index = () => {
           id="how-it-works"
           className="border-t border-white/5 bg-black py-12 sm:py-16"
         >
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
@@ -365,7 +365,7 @@ const Index = () => {
           id='testimonials'
           className='border-t border-white/5 bg-gradient-to-b from-black to-zinc-950 py-12 sm:py-16'
         >
-          <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
             <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8'>
               <div>
                 <h2 className='text-2xl sm:text-3xl font-semibold tracking-tight'>
@@ -412,7 +412,7 @@ const Index = () => {
 
       {/* Bottom Nav on mobile (optional) */}
       <div className='md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/90 backdrop-blur-sm'>
-        <div className='max-w-6xl mx-auto px-4 py-3 flex items-center justify-between text-xs text-white/60'>
+        <div className='max-w-7xl mx-auto px-4 py-3 flex items-center justify-between text-xs text-white/60'>
           <span>CapsuleCabs · Smart commute</span>
           <Link to='/booking'>
             <Button

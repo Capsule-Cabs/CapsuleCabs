@@ -1,12 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 /* CapsuleCabs Design System - Modern transportation theme with blue gradients */
 
-/* ========================================
-   CAPACITOR APK: PERFECT SAFE AREA FIX
-   ======================================== */
+/* === UNIVERSAL FULLSCREEN LAYOUT (works on web + Capacitor) === */
 html {
   height: -webkit-fill-available;
   height: 100%;
@@ -21,8 +19,8 @@ body {
   overflow-x: hidden;
 }
 
+/* Root container */
 #root {
-  height: 100vh;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   margin: 0;
@@ -31,31 +29,34 @@ body {
   overflow-x: hidden;
 }
 
-/* Status Bar Overlay (Black for your theme) */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: env(safe-area-inset-top, 25px);
-  background: #000000;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-/* Safe area padding for content */
+/* === CAPACITOR/MOBILE ONLY: Status Bar Overlay (Black for your theme) === */
 @supports (padding-top: env(safe-area-inset-top)) {
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 25px);
+    background: #000000;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  
   #root {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
-    /* No left/right padding */
   }
 }
 
-/* ========================================
-   SHADCN + CUSTOM COLORS (Fixed)
-   ======================================== */
+/* === DESKTOP WEB ONLY: No safe-area interference === */
+@supports not (padding-top: env(safe-area-inset-top)) {
+  body::before {
+    display: none;
+  }
+}
+
+/* SHADCN CUSTOM COLORS (your existing vars preserved) */
 @layer base {
   :root {
     /* Base colors */
@@ -153,78 +154,61 @@ body::before {
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-
-  * {
-    @apply border-border;
-  }
-
+  
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply border-border bg-background text-foreground font-sans;
   }
 }
 
-/* ========================================
-   COMPONENTS (Your existing styles preserved)
-   ======================================== */
+/* === COMPONENTS (your existing styles preserved) === */
 @layer components {
   /* Hero gradient backgrounds */
   .hero-gradient {
     background: linear-gradient(135deg, hsl(var(--hero-gradient-start)), hsl(var(--hero-gradient-end)));
   }
-
+  
   .hero-gradient-subtle {
     background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--background)));
   }
-
+  
   /* Glass morphism */
   .glass-card {
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.18);
   }
-
+  
   /* Smooth transitions */
   .transition-smooth {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
+  
   /* Floating animation */
   .float-animation {
     animation: float 6s ease-in-out infinite;
   }
-
+  
   /* Locked seat */
-  .bg-locked {
-    background-color: hsl(var(--locked));
-  }
+  .bg-locked { background-color: hsl(var(--locked)); }
+  .text-locked-foreground { color: hsl(var(--locked-foreground)); }
+  .border-locked { border-color: hsl(var(--locked)); }
+}
 
-  .text-locked-foreground {
-    color: hsl(var(--locked-foreground));
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
 
-  .border-locked {
-    border-color: hsl(var(--locked));
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-  }
-
-  /* Seat selection specific styles */
-  .seat-available {
-    @apply bg-muted hover:bg-accent border-border transition-smooth cursor-pointer;
-  }
-
-  .seat-selected {
-    @apply bg-primary text-primary-foreground border-primary;
-  }
-
-  .seat-booked {
-    @apply bg-destructive text-destructive-foreground cursor-not-allowed opacity-60;
-  }
-
-  .seat-locked {
-    @apply bg-locked text-locked-foreground border-locked;
-  }
+/* Seat selection specific styles */
+.seat-available {
+  @apply bg-muted hover:bg-accent border-border transition-smooth cursor-pointer;
+}
+.seat-selected {
+  @apply bg-primary text-primary-foreground border-primary;
+}
+.seat-booked {
+  @apply bg-destructive text-destructive-foreground cursor-not-allowed opacity-60;
+}
+.seat-locked {
+  @apply bg-locked text-locked-foreground border-locked;
 }

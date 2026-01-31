@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
       <Navigation />
 
       <main className='flex-1'>
-        <div className='max-w-6xl sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8'>
           {/* Header */}
           <header className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4'>
             <div>
