@@ -114,7 +114,7 @@ const sections = [
         </li>
 
         <li>
-          Eligible refunds will be processed to the original payment method.
+          Eligible refunds will be processed to the original payment method within 4 to 5 business days from the date of cancellation.
         </li>
       </ul>
     ),
