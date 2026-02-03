@@ -8,7 +8,7 @@ const sections = [
     content: (
       <>
         <p>
-          Welcome to <strong>Capsule Cabs</strong>. These Terms and Conditions
+          Welcome to <strong>CapsuleCabs LLP</strong>. These Terms and Conditions
           govern your access to and use of our website, mobile application, and
           intercity cab transportation services.
         </p>

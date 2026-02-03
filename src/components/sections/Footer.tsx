@@ -88,7 +88,7 @@ export const Footer = ({ Link }: FooterProps) => {
                   About Us
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <LinkComponent
                   to='/faq'
                   href='/faq'
@@ -96,7 +96,7 @@ export const Footer = ({ Link }: FooterProps) => {
                 >
                   FAQ
                 </LinkComponent>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -106,7 +106,7 @@ export const Footer = ({ Link }: FooterProps) => {
               Support
             </h3>
             <ul className='space-y-3'>
-              <li>
+              {/* <li>
                 <LinkComponent
                   to='/help'
                   href='/help'
@@ -114,8 +114,8 @@ export const Footer = ({ Link }: FooterProps) => {
                 >
                   Help Center
                 </LinkComponent>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <LinkComponent
                   to='/safety'
                   href='/safety'
@@ -123,7 +123,7 @@ export const Footer = ({ Link }: FooterProps) => {
                 >
                   Safety
                 </LinkComponent>
-              </li>
+              </li> */}
               <li>
                 <LinkComponent
                   to='/terms'
