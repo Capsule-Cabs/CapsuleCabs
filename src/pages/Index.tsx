@@ -21,6 +21,9 @@ import { AuthContext } from '@/contexts/AuthContext'
 import DriverDashboard from './DriverDashboard'
 import { AboutUs } from '@/components/sections/AboutUs'
 import { Footer } from '@/components/sections/Footer'
+import CarImage from '../assets/car_image.png'
+import Time from '../assets/time.png'
+import Shared from '../assets/shared.png'
 
 const FEATURES = [
   {
@@ -28,23 +31,27 @@ const FEATURES = [
     title: 'Trusted & Safe',
     description:
       'Verified drivers, live tracking, and secure payments for every ride.',
+    image: CarImage,
   },
   {
     icon: Clock,
     title: 'Always On Time',
     description:
       'Smart routing and live traffic data help you reach on time, every time.',
+    image: Time,
   },
   {
     icon: MapPin,
     title: 'Smart Routing',
     description:
       'Optimized pickup and drop points to reduce detours and save time.',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
   },
   {
     icon: Users,
     title: 'Shared & Private',
     description: 'Choose shared rides with guaranteed seats and clear pricing.',
+    image: Shared,
   },
 ]
 
@@ -278,19 +285,29 @@ const Index = () => {
               </Badge>
             </div>
 
-            <div className='grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5'>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               {FEATURES.map((feature) => (
                 <Card
                   key={feature.title}
-                  className='group text-color-white bg-white/5 border-white/10 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20'
+                  className="group relative overflow-hidden text-color-white bg-white/5 border-white/10 hover:border-emerald-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/20"
                 >
-                  <CardContent className='pt-4 pb-5 px-4 space-y-3'>
-                    <div className='h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 group-hover:bg-emerald-500/25 transition-colors'>
-                      <feature.icon className='h-4 w-4' />
+                  {/* Background image */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center opacity-60 group-hover:opacity-80 transition-opacity"
+                    style={{ backgroundImage: `url(${feature.image})` }}
+                  />
+
+                  {/* Optional dark overlay for readability */}
+                  <div className="absolute inset-0 bg-black/40" />
+
+                  {/* Foreground content */}
+                  <CardContent className="relative pt-4 pb-5 px-4 space-y-3">
+                    <div className="h-9 w-9 rounded-xl bg-emerald-500/40 flex items-center justify-center text-emerald-100 group-hover:bg-emerald-500/60 transition-colors">
+                      <feature.icon className="h-4 w-4" />
                     </div>
-                    <div className='space-y-1'>
-                      <h3 className='text-sm font-medium'>{feature.title}</h3>
-                      <p className='text-xs sm:text-sm text-white/60 leading-relaxed'>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-medium">{feature.title}</h3>
+                      <p className="text-xs sm:text-sm text-white/80 leading-relaxed">
                         {feature.description}
                       </p>
                     </div>
@@ -298,6 +315,7 @@ const Index = () => {
                 </Card>
               ))}
             </div>
+
           </div>
         </section>
 

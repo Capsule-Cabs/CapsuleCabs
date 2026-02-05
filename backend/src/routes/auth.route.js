@@ -468,20 +468,32 @@ const register = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const login = asyncHandler(async (req, res) => {
-  const { phone } = req.body;
-  const user = await User.findOne({ phone });
-  if (!user) throw new Error('User not found, please register');
-  // Mark verified
+  const { phone, password } = req.body;
+  
+  const user = await User.findOne({ phone }).select('+password');
+  if (!user) throw new Error('User not found');
+  
+  const isMatch = await user.comparePassword(password);
+  
+  if (!isMatch) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials'
+    });
+  }
+  
   user.isVerified = true;
   await user.save({ validateBeforeSave: false });
-  // Generate tokens
+  
   const accessToken = generateToken(user);
   const refreshToken = generateRefreshToken(user);
+  
   res.json({
     success: true,
     data: { accessToken, refreshToken }
   });
 });
+
 
 
 // Routes

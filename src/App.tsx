@@ -13,6 +13,7 @@ import ProtectedRoute from './components/protected/ProtectedRoute'
 import AuthRoute from './components/protected/AuthRoute'
 import Terms from './pages/Terms'
 import PrivacyPolicy from './pages/privacy-policy'
+import AdminDashboard from './pages/AdminDashboard'
 
 const queryClient = new QueryClient()
 
@@ -65,6 +66,7 @@ const App = () => (
           />
           <Route path='/terms' element={<Terms />} />
           <Route path='/privacy-policy' element={<PrivacyPolicy />} />
+          <Route path='/admin-dashboard' element={<AdminDashboard />} />
 
           <Route path='*' element={<NotFound />} />
         </Routes>

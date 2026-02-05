@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 
 import api from "@/services/api";
 import { AuthContext } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
@@ -113,6 +114,7 @@ const BOOKING_STEPS: BookingStep[] = [
 const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
   "AGR-GUR-001": ["6:00"],
   "GUR-AGR-001": ["22:00"],
+  "GUR-AGR-003": ["22:00"]
 };
 
 export const BookingSteps: React.FC = () => {
@@ -133,6 +135,11 @@ export const BookingSteps: React.FC = () => {
 
   const pickupBoxRef = useRef<google.maps.places.SearchBox | null>(null);
   const dropBoxRef = useRef<google.maps.places.SearchBox | null>(null);
+
+  const [timerSeconds, setTimerSeconds] = useState<number>(300);
+  const [timerActive, setTimerActive] = useState<boolean>(false);
+  const timerRef = useRef<NodeJS.Timeout>();
+
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
@@ -219,6 +226,38 @@ export const BookingSteps: React.FC = () => {
     }
   }, [availableCabs, selectedCab]);
 
+  useEffect(() => {
+    if (timerActive && timerSeconds > 0) {
+      timerRef.current = setInterval(() => {
+        setTimerSeconds((prev) => prev - 1);
+      }, 1000);
+    } else if (timerSeconds === 0) {
+      handleBookingTimeout();
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  }, [timerSeconds, timerActive]);
+
+  const handleBookingTimeout = () => {
+    setCurrentStep(1);
+    setSelectedCab(null);
+    setSelectedTime(null);
+    setSelectedSeats([]);
+    setPassengers([]);
+    setTimerSeconds(300);
+    setTimerActive(false);
+
+    toast.error("Booking session expired! ", {
+      description: "Your seat lock has been released! Please start over",
+      duration: 6000,
+      action: {
+        label: "Book again",
+        onClick: () => setCurrentStep(1)
+      }
+    })
+  }
+
   const lockSeats = async () => {
     if (!selectedCab || !selectedDate || selectedSeats.length === 0) return;
 
@@ -252,7 +291,13 @@ export const BookingSteps: React.FC = () => {
       console.log("BOOKING RESPONSE", data);
 
       if (data?.data?.success) {
+
+        setTimerActive(false);
+        clearInterval(timerRef.current);
         setCurrentStep((prev) => prev + 1);
+        toast("Booking confirmed!", {
+          description: "You can check your dashboard for details"
+        })
       } else {
         alert(data?.data?.message || "Booking failed, please try again.");
       }
@@ -262,9 +307,15 @@ export const BookingSteps: React.FC = () => {
   };
 
   const nextStep = async () => {
-    if (currentStep === 3) {
+    if (currentStep === 2) {
+      setTimerActive(true);
+      setTimerSeconds(300);
+      setCurrentStep((prev) => prev + 1);
+    }
+    else if (currentStep === 3) {
       try {
         await lockSeats();
+        setTimerActive(true);
 
         const newPassengers: Passenger[] = selectedSeats.map((seatNum) => {
           const existing = passengers.find((p) => p.seatNumber === seatNum);
@@ -295,10 +346,13 @@ export const BookingSteps: React.FC = () => {
         setPassengers(newPassengers);
         setCurrentStep((prev) => prev + 1);
       } catch (err: any) {
-        alert(
-          err?.response?.data?.message ||
-            "Failed to lock seats. Please try again or select different seats."
-        );
+        // alert(
+        //   err?.response?.data?.message ||
+        //   "Failed to lock seats. Please try again or select different seats."
+        // );
+        toast.error("Failed to lock seats", {
+          description: err?.response?.data?.message || "Please try again or select different seats.",
+        });
       }
     } else if (currentStep === 5) {
       try {
@@ -455,10 +509,10 @@ export const BookingSteps: React.FC = () => {
           isBooked
             ? "border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed"
             : isLocked
-            ? "border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed"
-            : isSelected
-            ? "border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30"
-            : "border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10",
+              ? "border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed"
+              : isSelected
+                ? "border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30"
+                : "border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10",
         ].join(" ")}
         disabled={isBooked || isLocked}
         onClick={() => {
@@ -771,7 +825,7 @@ export const BookingSteps: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                       
+
                     {/* <div>
                       <label className="block mb-1 text-xs font-medium text-white/60">
                         Drop Address
@@ -927,6 +981,16 @@ export const BookingSteps: React.FC = () => {
     <div className="min-h-screen bg-black text-white flex flex-col">
       {/* <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6"> */}
       <div>
+        {timerActive && (
+          <div className="flex justify-center mb-4">
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono">
+              ⏱️ {Math.floor(timerSeconds / 60)}:{(timerSeconds % 60).toString().padStart(2, '0')}
+              <span className="ml-1 text-xs">(Seat lock expires)</span>
+            </div>
+          </div>
+        )}
+
+
         {/* Step Progress */}
         {/* <div className="flex justify-center mb-4">
           <div className="flex items-center space-x-2 sm:space-x-3 pb-2 scrollbar-hide">
