@@ -212,3 +212,13 @@ body {
 .seat-locked {
   @apply bg-locked text-locked-foreground border-locked;
 }
+
+.toast-error {
+  background-color: red !important;
+  color: white !important;
+  border: none !important;
+}
+
+.toast-error [data-description] {
+  color: white !important;
+}

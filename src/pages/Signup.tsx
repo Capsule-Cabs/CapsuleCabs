@@ -117,7 +117,7 @@ const Signup = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="email" className="text-xs text-white/70">
                     Email Address
                   </Label>
@@ -136,7 +136,7 @@ const Signup = () => {
                       className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
                     />
                   </div>
-                </div>
+                </div> */}
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">

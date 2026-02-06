@@ -8,6 +8,7 @@ import { Phone, Lock, Eye, EyeOff, Car } from "lucide-react";
 import { Link } from "react-router-dom";
 import React, { useState, useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
+import { toast, Toaster } from "sonner";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,10 +19,24 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(phone, password);
-      window.location.href = "/";
+      const loginResponse: any = await login(phone, password);
+      if (!loginResponse.success) {
+        toast.error(loginResponse?.message || "Login failed", {
+          description: "Login failed. Please check your credentials and try again.",
+          duration: 4000,
+          className: "toast-error",
+        });
+        return;
+      } else {
+        window.location.href = "/";
+      }
+      return;
     } catch (err: any) {
-      alert(err.response?.data?.message || "Login failed");
+      toast.error(err?.response?.data?.message || "Login failed", {
+        description: "Login failed. Please check your credentials and try again.",
+        duration: 4000
+      });
+      // alert(err.response?.data?.message || "Login failed");
     }
   };
 
