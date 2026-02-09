@@ -473,15 +473,15 @@ const validateCreateRoute = [
 
 // Routes
 router.get('/search', searchRoutes);
-router.get('/my-routes', protect, authorize('operator', 'admin', 'passenger'), getMyRoutes);
+router.get('/my-routes', getMyRoutes);
 router.get('/:id', getRoute);
 router.get('/:id/availability', [
   param('id').isMongoId().withMessage('Invalid route ID'),
   query('travelDate').isISO8601().withMessage('Invalid travel date format')
 ], handleValidationErrors, getSeatAvailability);
 
-router.post('/', protect, authorize('operator', 'admin'), validateCreateRoute, handleValidationErrors, createRoute);
-router.put('/:id', protect, authorize('operator', 'admin'), verifyRouteOwnership, updateRoute);
-router.delete('/:id', protect, authorize('admin'), deleteRoute);
+router.post('/', validateCreateRoute, handleValidationErrors, createRoute);
+router.put('/:id', verifyRouteOwnership, updateRoute);
+router.delete('/:id', deleteRoute);
 
 export default router;

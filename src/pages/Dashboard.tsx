@@ -8,14 +8,26 @@ import {
   History,
   ArrowRight,
   Ticket,
+  Loader2
 } from 'lucide-react'
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Navigation } from '@/components/ui/navigation'
 import { AuthContext } from '@/contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import api from '@/services/api'
+import { toast } from 'sonner'
 
 type BookingStatus = 'booked' | 'ongoing' | 'completed' | 'cancelled'
 
@@ -30,11 +42,19 @@ interface Booking {
   departureTime: string
   arrivalTime?: string
   seatNumbers: string[]
-  totalPassengers: number
+  totalPassengers: number,
+  bookingId: string
 }
 
 const upcomingTrips: any[] = []
 const pastTrips: any[] = []
+async function onCancel(bookingId: string) {
+  return api.put(`/bookings/${bookingId}/cancel`).then((res: any) => {
+    if (res.status === 200) {
+      alert(res?.data?.message || "Booking cancelled successfully");
+    }
+  });
+}
 
 const Dashboard: React.FC = () => {
   const { user } = useContext(AuthContext)
@@ -42,6 +62,29 @@ const Dashboard: React.FC = () => {
   const [pastTrips, setPastTrips] = useState<Booking[]>([])
   const [loadingTrips, setLoadingTrips] = useState(false)
   const [tripError, setTripError] = useState<string | null>(null)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+
+  const handleCancel = async (bookingId: string) => {
+  try {
+    setLoadingId(bookingId);
+    await onCancel(bookingId); // your API call
+    
+    // Optimistically remove from local state (instant UI update)
+    setUpcomingTrips(prev => 
+      prev.filter(trip => trip.bookingId !== bookingId)
+    );
+    
+    // Optional: show success toast
+    toast.success('Trip cancelled successfully');
+    
+  } catch (error) {
+    toast.error('Cancellation failed. Please try again.');
+    console.error('Cancel error:', error);
+  } finally {
+    setLoadingId(null);
+  }
+};
+
 
   useEffect(() => {
     const fetchMyBookings = async () => {
@@ -106,10 +149,10 @@ const Dashboard: React.FC = () => {
           // human-readable date
           const travelDateFormatted = travelDateIso
             ? new Date(travelDateIso).toLocaleDateString(undefined, {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              })
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            })
             : ''
 
           return {
@@ -124,6 +167,7 @@ const Dashboard: React.FC = () => {
             arrivalTime: estimatedArrivalTime,
             seatNumbers,
             totalPassengers,
+            bookingId: b.bookingId
           }
         })
 
@@ -153,6 +197,7 @@ const Dashboard: React.FC = () => {
 
     fetchMyBookings()
   }, [])
+
 
   return (
     <div className='min-h-screen bg-black text-white flex flex-col'>
@@ -280,62 +325,112 @@ const Dashboard: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className='space-y-3'>
+              <div className="space-y-3">
                 {upcomingTrips.map((trip: any) => (
                   <Card
                     key={trip.id}
-                    className='bg-gradient-to-r from-zinc-950 to-black border-white/10 hover:border-emerald-400/60 hover:-translate-y-[1px] transition-all'
+                    className="bg-gradient-to-r from-zinc-950 to-black border-white/10 hover:border-emerald-400/60 hover:-translate-y-[1px] transition-all"
                   >
-                    <CardContent className='p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-                      <div className='flex items-start gap-4'>
-                        <div className='h-9 w-9 rounded-2xl bg-emerald-500/20 flex items-center justify-center mt-1'>
-                          <Car className='h-5 w-5 text-emerald-300' />
+                    <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="h-9 w-9 rounded-2xl bg-emerald-500/20 flex items-center justify-center mt-1">
+                          <Car className="h-5 w-5 text-emerald-300" />
                         </div>
                         <div>
-                          <div className='flex flex-wrap items-center gap-2'>
-                            <p className='font-semibold text-sm'>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-sm">
                               {trip.origin} → {trip.destination}
                             </p>
-                            <Badge className='bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-[11px] rounded-full px-2 py-0.5'>
-                              {trip.status === 'ongoing'
-                                ? 'Ongoing'
-                                : 'Upcoming'}
+                            <Badge className="bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-[11px] rounded-full px-2 py-0.5">
+                              {trip.status === "ongoing" ? "Ongoing" : "Upcoming"}
                             </Badge>
                           </div>
-                          <div className='mt-2 flex flex-wrap items-center gap-1 text-xs text-white/60'>
-                            <span className='flex items-center gap-1'>
+                          <div className="mt-2 flex flex-wrap items-center gap-1 text-xs text-white/60">
+                            <span className="flex items-center gap-1">
                               {trip.date}
                             </span>
-                            <span className='flex items-center gap-1'>
-                              <Clock className='h-3 w-3' />
-                              <p className='trip-time'>
-                                {trip.travelDate} • {trip.departureTime}–
-                                {trip.arrivalTime}
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <p className="trip-time">
+                                {trip.travelDate} • {trip.departureTime}–{trip.arrivalTime}
                               </p>
                             </span>
-                            <span className='flex items-center gap-1'>
-                              <MapPin className='h-3 w-3' />
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
                               Seat {trip.seatNumbers}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className='flex flex-col items-end gap-2'>
-                        <p className='text-sm font-semibold'>
+
+                      <div className='flex flex-col items-end gap-1.5 sm:gap-2'>
+                        <p className='text-sm font-semibold text-white'>
                           ₹
                           {trip.fare?.toFixed
                             ? trip.fare.toFixed(2)
                             : trip.fare}
                         </p>
-                        {/* <Link to={`/bookings/${trip.id}`}>
-                          <Button
-                            size="sm"
-                            className="rounded-full border-white/20 text-white hover:bg-white/10"
-                          >
-                            View ticket
-                          </Button>
-                        </Link> */}
+
+                        {/* Sleek Cancel Button + Dialog */}
+                        {trip.status !== 'ongoing' && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2.5 py-0.5 text-xs font-medium text-red-400/90 hover:text-red-300 hover:bg-red-500/10 border border-red-500/20 rounded-full w-fit sm:w-auto min-w-0"
+                                disabled={loadingId === trip.id}
+                              >
+                                {loadingId === trip.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Cancel'
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="p-0 m-2 max-w-[95vw] max-h-[85vh] w-[min(400px,95vw)] bg-zinc-950/98 backdrop-blur-md border border-white/10 shadow-2xl rounded-2xl">
+                              <AlertDialogHeader className="p-5 pb-3 space-y-1.5">
+                                <AlertDialogTitle className="text-lg font-bold text-white flex items-center gap-2">
+                                  <Car className="h-5 w-5 text-red-400" />
+                                  Cancel trip?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm text-zinc-300 leading-relaxed">
+                                  Seat <span className="font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{trip.seatNumbers}</span><br />
+                                  {trip.origin} → {trip.destination} • {trip.date}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+
+                              <div className="px-5 pb-5 text-xs text-zinc-400 space-y-1">
+                                <div>₹{trip.fare?.toFixed ? trip.fare.toFixed(0) : trip.fare} refunded (minus fees)</div>
+                                <div className="text-red-400 font-medium">Cannot be undone</div>
+                              </div>
+
+                              <AlertDialogFooter className="p-5 pt-0 border-t border-zinc-800 bg-zinc-950/50 backdrop-blur-sm rounded-b-2xl gap-2">
+                                <AlertDialogCancel className="flex-1 h-11 rounded-xl bg-zinc-800/70 hover:bg-zinc-700/80 border border-zinc-600/50 text-zinc-200 font-medium shadow-sm transition-all">
+                                  Keep booking
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-red-600/95 to-red-700/90 hover:from-red-500 hover:to-red-600 text-white font-semibold shadow-lg hover:shadow-red-500/25 transition-all"
+                                  onClick={() => handleCancel(trip.bookingId)}
+                                  disabled={loadingId === trip.id}
+                                >
+                                  {loadingId === trip.id ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Cancelling
+                                    </>
+                                  ) : (
+                                    'Confirm cancel'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+
+
+                          </AlertDialog>
+                        )}
                       </div>
+
                     </CardContent>
                   </Card>
                 ))}

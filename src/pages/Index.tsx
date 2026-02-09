@@ -145,21 +145,12 @@ const Index = () => {
                 </p>
 
                 <div className='flex flex-col sm:flex-row gap-3 sm:items-center'>
-                  {isAuthenticated ? (
-                    <Link to='/booking'>
-                      <Button className='group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15'>
-                        Book your first ride
-                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link to='/login'>
-                      <Button className='group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15'>
-                        Book your first ride
-                        <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                      </Button>
-                    </Link>
-                  )}
+                  <Link to='/booking'>
+                    <Button className='group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15'>
+                      Book your first ride
+                      <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                    </Button>
+                  </Link>
                   <div className='flex items-center gap-2 text-xs sm:text-sm text-white/60'>
                     <div className='flex -space-x-2'>
                       {/* <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
@@ -232,27 +223,15 @@ const Index = () => {
                         </p>
                       </div>
                     </div>
-                    {isAuthenticated ? (
-                      <Link to='/booking'>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full'
-                        >
-                          Start now
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Link to='/login'>
-                        <Button
-                          size='sm'
-                          variant='outline'
-                          className='border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full'
-                        >
-                          Start now
-                        </Button>
-                      </Link>
-                    )}
+                    <Link to='/booking'>
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        className='border-white/20 bg-transparent text-white hover:bg-white hover:text-black rounded-full'
+                      >
+                        Start now
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </div>

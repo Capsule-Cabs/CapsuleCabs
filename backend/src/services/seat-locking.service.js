@@ -8,7 +8,7 @@ class SeatLockingService {
   /**
    * ATOMIC seat lock - FIXED to allow re-locking own seats
    */
-  async lockSeats(routeId, travelDate, seatNumbers, userId, lockMinutes = this.DEFAULT_LOCK_MINUTES) {
+  async lockSeats(routeId, travelDate, seatNumbers, lockMinutes = this.DEFAULT_LOCK_MINUTES) {
     const lockExpiry = new Date(Date.now() + lockMinutes * 60 * 1000);
     const session = await mongoose.startSession();
     
@@ -35,7 +35,7 @@ class SeatLockingService {
         } else if (seat.status === 'available') {
           // Seat is available - OK to lock
           continue;
-        } else if (seat.status === 'locked' && seat.lockedBy && seat.lockedBy.toString() === userId.toString()) {
+        } else if (seat.status === 'locked' && seat.lockedBy) {
           // Seat is already locked by this user - OK to re-lock/extend
           continue;
         } else {
@@ -77,7 +77,7 @@ class SeatLockingService {
                               {
                                 $and: [
                                   { $eq: ["$$seat.status", "locked"] },
-                                  { $eq: ["$$seat.lockedBy", new mongoose.Types.ObjectId(userId)] }
+                                  // { $eq: ["$$seat.lockedBy", new mongoose.Types.ObjectId(userId)] }
                                 ]
                               }
                             ]
@@ -89,7 +89,7 @@ class SeatLockingService {
                           "$$seat",
                           {
                             status: "locked",
-                            lockedBy: new mongoose.Types.ObjectId(userId),
+                            // lockedBy: new mongoose.Types.ObjectId(userId),
                             lockedAt: new Date(),
                             lockExpiry: lockExpiry
                           }
@@ -117,8 +117,9 @@ class SeatLockingService {
       const updated = await SeatAvailability.findById(availability._id).session(session);
       const actuallyLocked = updated.seatsAvailable.filter(
         s => seatNumbers.includes(s.seatNumber) && 
-             s.status === 'locked' && 
-             s.lockedBy && s.lockedBy.toString() === userId.toString()
+             s.status === 'locked'
+            //   && 
+            //  s.lockedBy && s.lockedBy.toString() === userId.toString()
       );
 
       if (actuallyLocked.length !== seatNumbers.length) {
@@ -126,7 +127,7 @@ class SeatLockingService {
       }
 
       await session.commitTransaction();
-      logger.info(`Successfully locked ${seatNumbers.length} seats for user ${userId} (${seatsToLock} new, ${seatNumbers.length - seatsToLock} re-locked)`);
+      logger.info(`Successfully locked ${seatNumbers.length} seats (${seatsToLock} new, ${seatNumbers.length - seatsToLock} re-locked)`);
       return { success: true, seatNumbers, lockExpiry };
 
     } catch (error) {

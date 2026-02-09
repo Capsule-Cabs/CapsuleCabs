@@ -164,14 +164,14 @@ export const Navigation = () => {
                     Sign In
                   </Button>
                 </Link>
-                <Link to='/signup'>
+                {/* <Link to='/signup'>
                   <Button
                     size='sm'
                     className='bg-white text-black hover:bg-zinc-100 rounded-full'
                   >
                     Sign Up
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             )}
 

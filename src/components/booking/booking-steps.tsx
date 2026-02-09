@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   useJsApiLoader,
@@ -23,7 +23,9 @@ import api from "@/services/api";
 import { AuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
+import fetchRoutes from "@/services/bookingFunctions";
+
+// const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
 interface BookingStep {
   id: number;
@@ -50,6 +52,8 @@ interface CabWithAvailability {
   available: boolean;
   route: string;
   seatsAvailable: SeatAvailability[];
+  departureTime: string;
+  arrivalTime: string;
 }
 
 interface Passenger {
@@ -138,13 +142,17 @@ export const BookingSteps: React.FC = () => {
 
   const [timerSeconds, setTimerSeconds] = useState<number>(300);
   const [timerActive, setTimerActive] = useState<boolean>(false);
+
+  const [selectedSource, setSelectedSource] = useState<string>('');
+  const [selectedDestination, setSelectedDestination] = useState<string>('');
+
   const timerRef = useRef<NodeJS.Timeout>();
 
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-    libraries: ["places"],
-  });
+  // const { isLoaded } = useJsApiLoader({
+  //   googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
+  //   libraries: ["places"],
+  // });
 
   const handlePickupChanged = () => {
     const places = pickupBoxRef.current?.getPlaces();
@@ -160,62 +168,89 @@ export const BookingSteps: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchRoutesAndAvailability = async () => {
-      try {
-        const routesRes = await api.get("/routes/my-routes");
-        const routes = routesRes.data.data.routes;
+  const fetchRoutesAndAvailability = async () => {
+    try {
+      const routes = await fetchRoutes(selectedDate, selectedDestination, selectedSource);
+      const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
+        let seatsAvailable: SeatAvailability[] = [];
+        let available = false;
 
-        const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
-          let seatsAvailable: SeatAvailability[] = [];
-          let available = false;
+        if (selectedDate) {
+          // if (route._id === selectedCab) {
+          setPickupOptions(route.origin?.pickupPoints);
+          setDropOptions(route.destination?.dropPoints);
+          // }
 
-          if (selectedDate) {
-            if (route.id === selectedCab) {
-              setPickupOptions(route.origin?.pickupPoints);
-              setDropOptions(route.destination?.dropPoints);
-            }
+          const dateStr = format(selectedDate, "yyyy-MM-dd");
 
-            const dateStr = format(selectedDate, "yyyy-MM-dd");
-
-            try {
-              const seatAvailRes = await api.get(
-                `/routes/${route.id}/availability?travelDate=${dateStr}`
-              );
-              seatsAvailable = seatAvailRes.data.data.seatsAvailable;
-              available = seatsAvailable.some(
-                (seat: SeatAvailability) => seat.status === "available"
-              );
-            } catch (e) {
-              seatsAvailable = [];
-              available = false;
-            }
+          try {
+            const seatAvailRes = await api.get(
+              `/routes/${route._id}/availability?travelDate=${dateStr}`
+            );
+            seatsAvailable = seatAvailRes.data.data.seatsAvailable;
+            available = seatsAvailable.some(
+              (seat: SeatAvailability) => seat.status === "available"
+            );
+          } catch (e) {
+            seatsAvailable = [];
+            available = false;
           }
+        }
 
-          return {
-            id: route.id,
-            routeCode: route.routeCode,
-            name: route?.vehicle?.type || "Cab",
-            capacity: route?.vehicle?.capacity || 6,
-            price: route?.pricing?.baseFare || 550,
-            image: "",
-            route: `${route?.origin?.city} to ${route?.destination?.city}`,
-            available,
-            seatsAvailable,
-          } as CabWithAvailability;
-        });
+        const departureTime = route.schedule[0].departureTime || "";
+        const arrivalTime = route.schedule[0].arrivalTime || "";
 
-        const cabsWithAvailability = await Promise.all(
-          cabsWithAvailabilityPromises
-        );
-        setAvailableCabs(cabsWithAvailability);
-      } catch (error) {
-        console.error("Failed to fetch route or availability data", error);
-      }
-    };
+        return {
+          id: route._id,
+          routeCode: route.routeCode,
+          name: route?.vehicle?.type || "Cab",
+          capacity: route?.vehicle?.capacity || 6,
+          price: route?.pricing?.baseFare || 550,
+          image: "",
+          route: `${route?.origin?.city} to ${route?.destination?.city}`,
+          available,
+          seatsAvailable,
+          departureTime,
+          arrivalTime
+        } as CabWithAvailability;
+      });
 
-    fetchRoutesAndAvailability();
-  }, [selectedCab, selectedDate]);
+      const cabsWithAvailability = await Promise.all(
+        cabsWithAvailabilityPromises
+      );
+      setAvailableCabs(cabsWithAvailability);
+      console.log("Fetched cabs with availability", await cabsWithAvailability[0]);
+    } catch (error) {
+      console.error("Failed to fetch route or availability data", error);
+    }
+  };
+
+  // const availableCabTimes = useMemo(() => {
+  //   const combos: any[] = [];
+
+  //   availableCabs.forEach((cab) => {
+  //     if (cab.timeSlots && Array.isArray(cab.timeSlots)) {
+  //       cab.timeSlots.forEach((time: string) => {
+  //         combos.push({
+  //           ...cab,
+  //           cabId: cab.id,
+  //           time,
+  //           available: cab.available && true, // time-specific availability later
+  //         });
+  //       });
+  //     } else {
+  //       // Fallback if no timeSlots in cab data
+  //       combos.push({
+  //         ...cab,
+  //         cabId: cab.id,
+  //         time: 'Flexible',
+  //         available: cab.available,
+  //       });
+  //     }
+  //   });
+
+  //   return combos;
+  // }, [availableCabs]);
 
   useEffect(() => {
     if (availableCabs.length > 0 && !selectedCab) {
@@ -307,14 +342,22 @@ export const BookingSteps: React.FC = () => {
   };
 
   const nextStep = async () => {
-    if (currentStep === 2) {
+
+    if (currentStep === 1) {
+      if (!selectedDate || !selectedSource || !selectedDestination) {
+        toast.error('Please select source, destination and date');
+        return;
+      }
+      setCurrentStep((prev) => prev + 1)
+      await fetchRoutesAndAvailability();
+    } else if (currentStep === 2) {
       setTimerActive(true);
       setTimerSeconds(300);
       setCurrentStep((prev) => prev + 1);
     }
     else if (currentStep === 3) {
       try {
-        await lockSeats();
+        // await lockSeats();
         setTimerActive(true);
 
         const newPassengers: Passenger[] = selectedSeats.map((seatNum) => {
@@ -371,11 +414,11 @@ export const BookingSteps: React.FC = () => {
     }
   };
 
-  const selectedCabObj = availableCabs.find((cab) => cab.id === selectedCab);
+  // const selectedCabObj = availableCabs.find((cab) => cab.id === selectedCab);
 
-  const dynamicTimeSlots = selectedCabObj
-    ? TIMESLOTS_BY_ROUTE[selectedCabObj.routeCode]
-    : [];
+  // const dynamicTimeSlots = selectedCabObj
+  //   ? TIMESLOTS_BY_ROUTE[selectedCabObj.routeCode]
+  //   : [];
 
   const renderSeatLayout = () => {
     if (!selectedCab) return null;
@@ -390,7 +433,6 @@ export const BookingSteps: React.FC = () => {
     seats.forEach((seat) => {
       seatByNum[seat.seatNumber] = seat;
     });
-
     const layoutRows: (string | null)[][] = [
       ["A1", null, "Driver"],
       ["B1", "B2", "B3"],
@@ -438,7 +480,8 @@ export const BookingSteps: React.FC = () => {
                   <SeatButton
                     key={seatNum}
                     seatNum={seatNum}
-                    seatObj={seatByNum[seatNum]}
+                    seatObj={seatByNum[seatNum]
+                    }
                   />
                 ) : (
                   <div key={idx} className="min-w-[52px] min-h-[42px]" />
@@ -500,12 +543,13 @@ export const BookingSteps: React.FC = () => {
       seatObj.status === "locked" &&
       seatObj.lockedBy &&
       seatObj.lockedBy !== user?.id;
+    const seatPrice = seatObj.price || 0; // Add this line
 
     return (
       <button
         type="button"
         className={[
-          "min-w-[52px] min-h-[42px] rounded-lg border-2 text-xs font-semibold flex items-center justify-center transition-all shadow-sm",
+          "min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1",
           isBooked
             ? "border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed"
             : isLocked
@@ -524,137 +568,211 @@ export const BookingSteps: React.FC = () => {
           );
         }}
       >
-        {seatNum}
+        <span className="font-bold leading-tight">{seatNum}</span>
+        {seatPrice > 0 && (
+          <span className="text-[10px] text-white/70 font-medium mt-[1px] leading-none">
+            ₹{seatPrice}
+          </span>
+        )}
       </button>
     );
   };
+
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-center text-white">
-              Select your travel date
-            </h3>
-            <div className="flex justify-center">
-              <Card className="bg-gradient-to-b from-zinc-900 to-black border-white/10 text-white">
-                <CardContent className="p-4 sm:p-6 flex flex-col items-center">
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Compact Header */}
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-white tracking-tight">
+                Select Route & Date
+              </h3>
+              <p className="text-xs text-white/50">Choose your journey details</p>
+            </div>
+
+            {/* Single Compact Card */}
+            <Card className="bg-zinc-950/50 border-white/5 backdrop-blur-sm shadow-lg hover:shadow-emerald/10 transition-shadow">
+              <CardContent className="p-6 space-y-5">
+                {/* Source + Destination */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-xs font-medium text-white/60 uppercase tracking-wider">
+                    <MapPin className="h-3 w-3" />
+                    Route
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <select
+                        value={selectedSource || ''}
+                        onChange={(e) => setSelectedSource(e.target.value)}
+                        className="w-full h-11 px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-sm font-medium text-white focus:outline-none focus:border-emerald/50 focus:ring-1 focus:ring-emerald/30 transition-all hover:border-white/20"
+                      >
+                        <option value="">From</option>
+                        {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <select
+                        value={selectedDestination || ''}
+                        onChange={(e) => setSelectedDestination(e.target.value)}
+                        disabled={!selectedSource}
+                        className="w-full h-11 px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-sm font-medium text-white focus:outline-none focus:border-emerald/50 focus:ring-1 focus:ring-emerald/30 transition-all hover:border-white/20 disabled:bg-zinc-800/50 disabled:border-zinc-700/50 disabled:text-white/40"
+                      >
+                        <option value="">
+                          {selectedSource ? 'To' : 'Source first'}
+                        </option>
+                        {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
+                          <option key={city} value={city} disabled={city === selectedSource}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Separator + Calendar */}
+                <div className="relative">
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
+                    <div className="w-20 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                  </div>
                   <Calendar
                     mode="single"
                     selected={selectedDate}
                     onSelect={(date) => {
                       if (date) {
-                        const localDate = new Date(
-                          date.getFullYear(),
-                          date.getMonth(),
-                          date.getDate()
-                        );
+                        const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                         setSelectedDate(localDate);
                       }
                     }}
-                    disabled={(date) =>
-                      date < new Date(new Date().setHours(0, 0, 0, 0))
-                    }
-                    className="rounded-md border border-white/10 bg-black"
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    className="rounded-lg border border-white/10 bg-zinc-900/70 text-white shadow-sm hover:shadow-md transition-shadow"
+                    classNames={{
+                      day: "h-9 w-9 text-sm hover:bg-white/10 rounded-lg text-white",
+                      day_selected: "!bg-emerald-600 !text-emerald-50 font-semibold shadow-md border-2 border-emerald-700/50 rounded-lg hover:!bg-emerald-700",
+                      day_today: "ring-1 ring-emerald/40",
+                    }}
                   />
-                  {selectedDate && (
-                    <p className="mt-4 text-sm text-white/70">
-                      Selected:{" "}
-                      <span className="font-medium">
-                        {format(selectedDate, "PPP")}
-                      </span>
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Minimal Selection Indicators */}
+            <div className="flex items-center justify-center gap-4 text-xs text-white/40">
+              {selectedSource && selectedDestination && selectedDate && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-emerald/10 border border-emerald/30 rounded-lg">
+                  <span className="text-emerald/80 font-medium">{selectedSource} to {selectedDestination} on {format(selectedDate, 'MMM dd')}</span>
+                </div>
+              )}
             </div>
           </div>
         );
 
       case 2:
         return (
-          <div className="space-y-8">
-            <h3 className="text-xl font-semibold text-center text-white">
-              Choose your cab & time
+          <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+            <h3 className="text-2xl font-bold text-white text-center mb-8">
+              Select Cab & Time
             </h3>
 
-            <div className="grid gap-4">
-              {availableCabs.map((cab) => (
-                <Card
-                  key={cab.id}
-                  className={[
-                    "cursor-pointer transition-all bg-gradient-to-r from-zinc-900 to-black border",
-                    selectedCab === cab.id
-                      ? "border-emerald-400/70 shadow-lg shadow-emerald-500/20 scale-[1.01]"
-                      : "border-white/10 hover:border-emerald-300/50 hover:-translate-y-[2px]",
-                    !cab.available ? "opacity-60" : "",
-                  ].join(" ")}
-                  onClick={() => cab.available && setSelectedCab(cab.id)}
-                >
-                  <CardContent className="p-4 sm:p-5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-300 text-xl font-semibold">
-                        {cab.image || cab.name[0]}
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-white">{cab.name}</h4>
-                        <p className="text-xs sm:text-sm text-white/60">
-                          {cab.route}
-                        </p>
-                        <p className="text-xs text-white/50">
-                          {cab.capacity} seats • ₹{cab.price}/trip
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge
-                        variant={cab.available ? "default" : "secondary"}
-                        className={
-                          cab.available
-                            ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/50"
-                            : "bg-white/10 text-white/60 border-white/20"
-                        }
-                      >
-                        {cab.available ? "Available" : "Full"}
-                      </Badge>
-                      {selectedCab === cab.id && (
-                        <span className="text-[11px] text-emerald-300 uppercase tracking-[0.18em]">
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <div className={availableCabs.length === 1 ? "max-w-2xl mx-auto" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
+              {availableCabs.length > 0 ? (
+                availableCabs.map((cab) => {
+                  const departureTime = cab.departureTime
+                    ? new Date(`2000-01-01T${cab.departureTime}`).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    }).toLowerCase()
+                    : '09:55';
+                  const arrivalTime = cab.arrivalTime
+                    ? new Date(`2000-01-01T${cab.arrivalTime}`).toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    }).toLowerCase()
+                    : '09:55';
 
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-white">
-                Available time slots
-              </h4>
-              {dynamicTimeSlots && dynamicTimeSlots.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dynamicTimeSlots.map((time) => (
-                    <Button
-                      key={time}
-                      variant={selectedTime === time ? "default" : "outline"}
-                      onClick={() => setSelectedTime(time)}
-                      className={[
-                        "w-full justify-center rounded-full text-sm",
-                        selectedTime === time
-                          ? "bg-emerald-500 text-black border-emerald-400"
-                          : "bg-transparent text-white/80 border-white/20 hover:bg-white/10",
-                      ].join(" ")}
+                  const selected = selectedCab === cab.id;
+                  const isAvailable = cab.available;
+
+                  return (
+                    <Card
+                      key={cab.id}
+                      className={`
+                  relative group h-full bg-zinc-950/95 backdrop-blur-xl border border-white/10 
+                  rounded-2xl p-6 shadow-xl hover:shadow-emerald/25 hover:border-emerald/20 
+                  hover:-translate-y-1 transition-all duration-300 ${availableCabs.length === 1 ? 'max-w-none mx-auto shadow-2xl scale-105' : ''}
+                  ${selected ? 'ring-2 ring-emerald/40 shadow-emerald/25 border-emerald/20' : ''}
+                  ${!isAvailable ? 'opacity-60 cursor-not-allowed' : ''}
+                `}
+                      onClick={() => isAvailable && setSelectedCab(cab.id)}
                     >
-                      {time}
-                    </Button>
-                  ))}
-                </div>
+                      {/* Starting From - Plain Text Bottom Right */}
+                      <div className="absolute bottom-3 right-3 text-xs text-white/80 font-medium leading-tight z-20 drop-shadow-md">
+                        Starting from <br className="sm:hidden" />
+                        <span className="text-sm font-bold text-white">₹{cab.price || 349} +GST</span>
+                      </div>
+
+                      {selected && (
+                        <div className="absolute inset-0 bg-emerald/5 rounded-2xl backdrop-blur-sm z-10" />
+                      )}
+
+                      <CardContent className="p-6 relative z-20 h-full flex flex-col justify-between pt-2">
+                        <div className="space-y-4">
+                          {/* Header */}
+                          <div className="flex items-center justify-between gap-2 mb-4">
+                            <div className={`h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm'bg-emerald/15 text-emerald-400 hover:bg-emerald/25 shadow-md'`}>
+                              {cab.routeCode}
+                            </div>
+                            <Badge className={`ml-auto px-2.5 py-0.5 text-xs font-semibold h-fit whitespace-nowrap ${selected
+                              ? 'bg-emerald/20 text-emerald-400 border-emerald/30 shadow-sm'
+                              : isAvailable
+                                ? 'bg-emerald/15 text-emerald-400 border-emerald/30'
+                                : 'bg-zinc-800/50 text-white/50 border-zinc-700/50'
+                              }`}>
+                              {selected ? 'SELECTED' : isAvailable ? 'Available' : 'Full'}
+                            </Badge>
+                          </div>
+
+
+                          {/* Route */}
+                          <h4 className="font-bold text-white text-lg leading-tight line-clamp-1">
+                            {cab.route || `Seater ${cab.id}`}
+                          </h4>
+
+                          {/* Seats */}
+                          <p className="text-sm text-white/70 flex items-center gap-2">
+                            <span>{cab.capacity || 50} seats</span>
+                          </p>
+
+                          {/* Time */}
+                          <div className={`px-4 py-3 rounded-xl text-lg font-bold text-center shadow-md transition-all ${selected
+                            ? 'bg-emerald/30 text-emerald-50 border-2 border-emerald/40 shadow-emerald/25'
+                            : isAvailable
+                              ? 'bg-zinc-900/60 text-white border border-white/20 hover:bg-emerald/20 hover:border-emerald/30 hover:text-emerald-400'
+                              : 'bg-zinc-900/80 text-white/60 border border-zinc-800/50'
+                            }`}>
+                            {departureTime} — {arrivalTime}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               ) : (
-                <p className="text-sm text-white/50">
-                  Select route to get the time slots
-                </p>
+                <Card className="col-span-full p-12 text-center bg-zinc-950/60 backdrop-blur-xl border-white/10 rounded-2xl max-w-2xl mx-auto">
+                  <Clock className="h-16 w-16 mx-auto mb-4 text-white/20" />
+                  <h4 className="text-xl font-bold text-white mb-2">No cabs available</h4>
+                  <p className="text-white/50 mb-6">Try different timings or routes</p>
+                  <button className="px-8 py-3 bg-emerald/20 text-emerald-300 border border-emerald/30 rounded-xl font-semibold hover:bg-emerald/30 transition-all">
+                    Refresh
+                  </button>
+                </Card>
               )}
             </div>
           </div>
@@ -990,48 +1108,6 @@ export const BookingSteps: React.FC = () => {
           </div>
         )}
 
-
-        {/* Step Progress */}
-        {/* <div className="flex justify-center mb-4">
-          <div className="flex items-center space-x-2 sm:space-x-3 pb-2 scrollbar-hide">
-            {BOOKING_STEPS.map((step, index) => {
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-
-              return (
-                <div key={step.id} className="flex items-center flex-shrink-0">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={[
-                        "flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 text-xs font-medium transition-all",
-                        isActive
-                          ? "bg-emerald-500 text-black border-emerald-300 shadow shadow-emerald-500/40 scale-110"
-                          : isCompleted
-                          ? "bg-white text-black border-white"
-                          : "bg-black border-white/20 text-white/60",
-                      ].join(" ")}
-                    >
-                      {isCompleted ? "✓" : step.id}
-                    </div>
-                    <span className="mt-1 text-[10px] sm:text-[11px] text-white/60 text-center w-12">
-                      {step.title}
-                    </span>
-                  </div>
-                  {index < BOOKING_STEPS.length - 1 && (
-                    <div
-                      className={[
-                        "h-px mx-1 sm:mx-2 transition-colors",
-                        currentStep > step.id ? "bg-emerald-400" : "bg-white/15",
-                        "w-8 sm:w-12",
-                      ].join(" ")}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div> */}
-
         {/* Step Content */}
         <Card className="bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white flex-1">
           <CardContent className="p-5 sm:p-7">
@@ -1054,7 +1130,7 @@ export const BookingSteps: React.FC = () => {
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              (currentStep === 2 && (!selectedCab || !selectedTime)) ||
+              (currentStep === 2 && (!selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
                 passengers.some((p) => !p.name || !p.age || !p.gender))
