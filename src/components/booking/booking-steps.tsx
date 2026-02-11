@@ -12,6 +12,8 @@ import {
   CheckCircle,
   User,
   ArrowRight,
+  X,
+  Loader2
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +132,7 @@ export const BookingSteps: React.FC = () => {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [availableCabs, setAvailableCabs] = useState<CabWithAvailability[]>([]);
 
-  const { user } = useContext(AuthContext);
+  const { user, isAuthenticated, sendOtp, verifyOtp } = useContext(AuthContext);
 
   const [pickupOptions, setPickupOptions] = useState<PickupPoint[]>([]);
   const [dropOptions, setDropOptions] = useState<DropPoint[]>([]);
@@ -145,6 +147,12 @@ export const BookingSteps: React.FC = () => {
 
   const [selectedSource, setSelectedSource] = useState<string>('');
   const [selectedDestination, setSelectedDestination] = useState<string>('');
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginStep, setLoginStep] = useState<"PHONE" | "OTP">("PHONE");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginOtp, setLoginOtp] = useState("");
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -224,33 +232,6 @@ export const BookingSteps: React.FC = () => {
       console.error("Failed to fetch route or availability data", error);
     }
   };
-
-  // const availableCabTimes = useMemo(() => {
-  //   const combos: any[] = [];
-
-  //   availableCabs.forEach((cab) => {
-  //     if (cab.timeSlots && Array.isArray(cab.timeSlots)) {
-  //       cab.timeSlots.forEach((time: string) => {
-  //         combos.push({
-  //           ...cab,
-  //           cabId: cab.id,
-  //           time,
-  //           available: cab.available && true, // time-specific availability later
-  //         });
-  //       });
-  //     } else {
-  //       // Fallback if no timeSlots in cab data
-  //       combos.push({
-  //         ...cab,
-  //         cabId: cab.id,
-  //         time: 'Flexible',
-  //         available: cab.available,
-  //       });
-  //     }
-  //   });
-
-  //   return combos;
-  // }, [availableCabs]);
 
   useEffect(() => {
     if (availableCabs.length > 0 && !selectedCab) {
@@ -351,14 +332,16 @@ export const BookingSteps: React.FC = () => {
       setCurrentStep((prev) => prev + 1)
       await fetchRoutesAndAvailability();
     } else if (currentStep === 2) {
-      setTimerActive(true);
-      setTimerSeconds(300);
+      // setTimerActive(true);
+      // setTimerSeconds(300);
       setCurrentStep((prev) => prev + 1);
     }
     else if (currentStep === 3) {
       try {
-        // await lockSeats();
-        setTimerActive(true);
+        if(isAuthenticated) {
+          await lockSeats();
+        }
+        // setTimerActive(true);
 
         const newPassengers: Passenger[] = selectedSeats.map((seatNum) => {
           const existing = passengers.find((p) => p.seatNumber === seatNum);
@@ -399,7 +382,15 @@ export const BookingSteps: React.FC = () => {
       }
     } else if (currentStep === 5) {
       try {
-        await createBooking();
+        if (!isAuthenticated) {
+          setShowLoginModal(true);
+          return;
+        }
+        try {
+          await createBooking();
+        } catch (err) {
+          console.error(err);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -414,11 +405,144 @@ export const BookingSteps: React.FC = () => {
     }
   };
 
-  // const selectedCabObj = availableCabs.find((cab) => cab.id === selectedCab);
+  const handleAuthCheck = () => {
+    if (isAuthenticated) {
+      setTimerActive(true);
+      setTimerSeconds(300);
+      createBooking();
+    } else {
+      setShowLoginModal(true);
+    }
+  };
 
-  // const dynamicTimeSlots = selectedCabObj
-  //   ? TIMESLOTS_BY_ROUTE[selectedCabObj.routeCode]
-  //   : [];
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginPhone.length < 10) {
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+
+    setIsAuthLoading(true);
+    try {
+      await sendOtp(loginPhone);
+      setLoginStep("OTP");
+      toast.success("OTP sent to your phone");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginOtp.length < 4) {
+      toast.error("Please enter valid OTP");
+      return;
+    }
+
+    setIsAuthLoading(true);
+    try {
+      const data = await verifyOtp(loginPhone, loginOtp);
+      console.log('DATA: ', data);
+      if (data.success) {
+        toast.success("Login successful!");
+        setShowLoginModal(false);
+        setLoginOtp("");
+        setLoginStep("PHONE");
+        await lockSeats();
+        setTimerActive(true);
+        setTimerSeconds(300);
+      }
+    } catch (error: any) {
+      toast.error("Invalid OTP");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const renderLoginModal = () => {
+    if (!showLoginModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
+          {/* Close Button */}
+          <button
+            onClick={() => setShowLoginModal(false)}
+            className="absolute right-4 top-4 p-2 text-white/50 hover:text-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {loginStep === "PHONE" ? "Login to Continue" : "Verify OTP"}
+            </h2>
+            <p className="text-sm text-white/50 mb-6">
+              {loginStep === "PHONE"
+                ? "Please enter your phone number to proceed with the booking."
+                : `Enter the OTP sent to +91 ${loginPhone}`
+              }
+            </p>
+
+            {loginStep === "PHONE" ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-emerald-400 ml-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    placeholder="9876543210"
+                    maxLength={10}
+                    value={loginPhone}
+                    onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full mt-1 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all tracking-widest"
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isAuthLoading || loginPhone.length < 10}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-6 rounded-xl"
+                >
+                  {isAuthLoading ? <Loader2 className="animate-spin" /> : "Send OTP"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-emerald-400 ml-1">One Time Password</label>
+                  <input
+                    type="text"
+                    placeholder="• • • •" // 4 or 6 dots depending on your OTP length
+                    maxLength={6}
+                    value={loginOtp}
+                    onChange={(e) => setLoginOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full mt-1 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 text-center text-2xl tracking-[1em] focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+                    autoFocus
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={isAuthLoading || loginOtp.length < 4}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-6 rounded-xl"
+                >
+                  {isAuthLoading ? <Loader2 className="animate-spin" /> : "Verify & Proceed"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setLoginStep("PHONE")}
+                  className="w-full text-xs text-white/40 hover:text-white transition-colors mt-4"
+                >
+                  Change Phone Number
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSeatLayout = () => {
     if (!selectedCab) return null;
@@ -1034,7 +1158,7 @@ export const BookingSteps: React.FC = () => {
                 </div>
                 <Button
                   className="w-full mt-6 rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-3"
-                  onClick={() => alert("Payment flow not yet implemented")}
+                  onClick={() => handleAuthCheck()}
                 >
                   Proceed to Payment
                 </Button>
@@ -1141,6 +1265,9 @@ export const BookingSteps: React.FC = () => {
             {currentStep < 6 && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>
         </div>
+
+        { /* Login Modal */}
+        {renderLoginModal()}
       </div>
     </div>
   );

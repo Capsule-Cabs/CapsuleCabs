@@ -15,20 +15,20 @@ const userSchema = new Schema({
   },
   firstName: {
     type: String,
-    required: [true, 'First name is required'],
+    // required: [true, 'First name is required'],
     trim: true,
     maxlength: [50, 'First name cannot be more than 50 characters']
   },
   lastName: {
     type: String,
-    required: [true, 'Last name is required'],
+    // required: [true, 'Last name is required'],
     trim: true,
     maxlength: [50, 'Last name cannot be more than 50 characters']
   },
   password: {
     type: String,
     minlength: [6, 'Password must be at least 6 characters'],
-    select: false
+    
   },
   role: {
     type: String,
@@ -102,24 +102,20 @@ const userSchema = new Schema({
     expiresAt: { type: Date }
   },
   passwordResetToken: {
-    type: String,
-    select: false
+    type: String
   },
   passwordResetExpires: {
-    type: Date,
-    select: false
+    type: Date
   },
   phoneVerificationToken: {
-    type: String,
-    select: false
+    type: String
   },
   phoneVerificationExpires: {
-    type: Date,
-    select: false
+    type: Date
   },
   twoFactorSecret: {
     type: String,
-    select: false
+    
   },
   isTwoFactorEnabled: {
     type: Boolean,

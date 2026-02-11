@@ -494,6 +494,93 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
+/** 
+ * @desc Login using only phone and OTP
+ * @route POST /api/v1/auth/otp-login
+ * @access Public
+ */
+const loginWithOTP = asyncHandler(async (req, res) => {
+  const { phone } = req.body;
+  if(!phone) {
+    return res.status(400).json({
+      success: false,
+      message: 'Phone number is required'
+    });
+  }
+
+  let user = await User.findOne({ phone })
+
+  if(!user) {
+    user = await User.create({
+      phone,
+      isVerified: false,
+      firstName: 'User'
+    });
+  }
+
+  const otp = user.generatePhoneVerificationToken();
+  await user.save({  });
+
+  // await sendSMS(phone, `Your OTP for Seat Selekta Pro login is: ${otp}. It is valid for 10 minutes.`);
+
+  res.json({
+    success: true,
+    message: 'OTP sent for login',
+    ...(process.env.NODE_ENV === 'development' && { otp })
+  });
+});
+
+const verifyLoginOTP = asyncHandler(async (req, res) => {
+  const { phone, otp } = req.body;
+  const user = await User.findOne({ phone });
+  console.log("User: ", user);
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found"
+    });
+  }
+
+  if(user.phoneVerificationExpires < Date.now()) {
+    return res.status(400).json({
+      success: false,
+      message: "OTP expired."
+    });
+  }
+
+  if (user.phoneVerificationToken !== otp) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid OTP"
+    });
+  }
+
+
+  user.isVerified = true;
+  user.phoneVerificationToken = undefined;
+  user.phoneVerificationExpires = undefined;
+
+  await user.save({ validateBeforeSave: false });
+
+  const accessToken = generateToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  res.json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      },
+      accessToken,
+      refreshToken
+    }
+  });
+});
+
 
 
 // Routes
@@ -508,5 +595,9 @@ router.put('/change-password', protect, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
 ], handleValidationErrors, changePassword);
+
+// OTP based login
+router.post('/otp-login', loginWithOTP);
+router.post('/verify-login-otp', verifyLoginOTP);
 
 export default router;

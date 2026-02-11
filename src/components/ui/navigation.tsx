@@ -96,31 +96,15 @@ export const Navigation = () => {
                   >
                     <User className='h-4 w-4 mr-2' />
                     <span className='hidden sm:inline'>
-                      {user?.firstName} {user?.lastName}
+                      { user?.phone }
                     </span>
-                    <span className='sm:hidden'>Profile</span>
+                    <span className='sm:hidden'>{ user?.phone }</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align='end'
                   className='bg-zinc-900 border-white/10 text-white w-56'
                 >
-                  <div className='px-2 py-1.5'>
-                    <p className='text-sm font-semibold text-white'>
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className='text-xs text-white/60 flex items-center gap-1 mt-1'>
-                      <Mail className='h-3 w-3' />
-                      {user?.email}
-                    </p>
-                    {user?.phone && (
-                      <p className='text-xs text-white/60 flex items-center gap-1 mt-1'>
-                        <Phone className='h-3 w-3' />
-                        {user?.phone}
-                      </p>
-                    )}
-                  </div>
-                  <DropdownMenuSeparator className='bg-white/10' />
                   <DropdownMenuItem
                     asChild
                     className='hover:bg-white/10 cursor-pointer'
@@ -174,42 +158,6 @@ export const Navigation = () => {
                 </Link> */}
               </div>
             )}
-
-            {/* Mobile Menu */}
-            <>
-              {isAuthenticated ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild className='md:hidden'>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='border-white/20 bg-white/5 text-white hover:bg-white/10'
-                    >
-                      <Menu className='h-4 w-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align='end'
-                    className='bg-zinc-900 border-white/10 text-white'
-                  >
-                    <DropdownMenuItem
-                      asChild
-                      className='hover:bg-white/10 cursor-pointer'
-                    >
-                      <Link to='/'>Home</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      asChild
-                      className='hover:bg-white/10 cursor-pointer'
-                    >
-                      <Link to='/booking'>Book Ride</Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                ''
-              )}
-            </>
           </div>
         </div>
       </div>

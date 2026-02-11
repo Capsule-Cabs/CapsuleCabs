@@ -25,6 +25,8 @@ interface AuthContextType {
     password: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  sendOtp: (phone: string) => Promise<any>;
+  verifyOtp: (phone: string, otp: string) => Promise<any>;
 }
 
 export const AuthContext = createContext<AuthContextType>(null!);
@@ -95,6 +97,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = '/login';
   };
 
+  const sendOtp = async (phone: string) => {
+    const { data } = await api.post("/auth/otp-login", { phone });
+    return data;
+  }
+
+  const verifyOtp = async (phone: string, otp: string) => {
+    const { data } = await api.post('/auth/verify-login-otp', { phone, otp });
+    const { accessToken, refreshToken, user: userData } = data.data;
+
+    setAccessToken(accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    setUser(userData);
+
+    return data;
+  }
+
   const isAuthenticated = !!user;
   console.log('Authenticated: ', isAuthenticated, user);
 
@@ -105,7 +123,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       login,
       register,
-      logout
+      logout,
+      sendOtp,
+      verifyOtp
     };
   }, [user, isAuthenticated]);
 

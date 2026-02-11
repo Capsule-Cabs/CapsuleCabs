@@ -32,8 +32,8 @@ const handleValidationErrors = (req, res, next) => {
  */
 const lockSeats = asyncHandler(async (req, res) => {
   const { routeId, travelDate, seatNumbers } = req.body;
-  // const userId = req.user._id;
-
+  const userId = req.user._id;
+  console.log('USER IDD: ', userId);
   // Validate route exists and is active
   const route = await Route.findById(routeId);
   if (!route || route.status !== 'active') {
@@ -56,7 +56,7 @@ const lockSeats = asyncHandler(async (req, res) => {
       routeId,
       travelDate,
       seatNumbers,
-      // userId,
+      userId,
       2
     );
 
@@ -65,7 +65,7 @@ const lockSeats = asyncHandler(async (req, res) => {
         ...lockResult,
         routeId,
         travelDate,
-        // userId,
+        userId,
         lockDurationMinutes: 2
       }, 'Seats locked successfully')
     );
@@ -406,15 +406,15 @@ const validateCreateBooking = [
 ];
 
 // Routes
-router.post('/lock', validateLockSeats, handleValidationErrors, lockSeats);
-router.post('/', validateCreateBooking, handleValidationErrors, createBooking);
-router.get('/mine', getMyBookings);
-router.get('/fetchBookings', fetchBookings);
-router.get('/:bookingId', getBooking);
+router.post('/lock', protect, lockSeats);
+router.post('/', protect, createBooking);
+router.get('/mine', protect, getMyBookings);
+router.get('/fetchBookings', protect, fetchBookings);
+router.get('/:bookingId', protect, getBooking);
 router.put('/:bookingId/cancel', [
   param('bookingId').notEmpty().withMessage('Booking ID required'),
   body('reason').optional().isLength({ max: 200 }).withMessage('Reason too long')
-], handleValidationErrors, cancelBooking);
+], protect, handleValidationErrors, cancelBooking);
 router.put('/extend-lock', extendLock);
 router.delete('/lock', releaseLocks);
 
