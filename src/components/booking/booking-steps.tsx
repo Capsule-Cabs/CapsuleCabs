@@ -479,26 +479,27 @@ export const BookingSteps: React.FC = () => {
   const startMobilePayment = async () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
-    const apiRes = await api.post("/payment/createOrderForSdk",  {
-        amount: totalAmount,
-        merchantOrderId,
-        phone: user?.phone,
-    });
-    const { request } = apiRes.data.data;
+    const apiRes = await api.post('/payment/createOrderForSdk', {
+      amount: totalAmount,
+      merchantOrderId,
+      phone: user?.phone,
+    })
+    const { request } = apiRes.data.data
     try {
       const txnResult = await PhonePePaymentPlugin.startTransaction({
         request: request,
-        appSchema: ""
-      });
+        appSchema: 'com.capsulecabs.app',
+        showLoaderFlag: true,
+      })
 
-      if(txnResult.status === 'SUCCESS') {
+      if (txnResult.status === 'SUCCESS') {
         // verifyPaymentStatus(merchantOrderId);
-        toast.success('Payment was successfull.');
+        toast.success('Payment was successfull.')
       } else {
-        toast.error('Payment was not successfull.');
+        toast.error('Payment was not successfull.')
       }
     } catch (error) {
-      console.log('SDK Error: ', error);
+      console.log('SDK Error: ', error)
     }
   }
 
