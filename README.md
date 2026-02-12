@@ -72,6 +72,68 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+## Changes to make in android folder android/build.gradle
+
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+ext.kotlin_version = '1.8.22'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.5.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.2'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+repositories {
+google()
+mavenCentral()
+maven {
+url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
+}
+}
+}
+
+task clean(type: Delete) {
+delete rootProject.buildDir
+}
+
+subprojects {
+afterEvaluate { project ->
+if (project.hasProperty("android")) {
+project.android {
+compileOptions {
+sourceCompatibility JavaVersion.VERSION_17
+targetCompatibility JavaVersion.VERSION_17
+}
+}
+}
+}
+configurations.all {
+resolutionStrategy.eachDependency { details ->
+if (details.requested.group == "org.jetbrains.kotlin") {
+details.useVersion "1.6.21"
+}
+}
+}
+}
+
+## Changes to make in variable.gradle
+
+change from 23 to 24
+
 ```
 CapsuleCabs
 ├─ backend
