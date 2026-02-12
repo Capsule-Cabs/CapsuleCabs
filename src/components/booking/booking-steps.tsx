@@ -479,7 +479,7 @@ export const BookingSteps: React.FC = () => {
   const startMobilePayment = async () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
-    const apiRes = await api.post('/payment/createOrderForSdk', {
+    const apiRes = await api.post('/payments/createOrderForSdk', {
       amount: totalAmount,
       merchantOrderId,
       phone: user?.phone,
