@@ -806,7 +806,7 @@ export const BookingSteps: React.FC = () => {
 
             {/* Confirm Button */}
             <Button
-              onClick={makePayment}
+              onClick={handlePaymentSelection}
               disabled={isAuthLoading}
               className='w-full h-16 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg mt-4 shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all'
             >
