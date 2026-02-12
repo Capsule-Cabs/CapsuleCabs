@@ -113,6 +113,79 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 });
 
+const createOrderForSDK = asyncHandler(async (req, res) => {
+  try {
+    const { amount, phone, merchantOrderId } = req?.body;
+    if (!amount) {
+      return res.status(500).json(
+        ApiResponse.error("PhonePe credentials not configured")
+      );
+    }
+
+    const orderPayload = {
+      "merchantOrderId": merchantOrderId,
+      "amount": amount,
+      "expireAfter": 1200,
+      "metaInfo": {
+        "udf1": phone,
+        "udf2": new Date()
+      },
+      "paymentFlow": {
+        "type": "PG_CHECKOUT",
+        "message": "Collecting payment for ticket booking",
+        "merchantUrls": {
+          "redirectUrl": "http://localhost:8080/booking-status"
+        }
+      }
+    };
+
+    const authToken = await getOAuthToken();
+    console.log('PAYLOAD for SDK: ', orderPayload);
+    console.log('token: ', authToken);
+
+    const response = await axios.post(`${paymentUrl}/checkout/v2/sdk/order`,
+      orderPayload,
+      {
+        httpsAgent,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `O-Bearer ${authToken}`
+        }
+      }
+    );
+    const phonePeData = response?.data;
+    const sdkPayload = {
+      orderId: phonePeData.orderId,
+      merchantId: merchantOrderId,
+      token: phonePeData.token,
+      paymentMode: {
+        type: "PAY_PAGE"
+      }
+    };
+
+    const base64Request = Buffer.from(JSON.stringify(sdkPayload)).toString("base64")
+
+    
+
+    return res.json(
+      ApiResponse.success({ request: base64Request }, "Checkout data generated")
+    );
+
+  } catch (error) {
+    console.log(
+      "PhonePe Checkout Error:",
+      error?.response?.data || error.message
+    );
+
+    return res.status(500).json(
+      ApiResponse.error(
+        error?.response?.data || error.message,
+        "PhonePe checkout failed"
+      )
+    );
+  }
+});
+
 const fetchPaymentStatus = asyncHandler(async (req, res) => {
   try {
     const { merchantOrderId } = req?.body;
@@ -171,5 +244,7 @@ router.get('/', protect, async (req, res) => {
 router.post('/authToken', protect, fetchOAuthToken);
 router.post('/createOrder', createOrder);
 router.post('/orderStatus', fetchPaymentStatus);
+
+router.post('/createOrderForSDK', createOrderForSDK);
 
 export default router; 
