@@ -15,7 +15,7 @@ import {
   X,
   Loader2
 } from "lucide-react";
-
+import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,8 +24,10 @@ import { Badge } from "@/components/ui/badge";
 import api from "@/services/api";
 import { AuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
+import phonepe_image from '@/assets/phonepe_image.png'
 import fetchRoutes from "@/services/bookingFunctions";
+
+
 
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
@@ -124,13 +126,19 @@ const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
 };
 
 export const BookingSteps: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const location = useLocation();
+  const preFilledData = location.state;
+  const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(preFilledData?.date ? new Date(preFilledData.date) : undefined);
   const [selectedCab, setSelectedCab] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [availableCabs, setAvailableCabs] = useState<CabWithAvailability[]>([]);
+  // const [totalFare, setTotalFare] = useState(0);
+  const totalFare = useMemo(() => {
+    return passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
+  }, [passengers]);
 
   const { user, isAuthenticated, sendOtp, verifyOtp } = useContext(AuthContext);
 
@@ -145,16 +153,30 @@ export const BookingSteps: React.FC = () => {
   const [timerSeconds, setTimerSeconds] = useState<number>(300);
   const [timerActive, setTimerActive] = useState<boolean>(false);
 
-  const [selectedSource, setSelectedSource] = useState<string>('');
-  const [selectedDestination, setSelectedDestination] = useState<string>('');
+  const [selectedSource, setSelectedSource] = useState<string>(preFilledData?.from || "");
+  const [selectedDestination, setSelectedDestination] = useState<string>(preFilledData?.to || "");
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginStep, setLoginStep] = useState<"PHONE" | "OTP">("PHONE");
   const [loginPhone, setLoginPhone] = useState("");
   const [loginOtp, setLoginOtp] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedGateway, setSelectedGateway] = useState<"PHONEPE" | "ZOHO" | null>(null);
+
 
   const timerRef = useRef<NodeJS.Timeout>();
+  
+  // If the user is coming after selecting source and destination
+  useEffect(() => {
+  if (preFilledData && currentStep === 2) {
+    // Manually trigger the route fetching logic you have for Step 1
+    // Example: handleSearchRoutes(preFilledData.from, preFilledData.to, preFilledData.date);
+    fetchRoutesAndAvailability();
+    console.log("Pre-filled data detected, skipping to cab selection...");
+  }
+}, [preFilledData]);
+
 
 
   // const { isLoaded } = useJsApiLoader({
@@ -174,6 +196,15 @@ export const BookingSteps: React.FC = () => {
     if (places && places.length > 0) {
       setDropAddress(places[0].formatted_address ?? "");
     }
+  };
+  const generateStrongOrderId = (): string => {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 8);
+
+    // High-precision alternative for browser
+    const micro = performance.now().toString(36).replace('.', '');
+
+    return (timestamp + random + micro).toUpperCase().slice(0, 14);
   };
 
   const fetchRoutesAndAvailability = async () => {
@@ -338,15 +369,16 @@ export const BookingSteps: React.FC = () => {
     }
     else if (currentStep === 3) {
       try {
-        if(isAuthenticated) {
+        if (isAuthenticated) {
           await lockSeats();
         }
-        // setTimerActive(true);
-
+        // setTimerActive(true); 
+        let runningTotal = 0;
         const newPassengers: Passenger[] = selectedSeats.map((seatNum) => {
           const existing = passengers.find((p) => p.seatNumber === seatNum);
 
           if (existing) {
+            runningTotal += existing.fare;
             return { ...existing };
           }
 
@@ -354,6 +386,8 @@ export const BookingSteps: React.FC = () => {
           const seatObj = cab?.seatsAvailable.find(
             (s) => s.seatNumber === seatNum
           );
+          // const fare = seatObj?.price || cab?.price || 550;
+          // runningTotal += fare; // Add this seat's fare to total
 
           return {
             name: "",
@@ -368,8 +402,11 @@ export const BookingSteps: React.FC = () => {
             dropAddress,
           };
         });
-
+        // setTotalFare(runningTotal);
         setPassengers(newPassengers);
+
+        // 2. Log the local variable, not the state variable
+        console.log('Calculated Total Fare:', runningTotal);
         setCurrentStep((prev) => prev + 1);
       } catch (err: any) {
         // alert(
@@ -405,11 +442,51 @@ export const BookingSteps: React.FC = () => {
     }
   };
 
-  const handleAuthCheck = () => {
+  const initiatePaymentFlow = () => {
+    setShowPaymentModal(true);
+  };
+
+  const makePayment = async () => {
+    if (selectedGateway !== "PHONEPE") return;
+    setIsAuthLoading(true);
+    setShowPaymentModal(false);
+    try {
+      const totalAmount = totalFare;
+      const merchantOrderId = generateStrongOrderId();
+      const response = await api.post("/payments/createOrder", { amount: totalAmount, merchantOrderId, phone: user?.phone });
+
+      if (response?.data?.data?.redirectUrl) {
+        const sessionData = {
+          selectedCab,
+          selectedSeats,
+          passengers,
+          selectedDate: selectedDate?.toISOString(),
+          merchantOrderId,
+          totalFare
+        };
+
+        localStorage.setItem("pending_booking", JSON.stringify(sessionData));
+
+        window.location.href = response?.data?.data?.redirectUrl;
+      } else {
+        throw new Error("Payment URL not received");
+      }
+    } catch (error: any) {
+      console.log('Payment initation failed', error);
+      toast.error("Payment failed to initialize", {
+        description: error.message || "Please try again."
+      });
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }
+
+  const handleAuthCheck = async () => {
     if (isAuthenticated) {
       setTimerActive(true);
       setTimerSeconds(300);
-      createBooking();
+      initiatePaymentFlow();
+      // createBooking();
     } else {
       setShowLoginModal(true);
     }
@@ -465,7 +542,7 @@ export const BookingSteps: React.FC = () => {
     if (!showLoginModal) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
         <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-zinc-900 shadow-2xl">
           {/* Close Button */}
           <button
@@ -544,6 +621,103 @@ export const BookingSteps: React.FC = () => {
     );
   };
 
+  const renderPaymentSelectionModal = () => {
+    if (!showPaymentModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md p-4">
+        <div className="relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-300">
+
+          {/* Header Branding Area - PhonePe Theme */}
+          <div className="bg-[#5f259f] p-8 pb-14 flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Checkout</h2>
+              <p className="text-purple-200/50 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Secure Transaction</p>
+            </div>
+            <button onClick={() => setShowPaymentModal(false)} className="p-2 bg-black/20 rounded-full text-white/50 hover:text-white transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Payment Options Container */}
+          <div className="px-5 -mt-8 space-y-4 pb-8">
+
+            {/* PhonePe Option */}
+            <button
+              onClick={() => setSelectedGateway("PHONEPE")}
+              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${selectedGateway === "PHONEPE"
+                ? "ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]"
+                : "hover:bg-zinc-50"
+                }`}
+            >
+              <div className="flex items-center gap-4 relative z-10">
+                {/* The Logo Container */}
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  {/* Updated: Added PhonePe Brand Purple (#5f259f) and removed border */}
+                  <div className="absolute inset-0 rounded-full flex items-center justify-center overflow-hidden">
+                    {/* Updated: Removed 'invert' to keep the logo white as per original asset */}
+                    <img
+                      src={phonepe_image}
+                      alt="PhonePe"
+                      className="w-10 h-10 object-contain"
+                    />
+                  </div>
+
+                  {/* Secure Checkmark Badge */}
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-sky-500 rounded-full p-1 border-2 border-white shadow-sm">
+                    <CheckCircle className="w-2.5 h-2.5 text-white" fill="currentColor" />
+                  </div>
+                </div>
+
+                <div className="text-left">
+                  <p className="font-black text-zinc-900 text-xl tracking-tight leading-none">PhonePe</p>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter">100% Secured</span>
+                    <div className="h-0.5 w-0.5 rounded-full bg-zinc-300" />
+                    <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter">UPI / Cards</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pro Radio Selection UI matching image_b8f838.png */}
+              <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === "PHONEPE" ? "border-sky-500 bg-white" : "border-zinc-200"
+                }`}>
+                {selectedGateway === "PHONEPE" && (
+                  <div className="w-4 h-4 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.4)] animate-in zoom-in duration-200" />
+                )}
+              </div>
+            </button>
+
+            {/* Zoho Option (Disabled) */}
+            <div className="opacity-40 pointer-events-none grayscale px-2">
+              <div className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center">
+                    <span className="text-white/20 font-bold text-xs italic">Zoho</span>
+                  </div>
+                  <p className="font-bold text-white/30">Other Methods</p>
+                </div>
+                <Badge variant="outline" className="text-[10px] border-white/10 text-white/20">Coming Soon</Badge>
+              </div>
+            </div>
+
+            {/* Confirm Button */}
+            <Button
+              onClick={makePayment}
+              disabled={isAuthLoading}
+              className="w-full h-16 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg mt-4 shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all"
+            >
+              {isAuthLoading ? (
+                <Loader2 className="animate-spin h-6 w-6" />
+              ) : (
+                `PROCEED TO PAY ₹${selectedSeats.length * 550}`
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
   const renderSeatLayout = () => {
     if (!selectedCab) return null;
 
@@ -1151,9 +1325,7 @@ export const BookingSteps: React.FC = () => {
                   <span>Total Fare</span>
                   <span className="text-emerald-300">
                     ₹
-                    {selectedSeats.length
-                      ? (selectedSeats.length * 550).toFixed(2)
-                      : "0.00"}
+                    {totalFare}
                   </span>
                 </div>
                 <Button
@@ -1268,7 +1440,13 @@ export const BookingSteps: React.FC = () => {
 
         { /* Login Modal */}
         {renderLoginModal()}
+        <div className="min-h-screen bg-black text-white flex flex-col">
+          {/* ... existing code ... */}
+          {renderLoginModal()}
+          {renderPaymentSelectionModal()}
+        </div>
       </div>
     </div>
   );
+
 };

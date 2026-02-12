@@ -1,5 +1,5 @@
-import { useContext } from 'react'
-import { Link } from 'react-router-dom'
+import { useContext, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Shield,
@@ -9,6 +9,7 @@ import {
   Users,
   Smartphone,
   Car,
+  ArrowRightLeft,
 } from 'lucide-react'
 
 import { Navigation } from '@/components/ui/navigation'
@@ -24,6 +25,11 @@ import { Footer } from '@/components/sections/Footer'
 import CarImage from '../assets/car_image.png'
 import Time from '../assets/time.png'
 import Shared from '../assets/shared.png'
+import { Calendar as CalendarIcon, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 const FEATURES = [
   {
@@ -99,8 +105,39 @@ const TESTIMONIALS = [
   },
 ]
 
+const AVAILABLE_CITIES = [
+  { id: "gurugram", name: "Gurugram" },
+  { id: "agra", name: "Agra" },
+  { id: "delhi", name: "Delhi" },
+  { id: "jaipur", name: "Jaipur" },
+];
+
 const Index = () => {
   const { user, isAuthenticated } = useContext(AuthContext)
+  const navigate = useNavigate();
+  const [searchData, setSearchData] = useState({
+    from: "",
+    to: "",
+    date: new Date()
+  });
+
+  const handleSearch = () => {
+    navigate('/booking', { state: searchData });
+  }
+
+  const handleSwap = () => {
+    setSearchData(prev => ({
+      ...prev,
+      from: prev.to,
+      to: prev.from
+    }));
+  };
+
+  const isCityDisabled = (cityId: string, type: 'from' | 'to') => {
+    if (type === 'from') return cityId === searchData.to;
+    if (type === 'to') return cityId === searchData.from;
+    return false;
+  };
 
   if (user?.role === 'driver') {
     return <DriverDashboard />
@@ -126,7 +163,7 @@ const Index = () => {
           <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24'>
             <div className='grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 items-center'>
               {/* Left: Text */}
-              <div className='space-y-6'>
+              {/* <div className='space-y-6'>
                 <Badge className='bg-white/10 text-xs uppercase tracking-[0.2em] border border-white/15 text-white/80 rounded-full px-3 py-1'>
                   Constant Fares. Consitent Care.
                 </Badge>
@@ -153,28 +190,126 @@ const Index = () => {
                   </Link>
                   <div className='flex items-center gap-2 text-xs sm:text-sm text-white/60'>
                     <div className='flex -space-x-2'>
-                      {/* <div className="h-7 w-7 rounded-full border border-black bg-emerald-500/80" />
-                      <div className="h-7 w-7 rounded-full border border-black bg-lime-400/80" />
-                      <div className="h-7 w-7 rounded-full border border-black bg-white/80" /> */}
+                      
                     </div>
-                    {/* <span>See how it works</span> */}
                   </div>
                 </div>
 
-                {/* Stats */}
-                {/* <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-md pt-6">
-                  {STATS.map((item) => (
-                    <div
-                      key={item.label}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3 sm:px-4 sm:py-4 backdrop-blur-sm transition-transform hover:-translate-y-0.5 hover:border-emerald-400/60"
-                    >
-                      <div className="text-sm text-white/50">{item.label}</div>
-                      <div className="mt-1 text-lg sm:text-xl font-semibold">
-                        {item.value}
+              </div> */}
+              <div className="flex flex-col justify-center lg:items-end w-full max-w-xl ml-auto">
+                <div className="w-full space-y-6 animate-in fade-in slide-in-from-right duration-700">
+
+                  <div className="relative p-[1px] rounded-[2.5rem] bg-gradient-to-b from-white/20 to-transparent">
+                    <div className="bg-zinc-950/80 backdrop-blur-2xl rounded-[2.5rem] p-8 shadow-2xl border border-white/5">
+
+                      <h2 className="text-xl font-medium text-white mb-6 flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Plan your journey
+                      </h2>
+
+                      <div className="grid grid-cols-1 gap-4">
+
+                        <div className="relative flex flex-col gap-2">
+                          <div className="group relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50 group-focus-within:text-emerald-500 transition-colors z-10">
+                              <MapPin size={18} />
+                            </div>
+                            <Select value={searchData.from} onValueChange={(v) => setSearchData({ ...searchData, from: v })}>
+                              <SelectTrigger className="h-16 pl-12 bg-white/5 border-white/5 rounded-2xl text-white hover:bg-white/10 transition-all text-base focus:ring-1 focus:ring-emerald-500/50">
+                                <SelectValue placeholder="Pickup City" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-900 border-white/10 text-white rounded-xl">
+                                {AVAILABLE_CITIES.map((city) => (
+                                  <SelectItem
+                                    key={city.id}
+                                    value={city.name}
+                                    disabled={isCityDisabled(city.name, 'from')}
+                                    className="focus:bg-emerald-500/10 focus:text-emerald-400"
+                                  >
+                                    {city.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div onClick={handleSwap} className="absolute right-6 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center">
+                            <div className="h-8 w-8 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-white/40 hover:text-emerald-400 cursor-pointer transition-all hover:scale-110 active:scale-95 shadow-lg">
+                              <ArrowRightLeft size={14} className="rotate-90" />
+                            </div>
+                          </div>
+
+                          <div className="group relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500/50 group-focus-within:text-sky-500 transition-colors z-10">
+                              <MapPin size={18} />
+                            </div>
+                            <Select value={searchData.to} onValueChange={(v) => setSearchData({ ...searchData, to: v })}>
+                              <SelectTrigger className="h-16 pl-12 bg-white/5 border-white/5 rounded-2xl text-white hover:bg-white/10 transition-all text-base focus:ring-1 focus:ring-emerald-500/50">
+                                <SelectValue placeholder="Destination City" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-900 border-white/10 text-white rounded-xl">
+                                {AVAILABLE_CITIES.map((city) => (
+                                  <SelectItem
+                                    key={city.id}
+                                    value={city.name}
+                                    disabled={isCityDisabled(city.name, 'to')}
+                                    className="focus:bg-emerald-500/10 focus:text-emerald-400"
+                                  >
+                                    {city.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="h-16 w-full bg-white/5 border-white/5 rounded-2xl flex items-center justify-start px-4 text-white hover:bg-white/10 hover:border-white/10 transition-all font-normal gap-3"
+                            >
+                              {/* Icon Container with fixed width to ensure alignment */}
+                              <div className="flex items-center justify-center w-6 text-white/40">
+                                <CalendarIcon size={18} />
+                              </div>
+
+                              {/* Date Text */}
+                              <span className="text-base">
+                                {searchData.date ? format(searchData.date, "PPP") : "Pick a date"}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-zinc-950 border-white/10 shadow-2xl" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={searchData.date}
+                              onSelect={(d) => d && setSearchData({ ...searchData, date: d })}
+                              disabled={(date) => date < new Date()}
+                              className="bg-zinc-950 text-white rounded-xl"
+                            />
+                          </PopoverContent>
+                        </Popover>
+
+                        <Button
+                          onClick={handleSearch}
+                          className="h-16 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg rounded-2xl shadow-xl shadow-emerald-500/10 group overflow-hidden relative"
+                        >
+                          <span className="relative z-10 flex items-center justify-center gap-2">
+                            Search Cabs
+                            <Search className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          </span>
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div> */}
+                  </div>
+
+                  <div className="flex items-center justify-center lg:justify-end gap-6 text-white/40 text-xs font-medium px-4">
+                    <span className="flex items-center gap-1.5"><Search size={12} /> Instant Booking</span>
+                    <span className="flex items-center gap-1.5"><MapPin size={12} /> Route Coverage</span>
+                  </div>
+                </div>
               </div>
 
               {/* Right: Image + card */}
@@ -297,65 +432,6 @@ const Index = () => {
 
           </div>
         </section>
-
-        {/* How it works */}
-        {/* <section
-          id="how-it-works"
-          className="border-t border-white/5 bg-black py-12 sm:py-16"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                  Book in four smooth steps.
-                </h2>
-                <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
-                  A booking flow designed to be fast on mobile and desktop
-                  alike—no unnecessary fields or friction.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                className="border-white/20 text-black hover:bg-white hover:text-black rounded-full"
-                asChild
-              >
-                {isAuthenticated ? (
-                  <Link to="/booking">
-                    Try the booking flow
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                ) : (
-                  <Link to="/login">
-                    Try the booking flow
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                )}
-              </Button>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              {STEPS.map((item, index) => (
-                <Card
-                  key={item.step}
-                  className="bg-white/5 border-white/10 overflow-hidden group"
-                >
-                  <CardContent className="px-4 py-5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-xs text-white/50">
-                      <span className="font-mono text-[11px]">
-                        Step {item.step}
-                      </span>
-                      <span className="h-1.5 w-8 rounded-full bg-emerald-400/60 group-hover:w-10 transition-all" />
-                    </div>
-                    <h3 className="text-sm font-semibold">{item.title}</h3>
-                    <p className="text-xs sm:text-sm text-white/60 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section> */}
 
         {/* Testimonials */}
         <section
