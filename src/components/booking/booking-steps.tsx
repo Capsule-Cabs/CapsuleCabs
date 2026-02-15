@@ -199,6 +199,25 @@ export const BookingSteps: React.FC = () => {
       setDropAddress(places[0].formatted_address ?? '')
     }
   }
+
+  useEffect(() => {
+    const initPhonePe = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await PhonePePaymentPlugin.init({
+            environment: 'SANDBOX', // Change to "PRODUCTION" when going live
+            merchantId: 'M23EMO4MTCO4P', // Your actual MID
+            flowId: `flow_${user.id}`, // Alphanumeric string for tracking
+            enableLogging: true, // Set to false in production
+          })
+          console.log('PhonePe SDK Initialized')
+        } catch (error) {
+          console.error('PhonePe Init Error:', error)
+        }
+      }
+    }
+    initPhonePe()
+  }, [])
   const generateStrongOrderId = (): string => {
     const timestamp = Date.now().toString(36)
     const random = Math.random().toString(36).substring(2, 8)
@@ -453,19 +472,6 @@ export const BookingSteps: React.FC = () => {
   const initiatePaymentFlow = () => {
     setShowPaymentModal(true)
   }
-  const initPhonePe = async () => {
-    try {
-      const result = await PhonePePaymentPlugin.init({
-        environment: 'SANDBOX', // Use "PRODUCTION" for live
-        merchantId: 'YOUR_MERCHANT_ID',
-        flowId: 'UNIQUE_FLOW_ID', // e.g., a UUID or UserID
-        enableLogging: false,
-      })
-      console.log('PhonePe SDK Initialized:', result)
-    } catch (error) {
-      console.error('Initialization failed', error)
-    }
-  }
 
   const handlePaymentSelection = async () => {
     const platform = Capacitor.getPlatform()
@@ -485,9 +491,11 @@ export const BookingSteps: React.FC = () => {
       phone: user?.phone,
     })
     const { request } = apiRes.data.data
+    const decodedRequest = JSON.parse(atob(request))
+    console.log('SDK RESPONSE: ', request)
     try {
       const txnResult = await PhonePePaymentPlugin.startTransaction({
-        request: request,
+        request: decodedRequest,
         appSchema: 'com.capsulecabs.app',
         showLoaderFlag: true,
       })
