@@ -726,11 +726,10 @@ export const BookingSteps: React.FC = () => {
             {/* PhonePe Option */}
             <button
               onClick={() => setSelectedGateway('PHONEPE')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${
-                selectedGateway === 'PHONEPE'
-                  ? 'ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]'
-                  : 'hover:bg-zinc-50'
-              }`}
+              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${selectedGateway === 'PHONEPE'
+                ? 'ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]'
+                : 'hover:bg-zinc-50'
+                }`}
             >
               <div className='flex items-center gap-4 relative z-10'>
                 {/* The Logo Container */}
@@ -772,11 +771,10 @@ export const BookingSteps: React.FC = () => {
 
               {/* Pro Radio Selection UI matching image_b8f838.png */}
               <div
-                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  selectedGateway === 'PHONEPE'
-                    ? 'border-sky-500 bg-white'
-                    : 'border-zinc-200'
-                }`}
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE'
+                  ? 'border-sky-500 bg-white'
+                  : 'border-zinc-200'
+                  }`}
               >
                 {selectedGateway === 'PHONEPE' && (
                   <div className='w-4 h-4 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.4)] animate-in zoom-in duration-200' />
@@ -1090,136 +1088,102 @@ export const BookingSteps: React.FC = () => {
 
       case 2:
         return (
-          <div className='w-full max-w-4xl mx-auto px-4 py-8 space-y-6'>
-            <h3 className='text-2xl font-bold text-white text-center mb-8'>
-              Select Cab & Time
-            </h3>
+          <div className='w-full max-w-4xl mx-auto px-4 py-6 space-y-4'>
+            <div className="text-center mb-6">
+              <h3 className='text-2xl font-bold text-white'>Select Cab & Time</h3>
+              <p className="text-zinc-500 text-sm mt-1">Choose your preferred schedule</p>
+            </div>
 
-            <div
-              className={
-                availableCabs.length === 1
-                  ? 'max-w-2xl mx-auto'
-                  : 'grid grid-cols-1 md:grid-cols-2 gap-4'
-              }
-            >
+            <div className={
+              availableCabs.length === 1
+                ? 'max-w-xl mx-auto'
+                : 'grid grid-cols-1 gap-3' // Using a single column with horizontal cards feels "thinner"
+            }>
               {availableCabs.length > 0 ? (
                 availableCabs.map((cab) => {
                   const departureTime = cab.departureTime
-                    ? new Date(`2000-01-01T${cab.departureTime}`)
-                        .toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        })
-                        .toLowerCase()
-                    : '09:55'
+                    ? new Date(`2000-01-01T${cab.departureTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+                    : '09:55 am';
                   const arrivalTime = cab.arrivalTime
-                    ? new Date(`2000-01-01T${cab.arrivalTime}`)
-                        .toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        })
-                        .toLowerCase()
-                    : '09:55'
+                    ? new Date(`2000-01-01T${cab.arrivalTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+                    : '12:30 pm';
 
-                  const selected = selectedCab === cab.id
-                  const isAvailable = cab.available
+                  const selected = selectedCab === cab.id;
+                  const isAvailable = cab.available;
 
                   return (
                     <Card
                       key={cab.id}
                       className={`
-                  relative group h-full bg-zinc-950/95 backdrop-blur-xl border border-white/10 
-                  rounded-2xl p-6 shadow-xl hover:shadow-emerald/25 hover:border-emerald/20 
-                  hover:-translate-y-1 transition-all duration-300 ${availableCabs.length === 1 ? 'max-w-none mx-auto shadow-2xl scale-105' : ''}
-                  ${selected ? 'ring-2 ring-emerald/40 shadow-emerald/25 border-emerald/20' : ''}
-                  ${!isAvailable ? 'opacity-60 cursor-not-allowed' : ''}
+                  relative overflow-hidden group transition-all duration-300 cursor-pointer
+                  bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl
+                  ${selected ? 'ring-2 ring-emerald-500/50 border-emerald-500/50 bg-emerald-500/5' : 'hover:border-white/20'}
+                  ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
                       onClick={() => isAvailable && setSelectedCab(cab.id)}
                     >
-                      {/* Starting From - Plain Text Bottom Right */}
-                      <div className='absolute bottom-3 right-3 text-xs text-white/80 font-medium leading-tight z-20 drop-shadow-md'>
-                        Starting from <br className='sm:hidden' />
-                        <span className='text-sm font-bold text-white'>
-                          ₹{cab.price || 349} +GST
-                        </span>
-                      </div>
-
+                      {/* Selected Indicator Glow */}
                       {selected && (
-                        <div className='absolute inset-0 bg-emerald/5 rounded-2xl backdrop-blur-sm z-10' />
+                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[2px_0_10px_rgba(16,185,129,0.5)]" />
                       )}
 
-                      <CardContent className='p-6 relative z-20 h-full flex flex-col justify-between pt-2'>
-                        <div className='space-y-4'>
-                          {/* Header */}
-                          <div className='flex items-center justify-between gap-2 mb-4'>
-                            <div
-                              className={`h-8 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm'bg-emerald/15 text-emerald-400 hover:bg-emerald/25 shadow-md'`}
-                            >
-                              {cab.routeCode}
-                            </div>
-                            <Badge
-                              className={`ml-auto px-2.5 py-0.5 text-xs font-semibold h-fit whitespace-nowrap ${
-                                selected
-                                  ? 'bg-emerald/20 text-emerald-400 border-emerald/30 shadow-sm'
-                                  : isAvailable
-                                    ? 'bg-emerald/15 text-emerald-400 border-emerald/30'
-                                    : 'bg-zinc-800/50 text-white/50 border-zinc-700/50'
-                              }`}
-                            >
-                              {selected
-                                ? 'SELECTED'
-                                : isAvailable
-                                  ? 'Available'
-                                  : 'Full'}
-                            </Badge>
+                      <CardContent className='p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4'>
+
+                        {/* Left Side: Time & Route Info */}
+                        <div className="flex items-center gap-5 w-full sm:w-auto">
+                          <div className="flex flex-col items-center justify-center min-w-[100px] border-r border-white/10 pr-5">
+                            <span className="text-lg font-medium text-white leading-none">{departureTime}</span>
+                            {/* <ArrowRight className="h-3 w-3 text-emerald-500 my-1" /> */}
+                            <span className="text-white">to</span>
+                            <span className="text-lg font-medium text-white">{arrivalTime}</span>
                           </div>
 
-                          {/* Route */}
-                          <h4 className='font-bold text-white text-lg leading-tight line-clamp-1'>
-                            {cab.route || `Seater ${cab.id}`}
-                          </h4>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                                {cab.routeCode}
+                              </Badge>
+                              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                                {cab.capacity || 50} SEATER
+                              </span>
+                            </div>
+                            <h4 className='font-bold text-white text-base leading-tight uppercase tracking-tight'>
+                              {cab.route || `Standard Seater ${cab.id}`}
+                            </h4>
+                          </div>
+                        </div>
 
-                          {/* Seats */}
-                          <p className='text-sm text-white/70 flex items-center gap-2'>
-                            <span>{cab.capacity || 50} seats</span>
-                          </p>
+                        {/* Right Side: Price & Action */}
+                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 sm:pl-6 sm:border-l border-white/10">
+                          <div className="text-left sm:text-right">
+                            <p className="text-[10px] text-zinc-500 font-bold uppercase">Starting From</p>
+                            <p className="text-xl font-black text-white">
+                              ₹{cab.price || 349}
+                              <span className="text-[10px] text-zinc-500 ml-1 font-normal">+GST</span>
+                            </p>
+                          </div>
 
-                          {/* Time */}
-                          <div
-                            className={`px-4 py-3 rounded-xl text-lg font-bold text-center shadow-md transition-all ${
-                              selected
-                                ? 'bg-emerald/30 text-emerald-50 border-2 border-emerald/40 shadow-emerald/25'
-                                : isAvailable
-                                  ? 'bg-zinc-900/60 text-white border border-white/20 hover:bg-emerald/20 hover:border-emerald/30 hover:text-emerald-400'
-                                  : 'bg-zinc-900/80 text-white/60 border border-zinc-800/50'
-                            }`}
-                          >
-                            {departureTime} — {arrivalTime}
+                          <div className={`
+                      h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
+                      ${selected ? 'bg-emerald-500 text-black' : 'bg-zinc-800 text-white/20 group-hover:bg-zinc-700'}
+                    `}>
+                            <CheckCircle className={`h-6 w-6 ${selected ? 'scale-110' : 'scale-90'}`} />
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })
               ) : (
-                <Card className='col-span-full p-12 text-center bg-zinc-950/60 backdrop-blur-xl border-white/10 rounded-2xl max-w-2xl mx-auto'>
-                  <Clock className='h-16 w-16 mx-auto mb-4 text-white/20' />
-                  <h4 className='text-xl font-bold text-white mb-2'>
-                    No cabs available
-                  </h4>
-                  <p className='text-white/50 mb-6'>
-                    Try different timings or routes
-                  </p>
-                  <button className='px-8 py-3 bg-emerald/20 text-emerald-300 border border-emerald/30 rounded-xl font-semibold hover:bg-emerald/30 transition-all'>
-                    Refresh
-                  </button>
+                <Card className='p-12 text-center bg-zinc-950/60 border-white/10 rounded-2xl'>
+                  <Clock className='h-12 w-12 mx-auto mb-4 text-zinc-700' />
+                  <h4 className='text-lg font-bold text-white'>No cabs available</h4>
+                  <p className='text-zinc-500 text-sm'>Try different timings or routes</p>
                 </Card>
               )}
             </div>
           </div>
-        )
+        );
 
       case 3:
         return (
@@ -1232,212 +1196,192 @@ export const BookingSteps: React.FC = () => {
         )
 
       case 4:
+        // Calculate Summary Details
+        const baseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
+        const gst = baseFare * 0.05; // 5% GST
+        const serviceFee = 40; // Fixed Service Fee
+
         return (
-          <div className='max-w-3xl mx-auto bg-gradient-to-b from-zinc-900 to-black rounded-2xl border border-white/10 shadow-xl p-6 sm:p-8'>
-            <h3 className='text-2xl font-semibold text-center mb-6 text-white'>
-              Enter Passenger Details
-            </h3>
+          <div className='max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
 
-            <div className='space-y-6'>
-              {passengers.map((passenger, idx) => (
-                <div
-                  key={passenger.seatNumber}
-                  className='border border-white/10 bg-white/5 rounded-xl p-5 sm:p-6 shadow-sm'
-                >
-                  <div className='flex items-center justify-between mb-4'>
-                    <h4 className='font-semibold text-white'>
-                      Seat {passenger.seatNumber}
-                    </h4>
-                    <Badge className='bg-emerald-500/20 text-emerald-200 border-emerald-400/50'>
-                      ₹{passenger.fare}
-                    </Badge>
+            {/* 1. Booking & Fare Summary Section */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              {/* Left: Journey Info */}
+              <div className='md:col-span-2 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6'>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Booking Summary</p>
+                    <h3 className='text-xl font-bold text-white flex items-center gap-2'>
+                      {selectedSeats.length} Seats Reserved
+                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5">
+                        {selectedSeats.join(", ")}
+                      </Badge>
+                    </h3>
+                    <p className="text-zinc-500 text-sm mt-2 flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      {passengers[0]?.pickupAddress || "Selected Route"} → {passengers[0]?.dropAddress || "Destination"}
+                    </p>
                   </div>
+                </div>
+              </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div>
-                      <label className='block mb-1 text-xs font-medium text-white/60'>
-                        Name
-                      </label>
-                      <input
-                        type='text'
-                        placeholder='Name'
-                        value={passenger.name}
-                        onChange={(e) => {
-                          const newPax = [...passengers]
-                          newPax[idx].name = e.target.value
-                          setPassengers(newPax)
-                        }}
-                        className='border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70'
-                      />
+              {/* Right: Fare Breakdown */}
+              <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
+                {/* <div className="absolute top-0 right-0 p-2 opacity-10">
+                  <CreditCard className="h-12 w-12 text-emerald-500" />
+                </div> */}
+                <div className="space-y-2 relative z-10">
+                  <div className="flex justify-between text-xs text-zinc-400">
+                    <span>Base Fare</span>
+                    <span className="text-white font-medium">₹{baseFare.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-zinc-400">
+                    <span>GST (5%)</span>
+                    <span className="text-white font-medium">₹{gst.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-zinc-400">
+                    <span>Service Fee</span>
+                    <span className="text-white font-medium">₹{serviceFee.toFixed(2)}</span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end">
+                    <span className="text-sm font-bold text-emerald-400">Total Fare</span>
+                    <span className="text-sm font-black text-white">₹{totalFare}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Passenger Details Section */}
+            <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="h-8 w-1 bg-emerald-500 rounded-full" />
+                <h3 className='text-xl font-bold text-white'>Passenger Details</h3>
+              </div>
+
+              <div className='space-y-8'>
+                {passengers.map((passenger, idx) => (
+                  <div
+                    key={passenger.seatNumber}
+                    className='group relative border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors rounded-2xl p-6'
+                  >
+                    <div className='absolute -top-3 left-6 px-3 py-1 bg-zinc-900 border border-white/10 rounded-full'>
+                      <span className='text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
+                        Seat {passenger.seatNumber}
+                      </span>
                     </div>
 
-                    <div>
-                      <label className='block mb-1 text-xs font-medium text-white/60'>
-                        Age
-                      </label>
-                      <input
-                        type='number'
-                        min={1}
-                        placeholder='Age'
-                        value={passenger.age}
-                        onChange={(e) => {
-                          const newPax = [...passengers]
-                          newPax[idx].age = Number(e.target.value)
-                          setPassengers(newPax)
-                        }}
-                        className='border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70'
-                      />
-                    </div>
-
-                    <div>
-                      <label className='block mb-1 text-xs font-medium text-white/60'>
-                        Gender
-                      </label>
-                      <select
-                        value={passenger.gender}
-                        onChange={(e) => {
-                          const newPax = [...passengers]
-                          newPax[idx].gender = e.target.value
-                          setPassengers(newPax)
-                        }}
-                        className='border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70'
-                      >
-                        <option value=''>Select Gender</option>
-                        <option value='male'>Male</option>
-                        <option value='female'>Female</option>
-                        <option value='other'>Other</option>
-                      </select>
-                    </div>
-
-                    {/* Uncomment for  dynamic address*/}
-                    {/* <div>
-                      <label className="block mb-1 text-xs font-medium text-white/60">
-                        Pickup Address
-                      </label>
-                      {isLoaded ? (
-                        <StandaloneSearchBox
-                          onLoad={(ref) => {
-                            pickupBoxRef.current = ref;
-                          }}
-                          onPlacesChanged={handlePickupChanged}
-                        >
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
+                      <div className="md:col-span-2">
+                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                          Full Name
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
                           <input
-                            type="text"
-                            placeholder="Pickup Address"
-                            value={passenger.pickupAddress}
+                            type='text'
+                            placeholder='Enter passenger name'
+                            value={passenger.name}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].name = e.target.value;
+                              setPassengers(newPax);
+                            }}
+                            className='w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all'
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                          Age & Gender
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type='number'
+                            placeholder='Age'
+                            value={passenger.age || ''}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].age = Number(e.target.value);
+                              setPassengers(newPax);
+                            }}
+                            className='w-16 py-3 bg-black/40 border border-white/10 rounded-xl text-center text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
+                          />
+                          <select
+                            value={passenger.gender}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].gender = e.target.value;
+                              setPassengers(newPax);
+                            }}
+                            className='flex-1 px-3 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none'
+                          >
+                            <option value=''>Gender</option>
+                            <option value='male'>Male</option>
+                            <option value='female'>Female</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                            Pickup Point
+                          </label>
+                          <select
+                            value={passenger.pickupAddress || ''}
                             onChange={(e) => {
                               const newPax = [...passengers];
                               newPax[idx].pickupAddress = e.target.value;
                               setPassengers(newPax);
-                              setPickupAddress(e.target.value);
                             }}
-                            className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
-                          />
-                        </StandaloneSearchBox>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="Pickup Address"
-                          disabled
-                          className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
-                        />
-                      )}
-                    </div> */}
-                    <div>
-                      <label className='block mb-1 text-xs font-medium text-white/60'>
-                        Pickup Address
-                      </label>
-                      <select
-                        value={passenger.pickupAddress || ''}
-                        onChange={(e) => {
-                          const newPax = [...passengers]
-                          newPax[idx].pickupAddress = e.target.value
-                          setPassengers(newPax)
-                        }}
-                        className='border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70'
-                      >
-                        <option value=''>Select Pickup</option>
-                        {pickupOptions.map((point) => (
-                          <option value={point.name}>
-                            {point.name} ({point.address})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className='block mb-1 text-xs font-medium text-white/60'>
-                        Drop Address
-                      </label>
-                      <select
-                        value={passenger.dropAddress || ''}
-                        onChange={(e) => {
-                          const newPax = [...passengers]
-                          newPax[idx].dropAddress = e.target.value
-                          setPassengers(newPax)
-                        }}
-                        className='border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70'
-                      >
-                        <option value=''>Select Drop</option>
-                        {dropOptions.map((point) => (
-                          <option value={point.name}>
-                            {point.name} ({point.address})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* <div>
-                      <label className="block mb-1 text-xs font-medium text-white/60">
-                        Drop Address
-                      </label>
-                      {isLoaded ? (
-                        <StandaloneSearchBox
-                          onLoad={(ref) => {
-                            dropBoxRef.current = ref;
-                          }}
-                          onPlacesChanged={handleDropChanged}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Drop Address"
-                            value={passenger.dropAddress}
+                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
+                          >
+                            <option value=''>Select Pickup</option>
+                            {pickupOptions.map((point) => (
+                              <option key={point.name} value={point.name}>{point.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                            Drop Point
+                          </label>
+                          <select
+                            value={passenger.dropAddress || ''}
                             onChange={(e) => {
                               const newPax = [...passengers];
                               newPax[idx].dropAddress = e.target.value;
                               setPassengers(newPax);
-                              setDropAddress(e.target.value);
                             }}
-                            className="border border-white/15 bg-black/40 px-3 py-2.5 rounded-lg w-full text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-emerald-400/70"
-                          />
-                        </StandaloneSearchBox>
-                      ) : (
-                        <input
-                          type="text"
-                          placeholder="Drop Address"
-                          disabled
-                          className="border border-white/10 bg-zinc-900 px-3 py-2.5 rounded-lg w-full text-sm text-white/40"
-                        />
-                      )}
-                    </div> */}
+                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
+                          >
+                            <option value=''>Select Drop</option>
+                            {dropOptions.map((point) => (
+                              <option key={point.name} value={point.name}>{point.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className='flex justify-center mt-6'>
-              <Button
-                disabled={passengers.some(
-                  (p) => !p.name || !p.age || !p.gender,
-                )}
-                onClick={nextStep}
-                className='px-10 py-3 text-base rounded-full bg-emerald-500 text-black font-semibold shadow-lg shadow-emerald-500/25 hover:bg-emerald-400'
-              >
-                Continue
-              </Button>
+              {/* Action Button */}
+              {/* <div className='flex justify-end mt-10 pt-6 border-t border-white/5'>
+                <Button
+                  disabled={passengers.some((p) => !p.name || !p.age || !p.gender)}
+                  onClick={nextStep}
+                  className='group relative px-12 py-6 rounded-2xl bg-emerald-500 text-black font-black text-lg overflow-hidden transition-all hover:pr-14 hover:bg-emerald-400 disabled:opacity-30'
+                >
+                  <span className="relative z-10">CONTINUE</span>
+                  <ArrowRight className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all h-5 w-5" />
+                </Button>
+              </div> */}
             </div>
           </div>
-        )
+        );
 
       case 5:
         return (
