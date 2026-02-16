@@ -4,39 +4,57 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Lock, Eye, EyeOff, Car } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Phone, MessageSquare, Car } from "lucide-react"; // Replaced Lock icons with MessageSquare
+import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 
 const Login = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const { sendOtp, verifyOtp } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleSendOtp = async () => {
+    try {
+      const response = await sendOtp(phone);
+      if (response.success) {
+        setOtpSent(true);
+        toast.success("OTP sent successfully", {
+          description: `A verification code has been sent to ${phone}`,
+        });
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send OTP", {
+        description: "Please check your phone number and try again.",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const loginResponse: any = await login(phone, password);
-      if (!loginResponse.success) {
-        toast.error(loginResponse?.message || "Login failed", {
-          description: "Login failed. Please check your credentials and try again.",
-          duration: 4000,
-          className: "toast-error",
-        });
-        return;
-      } else {
-        window.location.href = "/";
-      }
+
+    // Flow 1: Request OTP
+    if (!otpSent) {
+      await handleSendOtp();
       return;
+    }
+
+    // Flow 2: Verify OTP
+    try {
+      const loginResponse = await verifyOtp(phone, otp);
+      if (loginResponse.success) {
+        navigate('/');
+      } else {
+        toast.error(loginResponse?.message || "Verification failed");
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed", {
-        description: "Login failed. Please check your credentials and try again.",
+        description: "The OTP entered is incorrect or has expired.",
         duration: 4000
       });
-      // alert(err.response?.data?.message || "Login failed");
     }
   };
 
@@ -53,10 +71,12 @@ const Login = () => {
                 Welcome
               </Badge>
               <CardTitle className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                Sign in to your account
+                {otpSent ? "Verify OTP" : "Sign in to your account"}
               </CardTitle>
               <p className="text-sm text-white/60 mt-2">
-                Enter your credentials to access your account and manage your rides.
+                {otpSent 
+                  ? "Enter the code sent to your mobile device to continue." 
+                  : "Enter your phone number to receive a secure login code."}
               </p>
             </CardHeader>
             <CardContent className="pt-2">
@@ -72,53 +92,53 @@ const Login = () => {
                     <Input
                       id="phone"
                       type="tel"
+                      disabled={otpSent}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="Enter your phone number"
-                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                      className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70 disabled:opacity-50"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs text-white/70">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
-                      <Lock className="h-4 w-4" />
-                    </span>
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="pl-9 pr-10 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+                {otpSent && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <Label htmlFor="otp" className="text-xs text-white/70">
+                      One-Time Password
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
+                        <MessageSquare className="h-4 w-4" />
+                      </span>
+                      <Input
+                        id="otp"
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        className="pl-9 bg-black/40 border-white/20 text-white placeholder:text-white/30 focus-visible:ring-emerald-400/70"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setOtp(""); }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-emerald-400 hover:text-emerald-300 uppercase tracking-wider font-bold"
+                      >
+                        Change
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="flex items-center justify-between text-xs text-white/60">
-                  <span>Use the phone number you registered with.</span>
+                  <span>{otpSent ? "Code expires in 5 minutes." : "Use the phone number you registered with."}</span>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-2.5"
+                  className="w-full rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold py-2.5 transition-all"
                 >
-                  Sign In
+                  {otpSent ? "Verify & Sign In" : "Send Login Code"}
                 </Button>
 
                 <div className="text-center text-xs text-white/60">
@@ -134,7 +154,7 @@ const Login = () => {
             </CardContent>
           </Card>
 
-          {/* Right: Info */}
+          {/* Right: Info (Remains Unchanged) */}
           <div className="hidden md:flex flex-col gap-4">
             <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-6 shadow-xl">
               <div className="flex items-center gap-3 mb-3">

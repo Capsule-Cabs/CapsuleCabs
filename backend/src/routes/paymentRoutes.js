@@ -74,7 +74,7 @@ const createOrder = asyncHandler(async (req, res) => {
         "type": "PG_CHECKOUT",
         "message": "Collecting payment for ticket booking",
         "merchantUrls": {
-          "redirectUrl": "http://localhost:8080/booking-status"
+          "redirectUrl": config?.phonePe_redirectURL
         }
       }
     };
@@ -188,7 +188,7 @@ const createOrderForSDK = asyncHandler(async (req, res) => {
 
 const fetchPaymentStatus = asyncHandler(async (req, res) => {
   try {
-    const { merchantOrderId } = req?.body;
+    const { merchantOrderId } = req?.params;
     if(!merchantOrderId) {
       return res.status(500).json(
         ApiResponse.error("Merchant OrderId is required")
@@ -243,7 +243,7 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.post('/authToken', protect, fetchOAuthToken);
 router.post('/createOrder', createOrder);
-router.post('/orderStatus', fetchPaymentStatus);
+router.get('/orderStatus/:merchantOrderId', fetchPaymentStatus);
 
 router.post('/createOrderForSDK', createOrderForSDK);
 

@@ -14,7 +14,7 @@ import {
   X,
   Loader2,
 } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -25,6 +25,7 @@ import { AuthContext } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import phonepe_image from '@/assets/phonepe_image.png'
 import fetchRoutes from '@/services/bookingFunctions'
+import verifyPaymentDetails from '@/services/paymentFunctions'
 
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
@@ -123,7 +124,8 @@ const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
 }
 
 export const BookingSteps: React.FC = () => {
-  const location = useLocation()
+  const location = useLocation();
+  const navigate = useNavigate();
   const preFilledData = location.state
   const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -501,7 +503,8 @@ export const BookingSteps: React.FC = () => {
       })
 
       if (txnResult.status === 'SUCCESS') {
-        // verifyPaymentStatus(merchantOrderId);
+        // const paymentResponse = await verifyPaymentDetails(merchantOrderId);
+        navigate('/booking-status');
         toast.success('Payment was successfull.')
       } else {
         toast.error('Payment was not successfull.')

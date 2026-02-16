@@ -522,7 +522,7 @@ const loginWithOTP = asyncHandler(async (req, res) => {
   const otp = user.generatePhoneVerificationToken();
   await user.save({  });
 
-  await smsService.sendOTP(phone, otp);
+  // await smsService.sendOTP(phone, otp);
 
   res.json({
     success: true,

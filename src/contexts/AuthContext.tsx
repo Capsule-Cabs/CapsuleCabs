@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log('USER: ', data);
         } catch (error) {
           clearTokens();
+          setUser(null);
         }
       }
       setIsLoading(false);

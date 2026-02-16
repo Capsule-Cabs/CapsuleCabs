@@ -6,6 +6,7 @@ export default {
     client_id: process.env.PHONE_PE_CLIENT_ID,
     client_version: process.env.PHONE_PE_VERSION,
     client_secret: process.env.PHONE_PE_CLIENT_SECRET,
+    phonePe_redirectURL: process.env.PHONE_PE_REDIRECT_URL,
     sms_api_key: process.env.DLT_API_KEY,
     trip_confirm_key: process.env.CPSLGO_KEY,
     trip_confirm_value: process.env.CPSLGO_VALUE,

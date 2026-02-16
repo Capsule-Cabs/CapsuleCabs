@@ -113,7 +113,7 @@ const AVAILABLE_CITIES = [
 ];
 
 const Index = () => {
-  const { user, isAuthenticated } = useContext(AuthContext)
+  const { user, isAuthenticated, isLoading } = useContext(AuthContext)
   const navigate = useNavigate();
   const [searchData, setSearchData] = useState({
     from: "",
@@ -138,6 +138,10 @@ const Index = () => {
     if (type === 'to') return cityId === searchData.from;
     return false;
   };
+
+  if (isLoading) {
+    return <div className="bg-black h-screen flex items-center justify-center text-white">Loading...</div>;
+  }
 
   if (user?.role === 'driver') {
     return <DriverDashboard />
