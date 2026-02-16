@@ -133,9 +133,6 @@ const createOrderForSDK = asyncHandler(async (req, res) => {
       "paymentFlow": {
         "type": "PG_CHECKOUT",
         "message": "Collecting payment for ticket booking",
-        "merchantUrls": {
-          "redirectUrl": "http://localhost:8080/booking-status"
-        }
       }
     };
 
