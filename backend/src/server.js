@@ -29,6 +29,7 @@ import paymentRoutes from './routes/paymentRoutes.js'
 import notificationRoutes from './routes/notificationRoutes.js'
 import routeOptimizationRoutes from './routes/routeOptimizationRoute.js'
 import driverBookingRoutes from './routes/driverBookingsRoute.js'
+import smsRoutes from './routes/sms.route.js'
 
 // Import socket handlers
 import socketHandler from './sockets/socketHandler.js'
@@ -169,6 +170,7 @@ class Server {
     this.app.use('/api/v1/notifications', notificationRoutes)
     this.app.use('/api/v1/route-optimization', routeOptimizationRoutes)
     this.app.use('/api/v1/driver', driverBookingRoutes)
+    this.app.use('/api/v1/message', smsRoutes)
 
     // API documentation
     this.app.get('/api/v1', (req, res) => {

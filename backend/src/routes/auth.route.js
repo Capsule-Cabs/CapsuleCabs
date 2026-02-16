@@ -11,6 +11,7 @@ import { sendSMS } from '../services/notificationService.js';
 import { cacheService } from '../config/redis.js';
 import { info, error as _error } from '../utils/logger.js';
 import asyncHandler from 'express-async-handler';
+import smsService from '../services/sms.service.js';
 
 // Rate limiting for sensitive auth operations
 const authLimiter = rateLimit({
@@ -521,7 +522,7 @@ const loginWithOTP = asyncHandler(async (req, res) => {
   const otp = user.generatePhoneVerificationToken();
   await user.save({  });
 
-  // await sendSMS(phone, `Your OTP for Seat Selekta Pro login is: ${otp}. It is valid for 10 minutes.`);
+  await smsService.sendOTP(phone, otp);
 
   res.json({
     success: true,

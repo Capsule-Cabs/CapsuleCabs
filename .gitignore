@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 backend/.env
+backend/.api/apis/fast2sms/node_modules
 .env
 
 # Editor directories and files
