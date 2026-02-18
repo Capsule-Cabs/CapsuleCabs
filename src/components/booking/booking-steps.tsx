@@ -471,6 +471,23 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
+  const getBookingPayload = () => {
+    return {
+      routeId: selectedCab,
+      travelDate: format(selectedDate!, "yyyy-MM-dd"),
+      passengers: passengers.map((p) => ({
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        seatNumber: p.seatNumber,
+        fare: p.fare,
+        pickupPoint: p.pickupAddress,
+        dropPoint: p.dropAddress,
+      })),
+      paymentMethod: "upi",
+    };
+  };
+
   const initiatePaymentFlow = () => {
     setShowPaymentModal(true)
   }
@@ -487,14 +504,21 @@ export const BookingSteps: React.FC = () => {
   const startMobilePayment = async () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
+    const bookingPayload = getBookingPayload();
     const apiRes = await api.post('/payments/createOrderForSdk', {
       amount: totalAmount,
       merchantOrderId,
       phone: user?.phone,
+      bookingPayload
     })
     const { request } = apiRes.data.data
     const decodedRequest = JSON.parse(atob(request))
     console.log('SDK RESPONSE: ', request)
+    localStorage.setItem("pending_booking", JSON.stringify({
+      ...bookingPayload,
+      merchantOrderId,
+      totalFare
+    }));
     try {
       const txnResult = await PhonePePaymentPlugin.startTransaction({
         request: decodedRequest,
@@ -521,24 +545,21 @@ export const BookingSteps: React.FC = () => {
     try {
       const totalAmount = totalFare
       const merchantOrderId = generateStrongOrderId()
+      const bookingPayload = getBookingPayload();
       const response = await api.post('/payments/createOrder', {
         amount: totalAmount,
         merchantOrderId,
         phone: user?.phone,
-      })
+        bookingPayload
+      });
+
+      localStorage.setItem("pending_booking", JSON.stringify({
+        ...bookingPayload,
+        merchantOrderId,
+        totalFare
+      }));
 
       if (response?.data?.data?.redirectUrl) {
-        const sessionData = {
-          selectedCab,
-          selectedSeats,
-          passengers,
-          selectedDate: selectedDate?.toISOString(),
-          merchantOrderId,
-          totalFare,
-        }
-
-        localStorage.setItem('pending_booking', JSON.stringify(sessionData))
-
         window.location.href = response?.data?.data?.redirectUrl
       } else {
         throw new Error('Payment URL not received')

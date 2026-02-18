@@ -25,7 +25,8 @@ import authRoutes from './routes/auth.route.js'
 import userRoutes from './routes/userRoutes.js'
 import routeRoutes from './routes/circuit.route.js'
 import bookingRoutes from './routes/bookingRoutes.js'
-import paymentRoutes from './routes/paymentRoutes.js'
+import paymentRoutes from './routes/phonePePaymentRoute.js'
+import zohoPayments from './routes/zohoPaymentRoute.js'
 import notificationRoutes from './routes/notificationRoutes.js'
 import routeOptimizationRoutes from './routes/routeOptimizationRoute.js'
 import driverBookingRoutes from './routes/driverBookingsRoute.js'
@@ -166,7 +167,8 @@ class Server {
     this.app.use('/api/v1/users', userRoutes)
     this.app.use('/api/v1/routes', routeRoutes)
     this.app.use('/api/v1/bookings', bookingRoutes)
-    this.app.use('/api/v1/payments', paymentRoutes)
+    this.app.use('/api/v1/phonePePayments', paymentRoutes)
+    this.app.use('/api/v1/zohoPayments', zohoPayments)
     this.app.use('/api/v1/notifications', notificationRoutes)
     this.app.use('/api/v1/route-optimization', routeOptimizationRoutes)
     this.app.use('/api/v1/driver', driverBookingRoutes)

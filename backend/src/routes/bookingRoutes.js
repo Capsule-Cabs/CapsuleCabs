@@ -78,19 +78,20 @@ const lockSeats = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Create new booking
- * @route   POST /api/v1/bookings
- * @access  Private
+ * Shared logic to create booking without requiring a Request/Response context
+ * @param {Object} user - Full User document from DB
+ * @param {Object} payload - The booking data (routeId, passengers, etc)
+ * @param {String} paymentId - The merchantOrderId
  */
-const createBooking = asyncHandler(async (req, res) => {
-  const { routeId, travelDate, passengers, paymentMethod } = req.body;
-  const userId = req.user._id;
+export const createInternalBooking = async (user, payload, paymentId) => {
+  const { routeId, travelDate, passengers, paymentMethod } = payload;
+  const userId = user._id;
 
   const seatNumbers = passengers.map(p => p.seatNumber);
 
   const route = await Route.findById(routeId);
   if (!route || route.status !== 'active') {
-    return res.status(404).json(ApiResponse.error('Route not found'));
+    throw new Error('Route not found or inactive');
   }
 
   const totalAmount = passengers.reduce((s, p) => s + p.fare, 0);
@@ -98,9 +99,10 @@ const createBooking = asyncHandler(async (req, res) => {
   const booking = new Booking({
     user: {
       userId,
-      phone: req.user.phone,
-      email: req.user.email,
-      name: req.user.fullName
+      phone: user.phone,
+      email: user.email,
+      // Map firstName/lastName to the single 'name' field in Booking model
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Passenger'
     },
     route: {
       routeId,
@@ -115,19 +117,29 @@ const createBooking = asyncHandler(async (req, res) => {
       departureTime: route.schedule[0].departureTime,
       estimatedArrivalTime: route.schedule[0].arrivalTime
     },
-    passengers,
+    passengers: passengers.map(p => ({
+      name: p.name,
+      age: p.age,
+      gender: p.gender,
+      seatNumber: p.seatNumber,
+      fare: p.fare,
+      pickupPoint: p.pickupPoint, // Ensure frontend sends 'pickupPoint'
+      dropPoint: p.dropPoint       // Ensure frontend sends 'dropPoint'
+    })),
     payment: {
       totalAmount,
       baseFare: totalAmount,
       paymentMethod,
       status: 'completed',
-      paidAt: new Date()
+      paidAt: new Date(),
+      paymentId
     },
     status: 'confirmed'
   });
 
   await booking.save();
 
+  // Handle seat confirmation/locking
   try {
     await seatLockingService.confirmBooking(
       routeId,
@@ -136,20 +148,26 @@ const createBooking = asyncHandler(async (req, res) => {
       userId,
       booking.bookingId
     );
-
-    res.status(201).json(ApiResponse.success({ bookingId: booking.bookingId }));
-
+    return booking;
   } catch (err) {
+    // Cleanup if seat confirmation fails
     await Booking.deleteOne({ _id: booking._id });
-
-    await seatLockingService.releaseSeats(
-      routeId,
-      travelDate,
-      seatNumbers,
-      userId
-    );
-
+    await seatLockingService.releaseSeats(routeId, travelDate, seatNumbers, userId);
     throw err;
+  }
+};
+
+/**
+ * @desc    Create new booking
+ * @route   POST /api/v1/bookings
+ * @access  Private
+ */
+const createBooking = asyncHandler(async (req, res) => {
+  try {
+    const booking = await createInternalBooking(req.user, req.body, req.body.paymentId);
+    res.status(201).json(ApiResponse.success({ bookingId: booking.bookingId }));
+  } catch (error) {
+    res.status(400).json(ApiResponse.error(error.message));
   }
 });
 
