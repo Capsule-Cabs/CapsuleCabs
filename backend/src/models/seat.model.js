@@ -152,6 +152,53 @@ seatAvailabilitySchema.methods.confirmBooking = async function(seatNumbers, user
   return { success: true };
 };
 
+// models/seat.model.js
+
+seatAvailabilitySchema.statics.syncSegmentAvailability = async function(params, session) {
+  const { tripId, bStart, bEnd, travelDate, seatNumbers, userId, bookingId, status } = params;
+  
+  const Route = mongoose.model('Route');
+  const allTripRoutes = await Route.find({ tripId }).session(session);
+
+  // 1. Identify which routes physically overlap
+  const overlappingRoutes = allTripRoutes.filter(r => 
+    Math.max(bStart, r.segmentStartOrder) < Math.min(bEnd, r.segmentEndOrder)
+  );
+
+  for (const route of overlappingRoutes) {
+    // 2. CHECK & INITIALIZE: This ensures the document exists even if no one searched for it yet
+    let availability = await this.findOne({ 
+      routeId: route._id, 
+      travelDate: new Date(travelDate) 
+    }).session(session);
+
+    if (!availability) {
+      // Use your existing initialization method
+      availability = await this.initializeForRoute(route._id, new Date(travelDate), route);
+    }
+
+    // 3. APPLY STATUS: Now that we are sure the doc exists, update it
+    await this.updateOne(
+      { 
+        _id: availability._id,
+        "seatsAvailable.seatNumber": { $in: seatNumbers }
+      },
+      {
+        $set: {
+          "seatsAvailable.$[elem].status": status,
+          "seatsAvailable.$[elem].bookedBy": userId,
+          "seatsAvailable.$[elem].bookingId": bookingId,
+          "seatsAvailable.$[elem].bookedAt": new Date()
+        }
+      },
+      {
+        arrayFilters: [{ "elem.seatNumber": { $in: seatNumbers } }],
+        session
+      }
+    );
+  }
+};
+
 // Method to release locks
 seatAvailabilitySchema.methods.releaseLocks = async function(seatNumbers, userId = null) {
   let releasedCount = 0;

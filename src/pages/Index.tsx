@@ -110,6 +110,7 @@ const AVAILABLE_CITIES = [
   { id: "agra", name: "Agra" },
   { id: "delhi", name: "Delhi" },
   { id: "jaipur", name: "Jaipur" },
+  { id: "mathura", name: "Mathura" }
 ];
 
 const Index = () => {

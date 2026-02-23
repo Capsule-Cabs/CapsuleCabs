@@ -2,7 +2,7 @@ import api from './api';
 
 const verifyPaymentDetails = async (merchantOrderId: string): Promise<any | null> => {
     try {
-        const response = await api.get<any>(`/payments/orderStatus/${merchantOrderId}`);
+        const response = await api.get<any>(`/phonePePayments/orderStatus/${merchantOrderId}`);
         
         if (response.data.success) {
             return response.data;

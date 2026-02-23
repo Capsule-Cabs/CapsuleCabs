@@ -505,7 +505,7 @@ export const BookingSteps: React.FC = () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
     const bookingPayload = getBookingPayload();
-    const apiRes = await api.post('/payments/createOrderForSdk', {
+    const apiRes = await api.post('/phonePePayments/createOrderForSdk', {
       amount: totalAmount,
       merchantOrderId,
       phone: user?.phone,
@@ -546,7 +546,7 @@ export const BookingSteps: React.FC = () => {
       const totalAmount = totalFare
       const merchantOrderId = generateStrongOrderId()
       const bookingPayload = getBookingPayload();
-      const response = await api.post('/payments/createOrder', {
+      const response = await api.post('/phonePePayments/createOrder', {
         amount: totalAmount,
         merchantOrderId,
         phone: user?.phone,

@@ -8,6 +8,19 @@ const routeSchema = new Schema({
     uppercase: true,
     match: [/^[A-Z0-9-]+$/, 'Route code must contain only uppercase letters, numbers, and hyphens']
   },
+  tripId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  segmentStartOrder: { 
+    type: Number,
+    required: true
+  },
+  segmentEndOrder: {
+    type: Number,
+    required: true
+  },
   operator: {
     operatorId: {
       type: Schema.Types.ObjectId,

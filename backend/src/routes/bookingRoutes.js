@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { body, param, validationResult } from 'express-validator';
 import asyncHandler from 'express-async-handler';
 
@@ -77,86 +78,97 @@ const lockSeats = asyncHandler(async (req, res) => {
   }
 });
 
+
 /**
  * Shared logic to create booking without requiring a Request/Response context
  * @param {Object} user - Full User document from DB
  * @param {Object} payload - The booking data (routeId, passengers, etc)
  * @param {String} paymentId - The merchantOrderId
  */
+// bookingRoutes.js - UPDATED createInternalBooking
 export const createInternalBooking = async (user, payload, paymentId) => {
   const { routeId, travelDate, passengers, paymentMethod } = payload;
   const userId = user._id;
-
   const seatNumbers = passengers.map(p => p.seatNumber);
 
+  // 1. Initial Fetch
   const route = await Route.findById(routeId);
   if (!route || route.status !== 'active') {
     throw new Error('Route not found or inactive');
   }
 
   const totalAmount = passengers.reduce((s, p) => s + p.fare, 0);
+  const session = await mongoose.startSession();
 
-  const booking = new Booking({
-    user: {
-      userId,
-      phone: user.phone,
-      email: user.email,
-      // Map firstName/lastName to the single 'name' field in Booking model
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Passenger'
-    },
-    route: {
-      routeId,
-      routeCode: route.routeCode,
-      origin: route.origin.city,
-      destination: route.destination.city,
-      operatorName: route.operator.name,
-      vehicleNumber: route.vehicle.vehicleNumber
-    },
-    journey: {
-      travelDate: new Date(travelDate),
-      departureTime: route.schedule[0].departureTime,
-      estimatedArrivalTime: route.schedule[0].arrivalTime
-    },
-    passengers: passengers.map(p => ({
-      name: p.name,
-      age: p.age,
-      gender: p.gender,
-      seatNumber: p.seatNumber,
-      fare: p.fare,
-      pickupPoint: p.pickupPoint, // Ensure frontend sends 'pickupPoint'
-      dropPoint: p.dropPoint       // Ensure frontend sends 'dropPoint'
-    })),
-    payment: {
-      totalAmount,
-      baseFare: totalAmount,
-      paymentMethod,
-      status: 'completed',
-      paidAt: new Date(),
-      paymentId
-    },
-    status: 'confirmed'
-  });
-
-  await booking.save();
-
-  // Handle seat confirmation/locking
   try {
-    await seatLockingService.confirmBooking(
-      routeId,
+    session.startTransaction();
+
+    // 2. Create the Booking Document
+    const booking = new Booking({
+      user: {
+        userId,
+        phone: user.phone,
+        email: user.email,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Passenger'
+      },
+      route: {
+        routeId,
+        routeCode: route.routeCode,
+        origin: route.origin.city,
+        destination: route.destination.city,
+        operatorName: route.operator.name,
+        vehicleNumber: route.vehicle.vehicleNumber
+      },
+      journey: {
+        travelDate: new Date(travelDate),
+        departureTime: route.schedule[0].departureTime,
+        estimatedArrivalTime: route.schedule[0].arrivalTime
+      },
+      passengers: passengers.map(p => ({
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        seatNumber: p.seatNumber,
+        fare: p.fare,
+        pickupPoint: p.pickupPoint || p.pickupAddress,
+        dropPoint: p.dropPoint || p.dropAddress
+      })),
+      payment: {
+        totalAmount,
+        baseFare: totalAmount,
+        paymentMethod,
+        status: 'completed',
+        paidAt: new Date(),
+        paymentId
+      },
+      status: 'confirmed'
+    });
+
+    await booking.save({ session });
+
+    // 3. Sync Segments: Block seats for all overlapping routes of this trip
+    await SeatAvailability.syncSegmentAvailability({
+      tripId: route.tripId,
+      bStart: route.segmentStartOrder,
+      bEnd: route.segmentEndOrder, // Verify if your schema uses 'segmentEndOrder' or 'segmentEnd'
       travelDate,
       seatNumbers,
       userId,
-      booking.bookingId
-    );
+      bookingId: booking.bookingId,
+      status: 'booked'
+    }, session);
+
+    await session.commitTransaction();
     return booking;
+
   } catch (err) {
-    // Cleanup if seat confirmation fails
-    await Booking.deleteOne({ _id: booking._id });
-    await seatLockingService.releaseSeats(routeId, travelDate, seatNumbers, userId);
+    // If anything fails (like a database collision), rollback everything
+    await session.abortTransaction();
     throw err;
+  } finally {
+    session.endSession();
   }
 };
-
 /**
  * @desc    Create new booking
  * @route   POST /api/v1/bookings
@@ -335,7 +347,7 @@ const extendLock = asyncHandler(async (req, res) => {
 
   try {
     const result = await seatLockingService.extendSeatLock(userId, additionalMinutes);
-    
+
     res.status(200).json(
       ApiResponse.success(result, 'Seat lock extended successfully')
     );
@@ -382,7 +394,7 @@ const releaseLocks = asyncHandler(async (req, res) => {
  */
 
 const fetchBookings = asyncHandler(async (req, res) => {
-  const { routeId, travelDate, departureTime} = req?.query;
+  const { routeId, travelDate, departureTime } = req?.query;
   console.log('QUERY: ', req?.query);
   if (!routeId || !travelDate || !departureTime) {
     return res.status(400).json({

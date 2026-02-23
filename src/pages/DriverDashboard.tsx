@@ -25,7 +25,8 @@ interface PassengerDetail {
   gender: string
   pickupPoint: string
   dropPoint: string
-  fare: number
+  fare: number,
+  seatNumber: number,
 }
 
 interface DriverBooking {
@@ -324,29 +325,6 @@ const DriverDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Seat Info */}
-              <div className='space-y-3'>
-                <h3 className='text-sm font-semibold uppercase tracking-[0.15em] text-white/70'>
-                  Seat Information
-                </h3>
-                <div className='rounded-xl bg-white/5 border border-white/10 p-4'>
-                  <div className='flex flex-wrap gap-2'>
-                    {selectedBooking.seatNumbers.map((seat) => (
-                      <Badge
-                        key={seat}
-                        className='bg-emerald-500/20 border border-emerald-400/40 text-emerald-200'
-                      >
-                        Seat {seat}
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className='text-xs text-white/60 mt-3'>
-                    Booking IDs: {selectedBooking.allBookingIds.length} booking
-                    {selectedBooking.allBookingIds.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-
               {/* Passengers List */}
               <div className='space-y-3'>
                 <h3 className='text-sm font-semibold uppercase tracking-[0.15em] text-white/70'>
@@ -358,23 +336,36 @@ const DriverDashboard: React.FC = () => {
                       key={idx}
                       className='rounded-lg bg-white/5 border border-white/10 p-3 space-y-2'
                     >
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='flex items-center gap-2 flex-1'>
-                          <div className='h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center'>
-                            <UserIcon className='h-4 w-4 text-emerald-300' />
+                      <div className='flex items-start justify-between gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors'>
+                        <div className='flex items-center gap-3 flex-1'>
+                          {/* Avatar Icon */}
+                          <div className='h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/20'>
+                            <UserIcon className='h-5 w-5 text-emerald-400' />
                           </div>
-                          <div>
-                            <p className='font-semibold text-sm'>{pax.name}</p>
-                            <p className='text-xs text-white/60'>
-                              {pax.gender.charAt(0).toUpperCase() +
-                                pax.gender.slice(1)}
-                              , {pax.age} yrs
+
+                          {/* Identity Info */}
+                          <div className='min-w-0'>
+                            <div className='flex items-center gap-2 mb-0.5'>
+                              <p className='font-bold text-sm tracking-tight text-white truncate max-w-[120px]'>
+                                {pax.name}
+                              </p>
+                              <span className='px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase border border-emerald-500/20'>
+                                {pax.seatNumber}
+                              </span>
+                            </div>
+                            <p className='text-xs font-medium text-white/50 flex items-center gap-1'>
+                              {pax.gender.charAt(0).toUpperCase() + pax.gender.slice(1)} • {pax.age} yrs
                             </p>
                           </div>
                         </div>
-                        <p className='font-semibold text-sm'>
-                          ₹{pax.fare.toLocaleString()}
-                        </p>
+
+                        {/* Fare Section */}
+                        <div className='text-right shrink-0'>
+                          <p className='font-bold text-sm text-emerald-400'>
+                            ₹{pax.fare.toLocaleString()}
+                          </p>
+                          <p className='text-[10px] text-white/40 uppercase tracking-wider font-semibold'>Paid</p>
+                        </div>
                       </div>
                       <div className='grid sm:grid-cols-2 gap-2 text-xs'>
                         <div className='flex items-center gap-1 text-white/60'>

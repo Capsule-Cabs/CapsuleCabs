@@ -3,7 +3,7 @@ import logger from '../utils/logger.js';
 import mongoose from 'mongoose';
 
 class SeatLockingService {
-  DEFAULT_LOCK_MINUTES = 5;
+  DEFAULT_LOCK_MINUTES = 10;
 
   /**
    * ATOMIC seat lock - FIXED to allow re-locking own seats

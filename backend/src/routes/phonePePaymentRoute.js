@@ -40,8 +40,7 @@ const processSuccessfulPayment = async (merchantOrderId, statusData) => {
       } 
     },
     { new: true }
-  ).populate('user'); // <--- CRITICAL: Turns user ID into user Object
-
+  ).populate('user');
   // If record was already COMPLETED, fetch it with the user populated
   if (!paymentDoc) {
     return await PhonePePayment.findOne({ merchantOrderId }).populate('user');

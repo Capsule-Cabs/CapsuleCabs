@@ -53,6 +53,7 @@ router.get(
     const bookings = await Booking.find({
       "route.routeId": { $in: routeIds },
       "journey.travelDate": { $gte: start, $lt: end },
+      "status": "confirmed"
     })
       .populate("user.userId", "firstName lastName phone email")
       .sort({ "journey.departureTime": 1 });

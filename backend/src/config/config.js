@@ -16,5 +16,8 @@ export default {
     zoho_refresh_token: process.env.ZOHO_REFRESH_TOKEN,
     zoho_client_id: process.env.ZOHO_CLIENT_ID,
     zoho_client_secret: process.env.ZOHO_CLIENT_SECRET,
-    zoho_account_id: process.env.ZOHO_ACCOUNT_ID
+    zoho_account_id: process.env.ZOHO_ACCOUNT_ID,
+    trip_sequences: {
+        "AGRA-GUR-TRIP": ["Agra", "Mathura", "Gurugram"]
+    }
 }
