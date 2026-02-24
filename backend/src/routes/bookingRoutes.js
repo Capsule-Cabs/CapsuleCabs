@@ -87,7 +87,7 @@ const lockSeats = asyncHandler(async (req, res) => {
  */
 // bookingRoutes.js - UPDATED createInternalBooking
 export const createInternalBooking = async (user, payload, paymentId) => {
-  const { routeId, travelDate, passengers, paymentMethod } = payload;
+  const { routeId, travelDate, passengers, paymentMethod, email, phone } = payload;
   const userId = user._id;
   const seatNumbers = passengers.map(p => p.seatNumber);
 
@@ -141,6 +141,8 @@ export const createInternalBooking = async (user, payload, paymentId) => {
         paidAt: new Date(),
         paymentId
       },
+      bookingEmail: email,
+      bookingPhone: phone,
       status: 'confirmed'
     });
 
@@ -413,6 +415,48 @@ const fetchBookings = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, bookings });
 });
 
+/**
+ * @route   POST /api/v1/bookings/verify-ticket
+ * @desc    Verify QR and Check-in passenger
+ * @access  Private (Driver/Admin only)
+ */
+const verifyTicket = asyncHandler(async (req, res) => {
+  const { bookingId } = req.body;
+
+  // 1. Find the booking
+  const booking = await Booking.findOne({ bookingId });
+
+  if (!booking) {
+    return res.status(404).json(ApiResponse.error('Invalid Ticket: Booking not found', 404));
+  }
+
+  // 2. Status Check: Is it paid?
+  if (booking.status !== 'confirmed') {
+    return res.status(400).json(ApiResponse.error('Ticket is not valid (Unpaid or Cancelled)', 400));
+  }
+
+  // 3. Duplication Check: Is it already used?
+  if (booking.checkInStatus === 'checked_in') {
+    return res.status(400).json(
+      ApiResponse.error(`Ticket already scanned at ${booking.checkInTime.toLocaleTimeString()}`, 400)
+    );
+  }
+
+  // 4. Update Booking to 'Checked In'
+  booking.checkInStatus = 'checked_in';
+  booking.checkInTime = new Date();
+  booking.verifiedBy = req.user._id; // Track which driver scanned it
+  await booking.save();
+
+  // 5. Send back passenger info so driver can welcome them
+  res.status(200).json(ApiResponse.success({
+    passengerName: booking.passengers[0].name,
+    seats: booking.passengers.map(p => p.seatNumber).join(', '),
+    pickup: booking.passengers[0].pickupPoint,
+    drop: booking.passengers[0].dropPoint
+  }, 'Check-in Successful!'));
+});
+
 // Validation middleware
 const validateLockSeats = [
   body('routeId').isMongoId().withMessage('Invalid route ID'),
@@ -447,5 +491,6 @@ router.put('/:bookingId/cancel', [
 ], protect, handleValidationErrors, cancelBooking);
 router.put('/extend-lock', extendLock);
 router.delete('/lock', releaseLocks);
+router.post('/verify-ticket', protect, authorize('driver', 'admin'), verifyTicket);
 
 export default router;

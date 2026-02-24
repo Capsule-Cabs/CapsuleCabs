@@ -66,6 +66,8 @@ interface Passenger {
   fare: number
   pickupAddress?: string
   dropAddress?: string
+  email?: string;
+  phone?: string;
 }
 
 interface PickupPoint {
@@ -147,6 +149,8 @@ export const BookingSteps: React.FC = () => {
   const [dropOptions, setDropOptions] = useState<DropPoint[]>([])
   const [pickupAddress, setPickupAddress] = useState<string>('')
   const [dropAddress, setDropAddress] = useState<string>('')
+  const [globalPickup, setGlobalPickup] = useState("");
+  const [globalDrop, setGlobalDrop] = useState("");
 
   const pickupBoxRef = useRef<google.maps.places.SearchBox | null>(null)
   const dropBoxRef = useRef<google.maps.places.SearchBox | null>(null)
@@ -475,6 +479,8 @@ export const BookingSteps: React.FC = () => {
     return {
       routeId: selectedCab,
       travelDate: format(selectedDate!, "yyyy-MM-dd"),
+      email: passengers[0]?.email || "",
+      phone: passengers[0]?.phone || "",
       passengers: passengers.map((p) => ({
         name: p.name,
         age: p.age,
@@ -482,7 +488,7 @@ export const BookingSteps: React.FC = () => {
         seatNumber: p.seatNumber,
         fare: p.fare,
         pickupPoint: p.pickupAddress,
-        dropPoint: p.dropAddress,
+        dropPoint: p.dropAddress
       })),
       paymentMethod: "upi",
     };
@@ -1283,6 +1289,58 @@ export const BookingSteps: React.FC = () => {
               </div>
             </div>
 
+            {/* Global pickup/drop (shown once) */}
+            <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  Pickup Point
+                </label>
+                <select
+                  value={globalPickup || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setGlobalPickup(value);
+                    // sync to all passengers
+                    const updated = passengers.map((p) => ({ ...p, pickupAddress: value }));
+                    setPassengers(updated);
+                  }}
+                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                >
+                  <option value="">Select Pickup</option>
+                  {pickupOptions.map((point) => (
+                    <option key={point.name} value={point.name}>
+                      {point.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                  Drop Point
+                </label>
+                <select
+                  value={globalDrop || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setGlobalDrop(value);
+                    // sync to all passengers
+                    const updated = passengers.map((p) => ({ ...p, dropAddress: value }));
+                    setPassengers(updated);
+                  }}
+                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                >
+                  <option value="">Select Drop</option>
+                  {dropOptions.map((point) => (
+                    <option key={point.name} value={point.name}>
+                      {point.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+
             {/* 2. Passenger Details Section */}
             <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
               <div className="flex items-center gap-3 mb-8">
@@ -1355,7 +1413,7 @@ export const BookingSteps: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                             Pickup Point
@@ -1394,8 +1452,46 @@ export const BookingSteps: React.FC = () => {
                             ))}
                           </select>
                         </div>
-                      </div>
+                      </div> */}
+
                     </div>
+                    {idx === 0 && (
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                            Contact Phone
+                          </label>
+                          <input
+                            type="tel"
+                            maxLength={10}
+                            placeholder="Enter contact number"
+                            value={passenger.phone ?? ""}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].phone = e.target.value.replace(/\D/g, "").slice(0, 10);
+                              setPassengers(newPax);
+                            }}
+                            className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                            Contact Email
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="Enter email for ticket"
+                            value={passenger.email ?? ""}
+                            onChange={(e) => {
+                              const newPax = [...passengers];
+                              newPax[idx].email = e.target.value;
+                              setPassengers(newPax);
+                            }}
+                            className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                          />
+                        </div>
+                      </div>)}
                   </div>
                 ))}
               </div>
@@ -1554,7 +1650,8 @@ export const BookingSteps: React.FC = () => {
               (currentStep === 2 && !selectedCab) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some((p) => !p.name || !p.age || !p.gender))
+                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup ||
+                  !globalDrop) && (!passengers[0].phone || !passengers[0].email ))
             }
             className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed'
           >

@@ -46,7 +46,7 @@ class SmsService {
         numbers: customerNumber,
         variables: '{#AA#}|{#BB#}|{#CC#}|{#DD#}',
         variables_values: `${sourceCity}|${destinationCity}|${webLink}|${supportNumber}`,
-        flash: 1
+        flash: 0
       };
 
       const response = await axios.post(

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Schema, model } from 'mongoose';
 
 const bookingSchema = new Schema({
@@ -299,7 +300,22 @@ const bookingSchema = new Schema({
       enum: ['requested', 'acknowledged', 'fulfilled', 'unavailable'],
       default: 'requested'
     }
-  }]
+  }],
+  bookingPhone: {
+    type: String,
+    required: true
+  },
+  bookingEmail: {
+    type: String,
+    required: true
+  },
+  checkInStatus: {
+    type: String,
+    enum: ['pending', 'checked_in'],
+    default: 'pending'
+  },
+  checkInTime: { type: Date },
+  verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -317,17 +333,17 @@ bookingSchema.index({ 'payment.paymentId': 1 });
 bookingSchema.index({ createdAt: -1 });
 
 // Virtual for total passengers
-bookingSchema.virtual('totalPassengers').get(function() {
+bookingSchema.virtual('totalPassengers').get(function () {
   return this.passengers.length;
 });
 
 // Virtual for seat numbers
-bookingSchema.virtual('seatNumbers').get(function() {
+bookingSchema.virtual('seatNumbers').get(function () {
   return this.passengers.map(p => p.seatNumber);
 });
 
 // Pre-save hook to generate booking ID
-bookingSchema.pre('save', async function(next) {
+bookingSchema.pre('save', async function (next) {
   if (this.isNew && !this.bookingId) {
     // Generate booking ID: SB + YYYYMMDD + Random 6 digits
     const date = new Date();
@@ -335,7 +351,7 @@ bookingSchema.pre('save', async function(next) {
     const randomNum = Math.floor(100000 + Math.random() * 900000);
     this.bookingId = `SB${dateStr}${randomNum}`;
     console.log('Booking ID: ', this.bookingId);
-    
+
     // Ensure uniqueness
     const existingBooking = await this.constructor.findOne({ bookingId: this.bookingId });
     if (existingBooking) {
@@ -347,36 +363,36 @@ bookingSchema.pre('save', async function(next) {
 });
 
 // Method to check if booking can be cancelled
-bookingSchema.methods.canBeCancelled = function() {
+bookingSchema.methods.canBeCancelled = function () {
   if (this.status !== 'confirmed') {
     return { allowed: false, reason: 'Booking is not in confirmed status' };
   }
-  
+
   const now = new Date();
   const travelDateTime = new Date(this.journey.travelDate);
   const [hours, minutes] = this.journey.departureTime.split(':').map(Number);
   travelDateTime.setHours(hours, minutes);
-  
+
   const hoursUntilDeparture = (travelDateTime - now) / (1000 * 60 * 60);
-  
+
   if (hoursUntilDeparture < 2) {
     return { allowed: false, reason: 'Cannot cancel booking less than 2 hours before departure' };
   }
-  
+
   return { allowed: true, hoursUntilDeparture };
 };
 
 // Method to calculate cancellation fee
-bookingSchema.methods.calculateCancellationFee = function() {
+bookingSchema.methods.calculateCancellationFee = function () {
   const cancellationCheck = this.canBeCancelled();
-  
+
   if (!cancellationCheck.allowed) {
     return { refundAmount: 0, cancellationFee: this.payment.totalAmount };
   }
-  
+
   const hoursUntilDeparture = cancellationCheck.hoursUntilDeparture;
   let refundPercentage = 0;
-  
+
   if (hoursUntilDeparture >= 48) {
     refundPercentage = 90; // 10% cancellation fee
   } else if (hoursUntilDeparture >= 24) {
@@ -386,18 +402,18 @@ bookingSchema.methods.calculateCancellationFee = function() {
   } else {
     refundPercentage = 0; // 100% cancellation fee
   }
-  
+
   const refundAmount = Math.round((this.payment.totalAmount * refundPercentage) / 100);
   const cancellationFee = this.payment.totalAmount - refundAmount;
-  
+
   return { refundAmount, cancellationFee, refundPercentage };
 };
 
 // Method to update booking status
-bookingSchema.methods.updateStatus = async function(newStatus, reason = null) {
+bookingSchema.methods.updateStatus = async function (newStatus, reason = null) {
   const oldStatus = this.status;
   this.status = newStatus;
-  
+
   // Add modification record
   this.modifications.push({
     modifiedAt: new Date(),
@@ -408,19 +424,19 @@ bookingSchema.methods.updateStatus = async function(newStatus, reason = null) {
     },
     reason: reason
   });
-  
+
   return await this.save();
 };
 
 // Method to add passenger
-bookingSchema.methods.addPassenger = function(passengerData) {
+bookingSchema.methods.addPassenger = function (passengerData) {
   this.passengers.push(passengerData);
   this.payment.totalAmount += passengerData.fare;
   return this.save();
 };
 
 // Method to remove passenger
-bookingSchema.methods.removePassenger = function(seatNumber) {
+bookingSchema.methods.removePassenger = function (seatNumber) {
   const passengerIndex = this.passengers.findIndex(p => p.seatNumber === seatNumber);
   if (passengerIndex > -1) {
     const passenger = this.passengers[passengerIndex];
@@ -432,32 +448,32 @@ bookingSchema.methods.removePassenger = function(seatNumber) {
 };
 
 // Static method to find bookings by date range
-bookingSchema.statics.findByDateRange = function(startDate, endDate, status = null) {
+bookingSchema.statics.findByDateRange = function (startDate, endDate, status = null) {
   const query = {
     'journey.travelDate': {
       $gte: startDate,
       $lte: endDate
     }
   };
-  
+
   if (status) {
     query.status = status;
   }
-  
+
   return this.find(query).populate('user.userId route.routeId');
 };
 
 // Static method to get booking analytics
-bookingSchema.statics.getAnalytics = function(routeId, dateRange = null) {
+bookingSchema.statics.getAnalytics = function (routeId, dateRange = null) {
   const matchQuery = { 'route.routeId': routeId };
-  
+
   if (dateRange) {
     matchQuery['journey.travelDate'] = {
       $gte: dateRange.start,
       $lte: dateRange.end
     };
   }
-  
+
   return this.aggregate([
     { $match: matchQuery },
     {

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your CapsuleCabs Trip</title>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #ffffff;">
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #0b0b0b; border: 1px solid #1a1a1a; margin-top: 20px; border-radius: 12px; overflow: hidden;">
+
+    <tr>
+      <td align="center" style="padding: 35px 0; border-bottom: 2px solid #2fd395;">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: 1px;">CAPSULE <span style="color: #2fd395;">CABS</span></h1>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding: 30px 40px;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="60%" style="vertical-align: top; padding-right: 20px;">
+              <div style="background-color: rgba(157, 236, 117, 0.1); color: #2fd395; padding: 4px 12px; border-radius: 20px; display: inline-block; font-size: 11px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase;">
+                Booking Confirmed
+              </div>
+              
+              <div style="margin-bottom: 25px;">
+                <p style="color: #888888; font-size: 11px; text-transform: uppercase; margin: 0 0 5px 0; letter-spacing: 0.5px;">Booking ID</p>
+                <p style="color: #ffffff; font-size: 18px; font-weight: bold; margin: 0;">{{bookingId}}</p>
+              </div>
+
+              <div style="margin-bottom: 15px;">
+                <p style="color: #888888; font-size: 10px; text-transform: uppercase; margin: 0 0 5px 0;">Pickup from</p>
+                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 0;">{{origin}}</p>
+                <p style="color: #2fd395; font-size: 12px; margin: 4px 0 0 0;">{{pickupPoint}}</p>
+              </div>
+
+              <div style="margin-bottom: 25px;">
+                <p style="color: #888888; font-size: 10px; text-transform: uppercase; margin: 0 0 5px 0;">Dropping at</p>
+                <p style="color: #ffffff; font-size: 15px; font-weight: bold; margin: 0;">{{destination}}</p>
+                <p style="color: #2fd395; font-size: 12px; margin: 4px 0 0 0;">{{dropPoint}}</p>
+              </div>
+
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td width="50%" style="padding-right: 10px;">
+                    <p style="color: #888888; font-size: 10px; text-transform: uppercase; margin: 0 0 5px 0;">Departure</p>
+                    <p style="color: #ffffff; font-size: 13px; font-weight: bold; margin: 0;">{{departureTime}}</p>
+                  </td>
+                  <td width="50%">
+                    <p style="color: #888888; font-size: 10px; text-transform: uppercase; margin: 0 0 5px 0;">Travel Date</p>
+                    <p style="color: #ffffff; font-size: 13px; font-weight: bold; margin: 0;">{{travelDate}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+
+            <td width="40%" align="center" style="vertical-align: middle;">
+              <table border="0" cellpadding="0" cellspacing="0" style="background-color: #111111; border: 1px dashed #333333; border-radius: 12px;">
+                <tr>
+                  <td align="center" style="padding: 20px;">
+                    <img src="cid:qr-code" width="140" height="140" style="display: block; border-radius: 4px;" alt="Scan for Entry">
+                    
+                    <p style="color: #2fd395; font-size: 10px; font-weight: bold; margin: 15px 0 0 0; letter-spacing: 1px; text-transform: uppercase;">
+                      BOARDING QR
+                    </p>
+                    <p style="color: #555555; font-size: 9px; margin: 4px 0 0 0;">
+                      Verify with Driver
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding: 0 40px 30px 40px;">
+        <table width="100%" style="border-top: 1px solid #1a1a1a; padding-top: 25px;">
+          <tr>
+            <td style="vertical-align: top;">
+              <p style="color: #888888; font-size: 10px; text-transform: uppercase; margin: 0 0 8px 0;">Passenger & Seats</p>
+              <p style="color: #ffffff; font-size: 13px; margin: 0; line-height: 1.4;">{{passengerList}}</p>
+              <p style="color: #666666; font-size: 11px; margin: 10px 0 0 0;">Vehicle No: <span style="color: #ffffff;">{{vehicleNumber}}</span></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding: 25px 40px; background-color: #050505; text-align: center; border-top: 1px solid #1a1a1a;">
+        <div style="margin-bottom: 15px;">
+           <span style="color: #2fd395; font-size: 10px; font-weight: bold; letter-spacing: 1px; border: 1px solid #222; padding: 4px 10px; border-radius: 4px;">LIVE GPS TRACKING ENABLED</span>
+        </div>
+        <p style="margin: 0; color: #666666; font-size: 11px; line-height: 18px;">
+          Need assistance? Our support team is here 24/7.<br>
+          <a href="mailto:support@capsulecabs.com" style="color: #2fd395; text-decoration: none;">support@capsulecabs.com</a><br>
+          &copy; 2026 CapsuleCabs. Ride with comfort.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

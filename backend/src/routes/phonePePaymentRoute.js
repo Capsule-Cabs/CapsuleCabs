@@ -10,6 +10,8 @@ import PhonePePayment from '../models/payment.model.js';
 import User from '../models/user.model.js';
 import Booking from '../models/booking.model.js';
 import { createInternalBooking } from './bookingRoutes.js';
+import emailService from '../services/email.service.js';
+import smsService from '../services/sms.service.js';
 
 
 const { paymentUrl, client_id, client_version, client_secret } = config;
@@ -23,21 +25,21 @@ const router = Router();
 
 const processSuccessfulPayment = async (merchantOrderId, statusData) => {
   const phonePeStatus = statusData?.status || statusData?.state || statusData?.data?.state;
-  
+
   // 1. Map status to your internal enum
   let mappedStatus = (phonePeStatus === 'COMPLETED') ? 'SUCCESS' : (phonePeStatus === 'FAILED' ? 'FAILED' : 'PENDING');
 
   // 2. IDEMPOTENT UPDATE: Use .populate('user') to get full user details
   const paymentDoc = await PhonePePayment.findOneAndUpdate(
-    { 
-      merchantOrderId, 
-      status: { $ne: 'SUCCESS' } 
+    {
+      merchantOrderId,
+      status: { $ne: 'SUCCESS' }
     },
-    { 
-      $set: { 
-        status: mappedStatus, 
-        transactionId: statusData?.transactionId || statusData?.data?.transactionId 
-      } 
+    {
+      $set: {
+        status: mappedStatus,
+        transactionId: statusData?.transactionId || statusData?.data?.transactionId
+      }
     },
     { new: true }
   ).populate('user');
@@ -53,7 +55,7 @@ const processSuccessfulPayment = async (merchantOrderId, statusData) => {
     try {
       // Check if booking already exists for this payment ID to prevent duplicates
       const existing = await Booking.findOne({ 'payment.paymentId': merchantOrderId });
-      
+
       if (!existing) {
         if (!paymentDoc.user) {
           throw new Error("Payment record has no associated User ID");
@@ -61,16 +63,39 @@ const processSuccessfulPayment = async (merchantOrderId, statusData) => {
 
         // Call the shared helper from bookingRoutes.js
         const newBooking = await createInternalBooking(
-          paymentDoc.user,           // Full user object
-          paymentDoc.pendingBookingData, 
-          merchantOrderId            // paymentId
+          paymentDoc.user,
+          paymentDoc.pendingBookingData,
+          merchantOrderId
         );
         console.log('NEW BOOKING: ', newBooking);
-        // Link the booking ID back to the payment document
         paymentDoc.bookingRefId = newBooking._id;
         paymentDoc.bookingId = newBooking.bookingId;
         await paymentDoc.save();
-        
+
+        // SEND SMS
+        // await smsService.sendTripConfirmation({
+        //   sourceCity: newBooking.route.origin,
+        //   destinationCity: newBooking.route.destination,
+        //   webLink: 'https://www.capsulecabs.com',
+        //   supportNumber: '9719226535',
+        //   customerNumber: newBooking.bookingPhone
+        // });
+
+        // SEND EMAIL
+        await emailService.sendBookingEmail(newBooking.bookingEmail, {
+          bookingId: newBooking.bookingId,
+          origin: newBooking.route.origin,
+          destination: newBooking.route.destination,
+          travelDate: newBooking.journey.travelDate,
+          departureTime: newBooking.journey.departureTime,
+          arrivalTime: newBooking.journey.estimatedArrivalTime,
+          vehicleNumber: newBooking.route.vehicleNumber,
+          passengers: newBooking.passengers,
+          totalAmount: newBooking.payment.totalAmount,
+          pickupPoint: newBooking.passengers[0].pickupPoint,
+          dropPoint: newBooking.passengers[0].dropPoint
+        });
+
         console.log(`[SYSTEM] Booking ${newBooking.bookingId} created successfully via payment process.`);
       }
     } catch (error) {
@@ -78,7 +103,7 @@ const processSuccessfulPayment = async (merchantOrderId, statusData) => {
       console.error("[CRITICAL ERROR] Payment success but Booking failed:", error.message);
     }
   }
-  
+
   return paymentDoc;
 };
 
