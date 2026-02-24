@@ -22,6 +22,8 @@ export default {
     },
     smtp_creds: {
         user: process.env.SMTP_USER,
-        password: process.env.SMTP_PASSWORD
+        password: process.env.SMTP_PASSWORD,
+        aws_access_key: process.env.AWS_ACCESS_KEY_ID,
+        aws_secret_key: process.env.AWS_SECRET_ACCESS_KEY
     }
 }
