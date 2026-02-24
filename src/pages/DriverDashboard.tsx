@@ -73,63 +73,60 @@ const DriverDashboard: React.FC = () => {
     fetchBookings()
   }, [])
 
-  // --- NEW: Camera Permission Pre-flight & Trigger ---
-  // 1. Updated Permission Logic
-  const handleStartScan = async () => {
-    try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Your browser does not support camera access or the connection is not secure.");
-        return;
-      }
-
-      // Force "environment" (Back Camera)
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } }
-      }).catch(() => {
-        // Fallback if "exact" back camera is not found
-        return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      });
-
-      stream.getTracks().forEach(track => track.stop());
-      setIsScanning(true);
-    } catch (err: any) {
-      console.error("Camera Permission Error:", err);
-      alert("Could not access the back camera. Please ensure camera permissions are granted.");
+  // 1. Updated Permission Logic - Simply trigger the UI
+  const handleStartScan = () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Camera access is not supported on this browser or connection.");
+      return;
     }
+    // We don't call getUserMedia here anymore to avoid hardware locks
+    setIsScanning(true);
   };
 
   // 2. Updated Scanner Initialization
   useEffect(() => {
     let scanner: Html5QrcodeScanner | null = null;
-    if (isScanning) {
-      scanner = new Html5QrcodeScanner(
-        "qr-reader",
-        {
-          fps: 15,
-          qrbox: { width: 250, height: 250 },
-          // Add this line to prioritize the back camera
-          videoConstraints: { facingMode: "environment" }
-        },
-        false
-      );
 
-      scanner.render(
-        (decodedText: any) => {
-          const id = decodedText.split('/').pop();
-          if (id) {
-            scanner?.clear();
-            setIsScanning(false);
-            verifyTicket(id);
+    if (isScanning) {
+      // Small delay to ensure the DOM element #qr-reader is fully mounted
+      const timer = setTimeout(() => {
+        scanner = new Html5QrcodeScanner(
+          "qr-reader",
+          {
+            fps: 15,
+            qrbox: { width: 250, height: 250 },
+            // Using a simple facingMode object which is most stable on Android Chrome
+            videoConstraints: {
+              facingMode: "environment"
+            },
+            rememberLastUsedCamera: true
+          },
+          false
+        );
+
+        scanner.render(
+          (decodedText: string) => {
+            const id = decodedText.split('/').pop();
+            if (id) {
+              scanner?.clear().then(() => {
+                setIsScanning(false);
+                verifyTicket(id);
+              }).catch(err => console.error("Clear error", err));
+            }
+          },
+          (errorMessage) => {
+            // You can ignore constant frame errors
           }
-        },
-        () => { }
-      );
+        );
+      }, 100); // 100ms delay
+
+      return () => {
+        clearTimeout(timer);
+        if (scanner) {
+          scanner.clear().catch(err => console.error("Cleanup error", err));
+        }
+      };
     }
-    return () => {
-      if (scanner) {
-        scanner.clear().catch(err => console.error("Scanner cleanup error:", err));
-      }
-    };
   }, [isScanning]);
 
   const verifyTicket = async (bookingId: string) => {
