@@ -10,7 +10,7 @@ import {
   User as UserIcon,
   ChevronRight,
   X,
-  QrCode, 
+  QrCode,
   ShieldCheck,
   ShieldAlert
 } from 'lucide-react'
@@ -52,7 +52,7 @@ const DriverDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<DriverBooking[]>([])
   const [selectedBooking, setSelectedBooking] = useState<DriverBooking | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  
+
   // --- Scanning States ---
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{ success: boolean, data?: any, message?: string } | null>(null)
@@ -74,47 +74,47 @@ const DriverDashboard: React.FC = () => {
   }, [])
 
   // --- NEW: Camera Permission Pre-flight & Trigger ---
+  // 1. Updated Permission Logic
   const handleStartScan = async () => {
     try {
-      // Check if browser supports mediaDevices
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Your browser does not support camera access or you are using an insecure connection (HTTP).");
+        alert("Your browser does not support camera access or the connection is not secure.");
         return;
       }
 
-      // Explicitly request permission with a user gesture
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: "environment" } 
+      // Force "environment" (Back Camera)
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      }).catch(() => {
+        // Fallback if "exact" back camera is not found
+        return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       });
-      
-      // Stop the test stream tracks immediately
+
       stream.getTracks().forEach(track => track.stop());
-      
-      // Permission granted, now show the scanner UI
       setIsScanning(true);
     } catch (err: any) {
       console.error("Camera Permission Error:", err);
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        alert("Camera access denied. Please check your browser site settings and allow camera access.");
-      } else {
-        alert("Could not access camera. Please ensure it is not being used by another app.");
-      }
+      alert("Could not access the back camera. Please ensure camera permissions are granted.");
     }
   };
 
-  // --- QR Scanner Initialization Logic ---
+  // 2. Updated Scanner Initialization
   useEffect(() => {
     let scanner: Html5QrcodeScanner | null = null;
     if (isScanning) {
       scanner = new Html5QrcodeScanner(
-        "qr-reader", 
-        { fps: 15, qrbox: { width: 250, height: 250 } }, 
+        "qr-reader",
+        {
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
+          // Add this line to prioritize the back camera
+          videoConstraints: { facingMode: "environment" }
+        },
         false
       );
 
       scanner.render(
         (decodedText: any) => {
-          // Extracts ID from the URL format used in your emails
           const id = decodedText.split('/').pop();
           if (id) {
             scanner?.clear();
@@ -122,7 +122,7 @@ const DriverDashboard: React.FC = () => {
             verifyTicket(id);
           }
         },
-        () => {} // Frame errors are ignored
+        () => { }
       );
     }
     return () => {
@@ -135,7 +135,7 @@ const DriverDashboard: React.FC = () => {
   const verifyTicket = async (bookingId: string) => {
     try {
       const response = await api.post('/bookings/verify-ticket', { bookingId });
-      if(response?.data?.success) {
+      if (response?.data?.success) {
         setScanResult({ success: true, data: response?.data?.data });
       }
     } catch (error: any) {
@@ -155,7 +155,7 @@ const DriverDashboard: React.FC = () => {
 
       <main className='flex-1 pb-32'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8'>
-          
+
           <header className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4'>
             <div>
               <p className='text-xs font-mono text-emerald-400/80 tracking-[0.2em] uppercase'>
@@ -226,7 +226,7 @@ const DriverDashboard: React.FC = () => {
 
       {/* --- FLOATING SCAN BUTTON (With Permission Check) --- */}
       <div className='fixed bottom-8 right-6 z-50'>
-        <Button 
+        <Button
           onClick={handleStartScan}
           className='h-16 w-16 rounded-full bg-[#9dec75] text-black shadow-[0_10px_30px_rgba(157,236,117,0.3)] hover:bg-[#86d664] hover:scale-110 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 border-4 border-black'
         >
