@@ -73,7 +73,36 @@ const DriverDashboard: React.FC = () => {
     fetchBookings()
   }, [])
 
-  // --- QR Scanner Initialization ---
+  // --- NEW: Camera Permission Pre-flight & Trigger ---
+  const handleStartScan = async () => {
+    try {
+      // Check if browser supports mediaDevices
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Your browser does not support camera access or you are using an insecure connection (HTTP).");
+        return;
+      }
+
+      // Explicitly request permission with a user gesture
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      });
+      
+      // Stop the test stream tracks immediately
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Permission granted, now show the scanner UI
+      setIsScanning(true);
+    } catch (err: any) {
+      console.error("Camera Permission Error:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        alert("Camera access denied. Please check your browser site settings and allow camera access.");
+      } else {
+        alert("Could not access camera. Please ensure it is not being used by another app.");
+      }
+    }
+  };
+
+  // --- QR Scanner Initialization Logic ---
   useEffect(() => {
     let scanner: Html5QrcodeScanner | null = null;
     if (isScanning) {
@@ -85,20 +114,20 @@ const DriverDashboard: React.FC = () => {
 
       scanner.render(
         (decodedText: any) => {
-          const parts = decodedText.split('/');
-          const id = parts[parts.length - 1];
+          // Extracts ID from the URL format used in your emails
+          const id = decodedText.split('/').pop();
           if (id) {
             scanner?.clear();
             setIsScanning(false);
             verifyTicket(id);
           }
         },
-        () => {}
+        () => {} // Frame errors are ignored
       );
     }
     return () => {
       if (scanner) {
-        scanner.clear().catch(err => console.error("Failed to clear scanner", err));
+        scanner.clear().catch(err => console.error("Scanner cleanup error:", err));
       }
     };
   }, [isScanning]);
@@ -124,10 +153,9 @@ const DriverDashboard: React.FC = () => {
     <div className='min-h-screen bg-black text-white flex flex-col relative'>
       <Navigation />
 
-      <main className='flex-1 pb-32'> {/* Added padding for FAB safety */}
+      <main className='flex-1 pb-32'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8'>
           
-          {/* Header (Original style preserved) */}
           <header className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4'>
             <div>
               <p className='text-xs font-mono text-emerald-400/80 tracking-[0.2em] uppercase'>
@@ -136,18 +164,15 @@ const DriverDashboard: React.FC = () => {
               <h1 className='mt-2 text-2xl sm:text-3xl font-semibold tracking-tight'>
                 {user?.firstName ? `Hi ${user.firstName}, here's your day.` : "Hi Driver, here's your day."}
               </h1>
-              <p className='mt-1 text-sm text-white/60'>
-                All bookings assigned to your routes. Click a booking for ride details.
-              </p>
             </div>
-            <div className='flex flex-wrap items-center gap-3'>
+            <div className='flex items-center gap-3'>
               <Badge className='bg-white/10 border border-white/15 text-[11px] text-white/70 rounded-full px-3 py-1'>
                 Live · Route assignments
               </Badge>
             </div>
           </header>
 
-          {/* Summary cards (Preserved) */}
+          {/* Stats cards */}
           <section className='grid sm:grid-cols-3 gap-4'>
             <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10'>
               <CardContent className='p-4 flex items-center justify-between'>
@@ -169,34 +194,27 @@ const DriverDashboard: React.FC = () => {
             </Card>
           </section>
 
-          {/* Assignments List (Preserved) */}
+          {/* Assignments List */}
           <section className='space-y-4'>
-            <div className='flex items-center justify-between gap-2'>
-              <h2 className='text-lg font-semibold tracking-tight'>Your Assignments <span className='text-xs font-normal text-white/50'>{bookings.length} today</span></h2>
-            </div>
+            <h2 className='text-lg font-semibold tracking-tight'>Your Assignments</h2>
             {loading ? (
-              <Card className='bg-white/5 border-white/10'><CardContent className='p-8 flex items-center justify-center gap-3'><Loader2 className='h-5 w-5 animate-spin text-emerald-400' /><p className='text-sm text-white/70'>Loading your bookings...</p></CardContent></Card>
+              <div className='p-8 flex items-center justify-center gap-3'><Loader2 className='h-5 w-5 animate-spin text-emerald-400' /><p className='text-sm text-white/70'>Syncing bookings...</p></div>
             ) : (
               <div className='space-y-3'>
                 {bookings.map((booking) => (
-                  <Card key={booking.id} className='bg-gradient-to-r from-zinc-950 to-black border-white/10 hover:border-emerald-400/60 hover:-translate-y-[1px] transition-all cursor-pointer group' onClick={() => setSelectedBooking(booking)}>
+                  <Card key={booking.id} className='bg-gradient-to-r from-zinc-950 to-black border-white/10 hover:border-emerald-400/60 transition-all cursor-pointer' onClick={() => setSelectedBooking(booking)}>
                     <CardContent className='p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
-                      <div className='flex items-start gap-4 flex-1'>
+                      <div className='flex items-start gap-4'>
                         <div className='h-10 w-10 rounded-2xl bg-emerald-500/20 flex items-center justify-center mt-0.5'><Bus className='h-5 w-5 text-emerald-300' /></div>
-                        <div className='flex-1'>
-                          <div className='flex flex-wrap items-center gap-2'>
-                            <p className='font-semibold text-sm text-white'>Route {booking.routeCode}</p>
-                            <Badge className='bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-[11px] rounded-full px-2 py-0.5'>{booking.totalPassengers} passengers</Badge>
-                          </div>
-                          <div className='mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-white/60'>
-                            <span className='flex items-center gap-1'><CalendarDays className='h-3 w-3' />{new Date(booking.travelDate).toLocaleDateString()}</span>
+                        <div>
+                          <p className='font-semibold text-sm text-white'>Route {booking.routeCode}</p>
+                          <div className='mt-2 flex gap-4 text-xs text-white/60'>
                             <span className='flex items-center gap-1'><Clock className='h-3 w-3' />{booking.departureTime}</span>
-                            <span className='flex items-center gap-1'><Users className='h-3 w-3' />{booking.seatNumbers.length} seats</span>
-                            <span className='flex items-center gap-1'><IndianRupee className='h-3 w-3' />₹{booking.totalRevenue.toLocaleString()}</span>
+                            <span className='flex items-center gap-1'><Users className='h-3 w-3' />{booking.totalPassengers} Passengers</span>
                           </div>
                         </div>
                       </div>
-                      <Button size='sm' className='rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 group-hover:bg-emerald-500/20 transition-all'>View details <ChevronRight className='h-4 w-4 ml-1' /></Button>
+                      <Button size='sm' variant='ghost' className='text-emerald-400'>View details <ChevronRight className='h-4 w-4 ml-1' /></Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -206,10 +224,10 @@ const DriverDashboard: React.FC = () => {
         </div>
       </main>
 
-      {/* --- NEW FLOATING ACTION BUTTON --- */}
+      {/* --- FLOATING SCAN BUTTON (With Permission Check) --- */}
       <div className='fixed bottom-8 right-6 z-50'>
         <Button 
-          onClick={() => setIsScanning(true)}
+          onClick={handleStartScan}
           className='h-16 w-16 rounded-full bg-[#9dec75] text-black shadow-[0_10px_30px_rgba(157,236,117,0.3)] hover:bg-[#86d664] hover:scale-110 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 border-4 border-black'
         >
           <QrCode className='h-6 w-6' />
@@ -222,9 +240,9 @@ const DriverDashboard: React.FC = () => {
         <div className='fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 backdrop-blur-xl'>
           <div className='w-full max-w-md'>
             <div className='flex justify-between items-center mb-8'>
-              <div className='space-y-1'>
+              <div className='space-y-1 text-left'>
                 <h2 className='text-2xl font-bold'>Scan Boarding Pass</h2>
-                <p className='text-white/40 text-sm'>Position the QR code within the frame</p>
+                <p className='text-white/40 text-sm'>Align passenger QR inside the frame</p>
               </div>
               <Button variant='ghost' onClick={() => setIsScanning(false)} className='rounded-full h-12 w-12 bg-white/5 hover:bg-white/10'>
                 <X className='h-6 w-6' />
@@ -280,15 +298,6 @@ const DriverDashboard: React.FC = () => {
               <button onClick={() => setSelectedBooking(null)} className='h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors'><X className='h-4 w-4' /></button>
             </CardHeader>
             <CardContent className='pt-6 space-y-6'>
-              {/* Trip Overview (Preserved) */}
-              <div className='space-y-3'>
-                <h3 className='text-sm font-semibold uppercase tracking-[0.15em] text-white/70'>Trip Overview</h3>
-                <div className='grid sm:grid-cols-2 gap-3'>
-                  <div className='rounded-xl bg-white/5 border border-white/10 p-3'><p className='text-xs text-white/60'>Route Code</p><p className='mt-1 font-semibold'>{selectedBooking.routeCode}</p></div>
-                  <div className='rounded-xl bg-white/5 border border-white/10 p-3'><p className='text-xs text-white/60'>Date</p><p className='mt-1 font-semibold'>{new Date(selectedBooking.travelDate).toLocaleDateString('en-IN')}</p></div>
-                </div>
-              </div>
-              {/* Passenger List (Preserved) */}
               <div className='space-y-3'>
                 <h3 className='text-sm font-semibold uppercase tracking-[0.15em] text-white/70'>Passengers ({selectedBooking.passengerDetails.length})</h3>
                 <div className='space-y-2 max-h-60 overflow-y-auto'>
