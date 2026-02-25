@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PhonePePaymentPlugin } from 'ionic-capacitor-phonepe-pg'
 import { format } from 'date-fns'
 import { useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api'
@@ -42,6 +43,7 @@ interface SeatAvailability {
   price: number
   seatType: string
   lockedBy?: string
+  gender?: string
 }
 
 interface CabWithAvailability {
@@ -870,6 +872,7 @@ export const BookingSteps: React.FC = () => {
     seats.forEach((seat) => {
       seatByNum[seat.seatNumber] = seat
     })
+    console.log('seatbyNum: ', seatByNum);
     const layoutRows: (string | null)[][] = [
       ['A1', null, 'Driver'],
       ['B1', 'B2', 'B3'],
@@ -966,53 +969,74 @@ export const BookingSteps: React.FC = () => {
   }
 
   const SeatButton: React.FC<{
-    seatNum: string
-    seatObj?: SeatAvailability
-  }> = ({ seatNum, seatObj }) => {
-    if (!seatObj) {
-      return <div className='min-w-[52px] min-h-[42px]' />
-    }
-
-    const isBooked = seatObj.status === 'booked'
-    const isSelected = selectedSeats.includes(seatNum)
-    const isLocked =
-      seatObj.status === 'locked' &&
-      seatObj.lockedBy &&
-      seatObj.lockedBy !== user?.id
-    const seatPrice = seatObj.price || 0 // Add this line
-
-    return (
-      <button
-        type='button'
-        className={[
-          'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-          isBooked
-            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-            : isLocked
-              ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-              : isSelected
-                ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-                : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
-        ].join(' ')}
-        disabled={isBooked || isLocked}
-        onClick={() => {
-          if (isBooked || isLocked) return
-          setSelectedSeats((prev) =>
-            prev.includes(seatNum)
-              ? prev.filter((s) => s !== seatNum)
-              : [...prev, seatNum],
-          )
-        }}
-      >
-        <span className='font-bold leading-tight'>{seatNum}</span>
-        {seatPrice > 0 && (
-          <span className='text-[10px] text-white/70 font-medium mt-[1px] leading-none'>
-            ₹{seatPrice}
-          </span>
-        )}
-      </button>
-    )
+  seatNum: string
+  seatObj?: SeatAvailability
+}> = ({ seatNum, seatObj }) => {
+  if (!seatObj) {
+    return <div className='min-w-[52px] min-h-[42px]' />
   }
+
+  const isBooked = seatObj.status === 'booked'
+  const isSelected = selectedSeats.includes(seatNum)
+  const isLocked =
+    seatObj.status === 'locked' &&
+    seatObj.lockedBy &&
+    seatObj.lockedBy !== user?.id
+  const originalPrice = seatObj.price || 0
+  const discountPrice = Math.max(0, originalPrice - 100)
+  
+  // Check if booked by female (assuming seatType: 'female' or similar)
+  const isFemaleBooked = isBooked && seatObj.seatType === 'female'
+
+  return (
+    <button
+      type='button'
+      className={[
+        'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
+        isBooked
+          ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+          : isLocked
+            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+            : isSelected
+              ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+              : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+      ].join(' ')}
+      disabled={isBooked || isLocked}
+      onClick={() => {
+        if (isBooked || isLocked) return
+        setSelectedSeats((prev) =>
+          prev.includes(seatNum)
+            ? prev.filter((s) => s !== seatNum)
+            : [...prev, seatNum],
+        )
+      }}
+    >
+      {/* Seat Number (always shown) */}
+      <span className='font-bold leading-tight'>{seatNum}</span>
+
+      {/* Female Booked Icon (no prices) */}
+      {isFemaleBooked ? (
+        <span className='text-lg mt-1'>👩</span>
+      ) : (
+        <>
+          {/* Discount Price */}
+          <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
+            ₹{discountPrice}
+          </span>
+          
+          {/* Original Price (strikethrough) */}
+          {originalPrice > 0 && (
+            <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
+              ₹{originalPrice}
+            </span>
+          )}
+        </>
+      )}
+    </button>
+  )
+}
+
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1265,9 +1289,6 @@ export const BookingSteps: React.FC = () => {
 
               {/* Right: Fare Breakdown */}
               <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
-                {/* <div className="absolute top-0 right-0 p-2 opacity-10">
-                  <CreditCard className="h-12 w-12 text-emerald-500" />
-                </div> */}
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>Base Fare</span>
@@ -1289,57 +1310,58 @@ export const BookingSteps: React.FC = () => {
               </div>
             </div>
 
-            {/* Global pickup/drop (shown once) */}
+            {/* Global pickup/drop (using UI Select) */}
             <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   Pickup Point
                 </label>
-                <select
+                <Select
                   value={globalPickup || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                  onValueChange={(value) => {
                     setGlobalPickup(value);
-                    // sync to all passengers
                     const updated = passengers.map((p) => ({ ...p, pickupAddress: value }));
                     setPassengers(updated);
                   }}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="">Select Pickup</option>
-                  {pickupOptions.map((point) => (
-                    <option key={point.name} value={point.name}>
-                      {point.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
+                    <SelectValue placeholder="Select Pickup" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {pickupOptions.map((point) => (
+                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                        {point.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   Drop Point
                 </label>
-                <select
+                <Select
                   value={globalDrop || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                  onValueChange={(value) => {
                     setGlobalDrop(value);
-                    // sync to all passengers
                     const updated = passengers.map((p) => ({ ...p, dropAddress: value }));
                     setPassengers(updated);
                   }}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="">Select Drop</option>
-                  {dropOptions.map((point) => (
-                    <option key={point.name} value={point.name}>
-                      {point.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
+                    <SelectValue placeholder="Select Drop" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {dropOptions.map((point) => (
+                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                        {point.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
 
             {/* 2. Passenger Details Section */}
             <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
@@ -1362,7 +1384,7 @@ export const BookingSteps: React.FC = () => {
 
                     <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
                       <div className="md:col-span-2">
-                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Full Name
                         </label>
                         <div className="relative">
@@ -1382,7 +1404,7 @@ export const BookingSteps: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Age & Gender
                         </label>
                         <div className="flex gap-2">
@@ -1397,68 +1419,34 @@ export const BookingSteps: React.FC = () => {
                             }}
                             className='w-16 py-3 bg-black/40 border border-white/10 rounded-xl text-center text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
                           />
-                          <select
-                            value={passenger.gender}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].gender = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='flex-1 px-3 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none'
-                          >
-                            <option value=''>Gender</option>
-                            <option value='male'>Male</option>
-                            <option value='female'>Female</option>
-                          </select>
+
+                          {/* Gender Select Component */}
+                          <div className="flex-1">
+                            <Select
+                              value={passenger.gender}
+                              onValueChange={(value) => {
+                                const newPax = [...passengers];
+                                newPax[idx].gender = value;
+                                setPassengers(newPax);
+                              }}
+                            >
+                              <SelectTrigger className="h-[46px] bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40 text-sm">
+                                <SelectValue placeholder="Gender" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                                <SelectItem value="male" className="focus:bg-emerald-500/10 focus:text-emerald-400">Male</SelectItem>
+                                <SelectItem value="female" className="focus:bg-emerald-500/10 focus:text-emerald-400">Female</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
-
-                      {/* <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                            Pickup Point
-                          </label>
-                          <select
-                            value={passenger.pickupAddress || ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].pickupAddress = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          >
-                            <option value=''>Select Pickup</option>
-                            {pickupOptions.map((point) => (
-                              <option key={point.name} value={point.name}>{point.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                            Drop Point
-                          </label>
-                          <select
-                            value={passenger.dropAddress || ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].dropAddress = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          >
-                            <option value=''>Select Drop</option>
-                            {dropOptions.map((point) => (
-                              <option key={point.name} value={point.name}>{point.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div> */}
-
                     </div>
+
                     {idx === 0 && (
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
                             Contact Phone
                           </label>
                           <input
@@ -1476,7 +1464,7 @@ export const BookingSteps: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
                             Contact Email
                           </label>
                           <input
@@ -1491,26 +1479,14 @@ export const BookingSteps: React.FC = () => {
                             className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                           />
                         </div>
-                      </div>)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-
-              {/* Action Button */}
-              {/* <div className='flex justify-end mt-10 pt-6 border-t border-white/5'>
-                <Button
-                  disabled={passengers.some((p) => !p.name || !p.age || !p.gender)}
-                  onClick={nextStep}
-                  className='group relative px-12 py-6 rounded-2xl bg-emerald-500 text-black font-black text-lg overflow-hidden transition-all hover:pr-14 hover:bg-emerald-400 disabled:opacity-30'
-                >
-                  <span className="relative z-10">CONTINUE</span>
-                  <ArrowRight className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all h-5 w-5" />
-                </Button>
-              </div> */}
             </div>
           </div>
         );
-
       case 5:
         return (
           <div className='space-y-6'>
@@ -1651,7 +1627,7 @@ export const BookingSteps: React.FC = () => {
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
                 passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup ||
-                  !globalDrop) && (!passengers[0].phone || !passengers[0].email ))
+                  !globalDrop) && (!passengers[0].phone || !passengers[0].email))
             }
             className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed'
           >
@@ -1660,10 +1636,8 @@ export const BookingSteps: React.FC = () => {
           </Button>
         </div>
 
-        {/* Login Modal */}
         {renderLoginModal()}
         <div className='min-h-screen bg-black text-white flex flex-col'>
-          {/* ... existing code ... */}
           {renderLoginModal()}
           {renderPaymentSelectionModal()}
         </div>

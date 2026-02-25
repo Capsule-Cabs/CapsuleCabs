@@ -42,7 +42,8 @@ const seatAvailabilitySchema = new mongoose.Schema({
       type: String,
       enum: ['window', 'aisle', 'middle', 'back-seats'],
       required: true
-    }
+    },
+    gender: String
   }],
   summary: {
     totalSeats: {

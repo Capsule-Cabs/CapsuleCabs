@@ -49,6 +49,7 @@ const PaymentStatus = () => {
           const paymentData = response?.data; 
           const state = paymentData?.state; // "COMPLETED"
           const bookingId = paymentData?.bookingId; // The ID created by backend
+          console.log('parsed data: ', parsedData);
 
           // 2. If backend has finished processing and linked a booking
           if (state === 'COMPLETED' && bookingId) {
@@ -146,14 +147,7 @@ const PaymentStatus = () => {
                                 <div className="p-2.5 bg-zinc-900 rounded-xl border border-white/5"><Calendar className="h-4 w-4 text-zinc-400" /></div>
                                 <div>
                                     <p className="text-[10px] text-zinc-500 font-bold uppercase">Travel Date</p>
-                                    <p className="text-sm font-medium">{bookingDetails?.selectedDate ? format(new Date(bookingDetails.selectedDate), "MMM dd, yyyy") : ""}</p>
-                                </div>
-                            </div>
-                            <div className="flex justify-end items-center gap-3">
-                                <div className="p-2.5 bg-zinc-900 rounded-xl border border-white/5"><Armchair className="h-4 w-4 text-zinc-400" /></div>
-                                <div>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase">Seats</p>
-                                    <p className="text-sm font-medium">{bookingDetails?.selectedSeats?.join(", ")}</p>
+                                    <p className="text-sm font-medium">{bookingDetails?.travelDate ? format(new Date(bookingDetails.travelDate), "MMM dd, yyyy") : ""}</p>
                                 </div>
                             </div>
                         </div>
