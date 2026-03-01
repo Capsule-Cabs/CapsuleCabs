@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PhonePePaymentPlugin } from 'ionic-capacitor-phonepe-pg'
@@ -140,10 +140,6 @@ export const BookingSteps: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([])
   const [passengers, setPassengers] = useState<Passenger[]>([])
   const [availableCabs, setAvailableCabs] = useState<CabWithAvailability[]>([])
-  // const [totalFare, setTotalFare] = useState(0);
-  const totalFare = useMemo(() => {
-    return passengers.reduce((sum, p) => sum + (p.fare || 0), 0)
-  }, [passengers])
 
   const { user, isAuthenticated, sendOtp, verifyOtp } = useContext(AuthContext)
 
@@ -177,6 +173,15 @@ export const BookingSteps: React.FC = () => {
     'PHONEPE' | 'ZOHO' | null
   >(null)
 
+  const [totalFare, setTotalFare] = useState<number>(0);
+  const [fareBreakdown, setFareBreakdown] = useState({
+    baseFare: 0,
+    gst: 0,
+    convenienceFee: 0,
+    discount: 0
+  });
+
+
   const timerRef = useRef<NodeJS.Timeout>()
 
   // If the user is coming after selecting source and destination
@@ -189,24 +194,18 @@ export const BookingSteps: React.FC = () => {
     }
   }, [preFilledData])
 
-  // const { isLoaded } = useJsApiLoader({
-  //   googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-  //   libraries: ["places"],
-  // });
-
-  const handlePickupChanged = () => {
-    const places = pickupBoxRef.current?.getPlaces()
-    if (places && places.length > 0) {
-      setPickupAddress(places[0].formatted_address ?? '')
+  useEffect(() => {
+    if (currentStep === 4 && passengers.length > 0) {
+      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0);
+      setTotalFareSafely({
+        baseFare,
+        gst: baseFare * 0.05,
+        convenienceFee: 12,
+        discount: 100
+      });
     }
-  }
+  }, [currentStep, passengers]);
 
-  const handleDropChanged = () => {
-    const places = dropBoxRef.current?.getPlaces()
-    if (places && places.length > 0) {
-      setDropAddress(places[0].formatted_address ?? '')
-    }
-  }
 
   useEffect(() => {
     const initPhonePe = async () => {
@@ -388,6 +387,22 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
+
+
+  const calculateTotalFare = useCallback((bd = fareBreakdown) => {
+    const total = bd.baseFare + bd.gst + bd.convenienceFee - bd.discount;
+    // Math.max ensures it doesn't go below 0
+    // toFixed(4) fixes the precision, and Number() converts it back to a float
+    return Number(Math.max(0, total).toFixed(4));
+  }, [fareBreakdown]);
+
+  const setTotalFareSafely = useCallback((breakdown: typeof fareBreakdown) => {
+    setFareBreakdown(breakdown);
+    setTotalFare(calculateTotalFare(breakdown));
+  }, [calculateTotalFare]);
+
+
+
   const nextStep = async () => {
     if (currentStep === 1) {
       if (!selectedDate || !selectedSource || !selectedDestination) {
@@ -434,12 +449,13 @@ export const BookingSteps: React.FC = () => {
             pickupAddress,
             dropAddress,
           }
-        })
+        });
+        console.log('New Passengers: ', newPassengers);
         // setTotalFare(runningTotal);
         setPassengers(newPassengers)
 
         // 2. Log the local variable, not the state variable
-        console.log('Calculated Total Fare:', runningTotal)
+        // console.log('Calculated Total Fare:', runningTotal)
         setCurrentStep((prev) => prev + 1)
       } catch (err: any) {
         // alert(
@@ -969,72 +985,72 @@ export const BookingSteps: React.FC = () => {
   }
 
   const SeatButton: React.FC<{
-  seatNum: string
-  seatObj?: SeatAvailability
-}> = ({ seatNum, seatObj }) => {
-  if (!seatObj) {
-    return <div className='min-w-[52px] min-h-[42px]' />
-  }
+    seatNum: string
+    seatObj?: SeatAvailability
+  }> = ({ seatNum, seatObj }) => {
+    if (!seatObj) {
+      return <div className='min-w-[52px] min-h-[42px]' />
+    }
 
-  const isBooked = seatObj.status === 'booked'
-  const isSelected = selectedSeats.includes(seatNum)
-  const isLocked =
-    seatObj.status === 'locked' &&
-    seatObj.lockedBy &&
-    seatObj.lockedBy !== user?.id
-  const originalPrice = seatObj.price || 0
-  const discountPrice = Math.max(0, originalPrice - 100)
-  
-  // Check if booked by female (assuming seatType: 'female' or similar)
-  const isFemaleBooked = isBooked && seatObj.seatType === 'female'
+    const isBooked = seatObj.status === 'booked'
+    const isSelected = selectedSeats.includes(seatNum)
+    const isLocked =
+      seatObj.status === 'locked' &&
+      seatObj.lockedBy &&
+      seatObj.lockedBy !== user?.id
+    const originalPrice = seatObj.price || 0
+    const discountPrice = Math.max(0, originalPrice - 100)
 
-  return (
-    <button
-      type='button'
-      className={[
-        'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-        isBooked
-          ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-          : isLocked
-            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-            : isSelected
-              ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-              : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
-      ].join(' ')}
-      disabled={isBooked || isLocked}
-      onClick={() => {
-        if (isBooked || isLocked) return
-        setSelectedSeats((prev) =>
-          prev.includes(seatNum)
-            ? prev.filter((s) => s !== seatNum)
-            : [...prev, seatNum],
-        )
-      }}
-    >
-      {/* Seat Number (always shown) */}
-      <span className='font-bold leading-tight'>{seatNum}</span>
+    // Check if booked by female (assuming seatType: 'female' or similar)
+    const isFemaleBooked = isBooked && seatObj.seatType === 'female'
 
-      {/* Female Booked Icon (no prices) */}
-      {isFemaleBooked ? (
-        <span className='text-lg mt-1'>👩</span>
-      ) : (
-        <>
-          {/* Discount Price */}
-          <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
-            ₹{discountPrice}
-          </span>
-          
-          {/* Original Price (strikethrough) */}
-          {originalPrice > 0 && (
-            <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
-              ₹{originalPrice}
+    return (
+      <button
+        type='button'
+        className={[
+          'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
+          isBooked
+            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+            : isLocked
+              ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+              : isSelected
+                ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+                : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+        ].join(' ')}
+        disabled={isBooked || isLocked}
+        onClick={() => {
+          if (isBooked || isLocked) return
+          setSelectedSeats((prev) =>
+            prev.includes(seatNum)
+              ? prev.filter((s) => s !== seatNum)
+              : [...prev, seatNum],
+          )
+        }}
+      >
+        {/* Seat Number (always shown) */}
+        <span className='font-bold leading-tight'>{seatNum}</span>
+
+        {/* Female Booked Icon (no prices) */}
+        {isFemaleBooked ? (
+          <span className='text-lg mt-1'>👩</span>
+        ) : (
+          <>
+            {/* Discount Price */}
+            <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
+              ₹{discountPrice}
             </span>
-          )}
-        </>
-      )}
-    </button>
-  )
-}
+
+            {/* Original Price (strikethrough) */}
+            {originalPrice > 0 && (
+              <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
+                ₹{originalPrice}
+              </span>
+            )}
+          </>
+        )}
+      </button>
+    )
+  }
 
 
 
@@ -1258,10 +1274,12 @@ export const BookingSteps: React.FC = () => {
         )
 
       case 4:
-        // Calculate Summary Details
-        const baseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
-        const gst = baseFare * 0.05; // 5% GST
-        const serviceFee = 40; // Fixed Service Fee
+        // 1. Calculations
+        const currentBaseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
+        const currentGst = currentBaseFare * 0.05;
+        const currentServiceFee = 12;
+        const currentDiscount = 100;
+        const currentTotal = Math.max(0, currentBaseFare + currentGst + currentServiceFee - currentDiscount);
 
         return (
           <div className='max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
@@ -1287,24 +1305,33 @@ export const BookingSteps: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: Fare Breakdown */}
+              {/* Right: Updated Fare Breakdown with Discount */}
               <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>Base Fare</span>
-                    <span className="text-white font-medium">₹{baseFare.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentBaseFare.toFixed(2)}</span>
                   </div>
+
+                  {/* Discount Row */}
+                  <div className="flex justify-between text-xs text-emerald-400 font-medium">
+                    <span>Discount ({currentDiscount})</span>
+                    <span>- ₹{currentDiscount.toFixed(2)}</span>
+                  </div>
+
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>GST (5%)</span>
-                    <span className="text-white font-medium">₹{gst.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentGst.toFixed(2)}</span>
                   </div>
+
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>Service Fee</span>
-                    <span className="text-white font-medium">₹{serviceFee.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentServiceFee.toFixed(2)}</span>
                   </div>
+
                   <div className="pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end">
                     <span className="text-sm font-bold text-emerald-400">Total Fare</span>
-                    <span className="text-sm font-black text-white">₹{totalFare}</span>
+                    <span className="text-sm font-black text-white">₹{currentTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

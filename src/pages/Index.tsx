@@ -121,6 +121,7 @@ const Index = () => {
     to: "",
     date: new Date()
   });
+  const [openCalendar, setOpenCalendar] = useState(false);
 
   const handleSearch = () => {
     navigate('/booking', { state: searchData });
@@ -268,7 +269,7 @@ const Index = () => {
                           </div>
                         </div>
 
-                        <Popover>
+                        <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -289,7 +290,12 @@ const Index = () => {
                             <Calendar
                               mode="single"
                               selected={searchData.date}
-                              onSelect={(d) => d && setSearchData({ ...searchData, date: d })}
+                              onSelect={(d) => {
+                                if (d) {
+                                  setSearchData({ ...searchData, date: d });
+                                  setOpenCalendar(false);
+                                }
+                              }}
                               disabled={(date) => date < new Date()}
                               className="bg-zinc-950 text-white rounded-xl"
                             />
