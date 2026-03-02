@@ -157,7 +157,8 @@ export const createInternalBooking = async (user, payload, paymentId) => {
       seatNumbers,
       userId,
       bookingId: booking.bookingId,
-      status: 'booked'
+      status: 'booked',
+      passengers: booking.passengers
     }, session);
 
     await session.commitTransaction();

@@ -158,7 +158,7 @@ seatAvailabilitySchema.methods.confirmBooking = async function (seatNumbers, use
 // seat.model.js
 
 seatAvailabilitySchema.statics.syncSegmentAvailability = async function (params, session) {
-  const { tripId, bStart, bEnd, travelDate, seatNumbers, userId, bookingId, status } = params;
+  const { tripId, bStart, bEnd, travelDate, seatNumbers, userId, bookingId, status, passengers } = params;
   const Route = mongoose.model('Route');
 
   const allTripRoutes = await Route.find({ tripId }).session(session);
@@ -174,20 +174,22 @@ seatAvailabilitySchema.statics.syncSegmentAvailability = async function (params,
     }).session(session);
 
     if (!availability) {
-      // 1. Create the base seat map (Standard Initialization logic)
+      // 1. Create the base seat map
       const seatsAvailable = route.seating.seatMap.map(seat => {
         const isTargetSeat = seatNumbers.includes(seat.seatNumber);
+        // Find passenger data if this is a target seat
+        const pData = isTargetSeat ? passengers.find(p => p.seatNumber === seat.seatNumber) : null;
 
         return {
           seatNumber: seat.seatNumber,
-          // If it's the seat being booked, set status now!
           status: isTargetSeat ? status : (seat.isBlocked ? 'blocked' : 'available'),
           price: seat.price.base + (seat.type === 'window' ? seat.price.premium : 0),
           seatType: seat.type,
-          // Set booking info if it's the target seat
           bookedBy: isTargetSeat ? userId : undefined,
           bookingId: isTargetSeat ? bookingId : undefined,
-          bookedAt: isTargetSeat ? new Date() : undefined
+          bookedAt: isTargetSeat ? new Date() : undefined,
+          // --- STORE GENDER HERE ---
+          gender: pData ? pData.gender : undefined 
         };
       });
 
@@ -199,7 +201,6 @@ seatAvailabilitySchema.statics.syncSegmentAvailability = async function (params,
         blockedCount: seatsAvailable.filter(s => s.status === 'blocked').length
       };
 
-      // 2. Create and Save in ONE go
       availability = new this({
         routeId: route._id,
         travelDate: new Date(travelDate),
@@ -210,27 +211,29 @@ seatAvailabilitySchema.statics.syncSegmentAvailability = async function (params,
       await availability.save({ session });
 
     } else {
-      // 3. If it already exists, use updateOne (This avoids Versioning errors)
-      await this.updateOne(
-        {
-          _id: availability._id,
-          "seatsAvailable.seatNumber": { $in: seatNumbers }
-        },
-        {
-          $set: {
-            "seatsAvailable.$[elem].status": status,
-            "seatsAvailable.$[elem].bookedBy": userId,
-            "seatsAvailable.$[elem].bookingId": bookingId,
-            "seatsAvailable.$[elem].bookedAt": new Date(),
-            "seatsAvailable.$[elem].lockedBy": null,
-            "seatsAvailable.$[elem].lockExpiry": null
-          }
-        },
-        {
-          arrayFilters: [{ "elem.seatNumber": { $in: seatNumbers } }],
-          session
-        }
-      );
+      // 2. If it exists, update using a loop to ensure correct mapping of gender to seat
+      for (const seatNum of seatNumbers) {
+        const passenger = passengers.find(p => p.seatNumber === seatNum);
+        
+        await this.updateOne(
+          { 
+            _id: availability._id, 
+            "seatsAvailable.seatNumber": seatNum 
+          },
+          {
+            $set: {
+              "seatsAvailable.$.status": status,
+              "seatsAvailable.$.bookedBy": userId,
+              "seatsAvailable.$.bookingId": bookingId,
+              "seatsAvailable.$.bookedAt": new Date(),
+              "seatsAvailable.$.lockedBy": null,
+              "seatsAvailable.$.lockExpiry": null,
+              "seatsAvailable.$.gender": passenger ? passenger.gender : null // Correctly mapped
+            }
+          },
+          { session }
+        );
+      }
     }
   }
 };

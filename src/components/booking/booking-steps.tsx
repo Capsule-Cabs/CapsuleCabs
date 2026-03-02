@@ -14,6 +14,7 @@ import {
   ArrowRight,
   X,
   Loader2,
+  Wind, Wifi, Usb, Info
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -180,6 +181,7 @@ export const BookingSteps: React.FC = () => {
     convenienceFee: 0,
     discount: 0
   });
+  const [viewingRoute, setViewingRoute] = useState<any>(null);
 
 
   const timerRef = useRef<NodeJS.Timeout>()
@@ -206,6 +208,9 @@ export const BookingSteps: React.FC = () => {
     }
   }, [currentStep, passengers]);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   useEffect(() => {
     const initPhonePe = async () => {
@@ -598,6 +603,7 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
+
   const handleAuthCheck = async () => {
     if (isAuthenticated) {
       setTimerActive(true)
@@ -964,16 +970,17 @@ export const BookingSteps: React.FC = () => {
         {/* Legend */}
         <div className='flex justify-center gap-6 text-[11px] text-white/60'>
           <div className='flex items-center gap-2'>
-            <div className='w-3 h-3 rounded border border-white/20 bg-white/10' />
-            <span>Available</span>
-          </div>
-          <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-emerald-400/80 bg-emerald-500/30' />
             <span>Selected</span>
           </div>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-amber-500/80 bg-amber-500/30' />
             <span>Locked</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            {/* border-rose-500 for the stroke, bg-rose-500/30 for the translucent fill */}
+            <div className='w-3 h-3 rounded border border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100' />
+            <span>Women</span>
           </div>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-red-500/80 bg-red-500/30' />
@@ -985,72 +992,103 @@ export const BookingSteps: React.FC = () => {
   }
 
   const SeatButton: React.FC<{
-    seatNum: string
-    seatObj?: SeatAvailability
-  }> = ({ seatNum, seatObj }) => {
-    if (!seatObj) {
-      return <div className='min-w-[52px] min-h-[42px]' />
-    }
+  seatNum: string
+  seatObj?: SeatAvailability
+}> = ({ seatNum, seatObj }) => {
+  if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
 
-    const isBooked = seatObj.status === 'booked'
-    const isSelected = selectedSeats.includes(seatNum)
-    const isLocked =
-      seatObj.status === 'locked' &&
-      seatObj.lockedBy &&
-      seatObj.lockedBy !== user?.id
-    const originalPrice = seatObj.price || 0
-    const discountPrice = Math.max(0, originalPrice - 100)
+  const isBooked = seatObj.status === 'booked'
+  const isSelected = selectedSeats.includes(seatNum)
+  const isLocked = seatObj.status === 'locked' && seatObj.lockedBy && seatObj.lockedBy !== user?.id
+  
+  // High-visibility Female check
+  const isFemaleBooked = isBooked && seatObj.gender?.toLowerCase() === 'female'
 
-    // Check if booked by female (assuming seatType: 'female' or similar)
-    const isFemaleBooked = isBooked && seatObj.seatType === 'female'
+  const originalPrice = seatObj.price || 0
+  const discountPrice = Math.max(0, originalPrice - 100)
+
+  return (
+    <button
+      type='button'
+      className={[
+        'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
+        // 1. Check Female Booked FIRST with Fuchsia
+        isFemaleBooked
+          ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
+        // 2. Standard Booked
+        : isBooked
+          ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+        : isLocked
+          ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+        : isSelected
+          ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+          : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+      ].join(' ')}
+      disabled={isBooked || isLocked}
+      onClick={() => {
+        if (isBooked || isLocked) return
+        setSelectedSeats((prev) =>
+          prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
+        )
+      }}
+    >
+      <span className='font-bold leading-tight'>{seatNum}</span>
+      <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
+        ₹{discountPrice}
+      </span>
+      {originalPrice > 0 && (
+        <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
+          ₹{originalPrice}
+        </span>
+      )}
+    </button>
+  )
+}
+
+  const renderRoutePopup = () => {
+    if (!viewingRoute) return null;
 
     return (
-      <button
-        type='button'
-        className={[
-          'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-          isBooked
-            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-            : isLocked
-              ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-              : isSelected
-                ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-                : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
-        ].join(' ')}
-        disabled={isBooked || isLocked}
-        onClick={() => {
-          if (isBooked || isLocked) return
-          setSelectedSeats((prev) =>
-            prev.includes(seatNum)
-              ? prev.filter((s) => s !== seatNum)
-              : [...prev, seatNum],
-          )
-        }}
-      >
-        {/* Seat Number (always shown) */}
-        <span className='font-bold leading-tight'>{seatNum}</span>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+          <div className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-800/50">
+            <h3 className="font-bold text-white">Route Schedule</h3>
+            <Button variant="ghost" size="icon" onClick={() => setViewingRoute(null)} className="text-zinc-400">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
 
-        {/* Female Booked Icon (no prices) */}
-        {isFemaleBooked ? (
-          <span className='text-lg mt-1'>👩</span>
-        ) : (
-          <>
-            {/* Discount Price */}
-            <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
-              ₹{discountPrice}
-            </span>
+          <div className="p-6 space-y-6">
+            {/* Timeline Logic */}
+            <div className="relative space-y-8 before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-emerald-500/20">
+              {/* Example Stops - Map these from your cab object if available */}
+              {[
+                { stop: "First Pickup Point", time: viewingRoute.departureTime },
+                { stop: "Intermediate Stop", time: "10:30 AM" },
+                { stop: "Last Dropping Point", time: viewingRoute.arrivalTime }
+              ].map((item, idx) => (
+                <div key={idx} className="relative flex items-start gap-4 pl-8">
+                  <div className={`absolute left-0 h-6 w-6 rounded-full border-4 border-zinc-900 flex items-center justify-center ${idx === 0 ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
+                    {idx === 0 && <div className="h-2 w-2 bg-white rounded-full" />}
+                  </div>
+                  <div>
+                    <p className="text-white font-bold leading-none">{item.stop}</p>
+                    <p className="text-zinc-500 text-xs mt-1">{item.time}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* Original Price (strikethrough) */}
-            {originalPrice > 0 && (
-              <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
-                ₹{originalPrice}
-              </span>
-            )}
-          </>
-        )}
-      </button>
-    )
-  }
+          <div className="p-4 bg-zinc-800/30">
+            <Button onClick={() => setViewingRoute(null)} className="w-full bg-white text-black hover:bg-zinc-200">
+              Close
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
 
 
@@ -1216,18 +1254,47 @@ export const BookingSteps: React.FC = () => {
                             <span className="text-lg font-medium text-white">{arrivalTime}</span>
                           </div>
 
-                          <div className="space-y-1">
+                          <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                              <Badge className="text-[10px] h-5 text-emerald-500 bg-transparent border-0 text-zinc-400 shadow-none">
                                 {cab.routeCode}
                               </Badge>
                               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                                 {cab.capacity || 50} SEATER
                               </span>
                             </div>
+
                             <h4 className='font-bold text-white text-base leading-tight uppercase tracking-tight'>
                               {cab.route || `Standard Seater ${cab.id}`}
                             </h4>
+
+                            {/* NEW: Feature Icons and See Route Button */}
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              <div className="flex items-center gap-3 text-zinc-500">
+                                <div className="flex flex-col items-center gap-0.5" title="AC">
+                                  <Wind className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">AC</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-0.5" title="Wifi">
+                                  <Wifi className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">Wifi</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-0.5" title="USB">
+                                  <Usb className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">USB</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent card selection when clicking link
+                                  setViewingRoute(cab); // State for the popup
+                                }}
+                                className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors underline underline-offset-4"
+                              >
+                                See Route
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -1278,7 +1345,7 @@ export const BookingSteps: React.FC = () => {
         const currentBaseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
         const currentGst = currentBaseFare * 0.05;
         const currentServiceFee = 12;
-        const currentDiscount = 100;
+        const currentDiscount = 100 * passengers.length; // ₹100 discount per passenger
         const currentTotal = Math.max(0, currentBaseFare + currentGst + currentServiceFee - currentDiscount);
 
         return (
@@ -1315,7 +1382,7 @@ export const BookingSteps: React.FC = () => {
 
                   {/* Discount Row */}
                   <div className="flex justify-between text-xs text-emerald-400 font-medium">
-                    <span>Discount ({currentDiscount})</span>
+                    <span>Discount Welcome({currentDiscount})</span>
                     <span>- ₹{currentDiscount.toFixed(2)}</span>
                   </div>
 
@@ -1407,6 +1474,12 @@ export const BookingSteps: React.FC = () => {
                       <span className='text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
                         Seat {passenger.seatNumber}
                       </span>
+
+                      {idx === 0 && (
+                        <span className='ml-3 text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
+                          {`Primary Passenger`}
+                        </span>
+                      )}
                     </div>
 
                     <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
@@ -1463,6 +1536,7 @@ export const BookingSteps: React.FC = () => {
                               <SelectContent className="bg-zinc-900 border-white/10 text-white">
                                 <SelectItem value="male" className="focus:bg-emerald-500/10 focus:text-emerald-400">Male</SelectItem>
                                 <SelectItem value="female" className="focus:bg-emerald-500/10 focus:text-emerald-400">Female</SelectItem>
+                                <SelectItem value="other" className="focus:bg-emerald-500/10 focus:text-emerald-400">Others</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1615,11 +1689,16 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    <div className='min-h-screen bg-black text-white flex flex-col'>
-      {/* <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6"> */}
-      <div>
+    // We use flex-col and min-h-screen to ensure the page fills the height, 
+    // but doesn't create extra scroll space unless content is long.
+    <div className='min-h-screen bg-black text-white flex flex-col relative'>
+
+      {/* Main Content Area */}
+      <div className='flex-1 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col'>
+
+        {/* Timer Section */}
         {timerActive && (
-          <div className='flex justify-center mb-4'>
+          <div className='flex justify-center mb-6'>
             <div className='bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono'>
               ⏱️ {Math.floor(timerSeconds / 60)}:
               {(timerSeconds % 60).toString().padStart(2, '0')}
@@ -1628,20 +1707,22 @@ export const BookingSteps: React.FC = () => {
           </div>
         )}
 
-        {/* Step Content */}
-        <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white flex-1'>
-          <CardContent className='p-5 sm:p-7'>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
+        {/* Step Content Wrapper */}
+        <div className='flex-1'>
+          <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white h-full'>
+            <CardContent className='p-5 sm:p-7'>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Navigation Buttons */}
-        <div className='flex justify-between gap-4 max-w-5xl mx-auto w-full pt-2'>
+        {/* Navigation Buttons (Desktop Only - Inlined) */}
+        <div className='hidden md:flex justify-between gap-4 max-w-5xl mx-auto w-full pt-8'>
           <Button
             variant='outline'
             onClick={prevStep}
             disabled={currentStep === 1}
-            className='rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed'
+            className='rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 px-8'
           >
             Previous
           </Button>
@@ -1650,25 +1731,58 @@ export const BookingSteps: React.FC = () => {
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              (currentStep === 2 && !selectedCab) ||
+              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
+              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup ||
-                  !globalDrop) && (!passengers[0].phone || !passengers[0].email))
+                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                (!passengers[0].phone || !passengers[0].email))
             }
-            className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed'
+            className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 px-8'
           >
             {currentStep === 6 ? 'Complete' : 'Next'}
             {currentStep < 6 && <ArrowRight className='ml-2 h-4 w-4' />}
           </Button>
         </div>
+      </div>
 
-        {renderLoginModal()}
-        <div className='min-h-screen bg-black text-white flex flex-col'>
-          {renderLoginModal()}
-          {renderPaymentSelectionModal()}
+      {/* Sticky Navigation Footer (Mobile Only) */}
+      <div className='md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg'>
+        <div className='flex justify-between gap-4 p-4'>
+          <Button
+            variant='outline'
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className='flex-1 rounded-full border-white/20 text-white bg-transparent h-12'
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={nextStep}
+            disabled={
+              currentStep === 6 ||
+              (currentStep === 1 && !selectedDate) ||
+              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
+              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 3 && selectedSeats.length === 0) ||
+              (currentStep === 4 &&
+                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                (!passengers[0].phone || !passengers[0].email))
+            }
+            className='flex-1 rounded-full bg-emerald-500 text-black font-bold h-12'
+          >
+            {currentStep === 6 ? 'Complete' : 'Next'}
+          </Button>
         </div>
       </div>
+
+      {/* Spacer so content doesn't get hidden behind the mobile sticky footer */}
+      <div className="h-24 md:hidden" />
+
+      {/* Modals & Popups (Rendered once at the bottom) */}
+      {renderLoginModal()}
+      {renderPaymentSelectionModal()}
+      {renderRoutePopup && renderRoutePopup()}
     </div>
-  )
+  );
 }

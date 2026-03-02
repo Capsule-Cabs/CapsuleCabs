@@ -167,9 +167,9 @@ const PaymentStatus = () => {
                                 <span>{totalPaid}</span>
                             </div>
                         </div>
-                        <div className="h-14 w-14 bg-white p-1 rounded-lg opacity-80">
+                        {/* <div className="h-14 w-14 bg-white p-1 rounded-lg opacity-80">
                             <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${bookingDetails?.bookingId}`} alt="QR" className="w-full h-full" />
-                        </div>
+                        </div> */}
                     </div>
                   </CardContent>
                 </Card>
