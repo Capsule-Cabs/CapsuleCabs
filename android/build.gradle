@@ -23,9 +23,10 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-         url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
-      }
+        // PhonePe
+        maven { url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android" }
+        // Zoho
+        maven { url "https://maven.zohodl.com" }
     }
 }
 

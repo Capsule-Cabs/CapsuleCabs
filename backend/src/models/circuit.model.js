@@ -81,7 +81,8 @@ const routeSchema = new Schema({
         type: [Number],
       },
       landmark: String,
-      contactNumber: String
+      contactNumber: String,
+      time: { type: String, required: true }
     }]
   },
   destination: {
@@ -119,7 +120,8 @@ const routeSchema = new Schema({
         type: [Number],
       },
       landmark: String,
-      contactNumber: String
+      contactNumber: String,
+      time: { type: String, required: true }
     }]
   },
   vehicle: {

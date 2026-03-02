@@ -338,7 +338,7 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-sm">
+                            <p className="font-semibold text-sm text-white">
                               {trip.origin} → {trip.destination}
                             </p>
                             <Badge className="bg-emerald-500/15 border border-emerald-400/40 text-emerald-200 text-[11px] rounded-full px-2 py-0.5">

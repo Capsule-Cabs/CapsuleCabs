@@ -1,5 +1,6 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PhonePePaymentPlugin } from 'ionic-capacitor-phonepe-pg'
 import { format } from 'date-fns'
 import { useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api'
@@ -13,6 +14,7 @@ import {
   ArrowRight,
   X,
   Loader2,
+  Wind, Wifi, Usb, Info
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,6 +44,7 @@ interface SeatAvailability {
   price: number
   seatType: string
   lockedBy?: string
+  gender?: string
 }
 
 interface CabWithAvailability {
@@ -56,6 +59,9 @@ interface CabWithAvailability {
   seatsAvailable: SeatAvailability[]
   departureTime: string
   arrivalTime: string
+  origin: string | any;
+  destination: string | any;
+
 }
 
 interface Passenger {
@@ -138,10 +144,6 @@ export const BookingSteps: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([])
   const [passengers, setPassengers] = useState<Passenger[]>([])
   const [availableCabs, setAvailableCabs] = useState<CabWithAvailability[]>([])
-  // const [totalFare, setTotalFare] = useState(0);
-  const totalFare = useMemo(() => {
-    return passengers.reduce((sum, p) => sum + (p.fare || 0), 0)
-  }, [passengers])
 
   const { user, isAuthenticated, sendOtp, verifyOtp } = useContext(AuthContext)
 
@@ -175,6 +177,16 @@ export const BookingSteps: React.FC = () => {
     'PHONEPE' | 'ZOHO' | null
   >(null)
 
+  const [totalFare, setTotalFare] = useState<number>(0);
+  const [fareBreakdown, setFareBreakdown] = useState({
+    baseFare: 0,
+    gst: 0,
+    convenienceFee: 0,
+    discount: 0
+  });
+  const [viewingRoute, setViewingRoute] = useState<any>(null);
+
+
   const timerRef = useRef<NodeJS.Timeout>()
 
   // If the user is coming after selecting source and destination
@@ -187,24 +199,21 @@ export const BookingSteps: React.FC = () => {
     }
   }, [preFilledData])
 
-  // const { isLoaded } = useJsApiLoader({
-  //   googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
-  //   libraries: ["places"],
-  // });
-
-  const handlePickupChanged = () => {
-    const places = pickupBoxRef.current?.getPlaces()
-    if (places && places.length > 0) {
-      setPickupAddress(places[0].formatted_address ?? '')
+  useEffect(() => {
+    if (currentStep === 4 && passengers.length > 0) {
+      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0);
+      setTotalFareSafely({
+        baseFare,
+        gst: baseFare * 0.05,
+        convenienceFee: 12,
+        discount: 100
+      });
     }
-  }
+  }, [currentStep, passengers]);
 
-  const handleDropChanged = () => {
-    const places = dropBoxRef.current?.getPlaces()
-    if (places && places.length > 0) {
-      setDropAddress(places[0].formatted_address ?? '')
-    }
-  }
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   useEffect(() => {
     const initPhonePe = async () => {
@@ -282,6 +291,8 @@ export const BookingSteps: React.FC = () => {
           seatsAvailable,
           departureTime,
           arrivalTime,
+          origin: route.origin,
+          destination: route.destination,
         } as CabWithAvailability
       })
 
@@ -386,6 +397,22 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
+
+
+  const calculateTotalFare = useCallback((bd = fareBreakdown) => {
+    const total = bd.baseFare + bd.gst + bd.convenienceFee - bd.discount;
+    // Math.max ensures it doesn't go below 0
+    // toFixed(4) fixes the precision, and Number() converts it back to a float
+    return Number(Math.max(0, total).toFixed(4));
+  }, [fareBreakdown]);
+
+  const setTotalFareSafely = useCallback((breakdown: typeof fareBreakdown) => {
+    setFareBreakdown(breakdown);
+    setTotalFare(calculateTotalFare(breakdown));
+  }, [calculateTotalFare]);
+
+
+
   const nextStep = async () => {
     if (currentStep === 1) {
       if (!selectedDate || !selectedSource || !selectedDestination) {
@@ -432,12 +459,13 @@ export const BookingSteps: React.FC = () => {
             pickupAddress,
             dropAddress,
           }
-        })
+        });
+        console.log('New Passengers: ', newPassengers);
         // setTotalFare(runningTotal);
         setPassengers(newPassengers)
 
         // 2. Log the local variable, not the state variable
-        console.log('Calculated Total Fare:', runningTotal)
+        // console.log('Calculated Total Fare:', runningTotal)
         setCurrentStep((prev) => prev + 1)
       } catch (err: any) {
         // alert(
@@ -579,6 +607,7 @@ export const BookingSteps: React.FC = () => {
       setIsAuthLoading(false)
     }
   }
+
 
   const handleAuthCheck = async () => {
     if (isAuthenticated) {
@@ -870,6 +899,7 @@ export const BookingSteps: React.FC = () => {
     seats.forEach((seat) => {
       seatByNum[seat.seatNumber] = seat
     })
+    console.log('seatbyNum: ', seatByNum);
     const layoutRows: (string | null)[][] = [
       ['A1', null, 'Driver'],
       ['B1', 'B2', 'B3'],
@@ -945,16 +975,17 @@ export const BookingSteps: React.FC = () => {
         {/* Legend */}
         <div className='flex justify-center gap-6 text-[11px] text-white/60'>
           <div className='flex items-center gap-2'>
-            <div className='w-3 h-3 rounded border border-white/20 bg-white/10' />
-            <span>Available</span>
-          </div>
-          <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-emerald-400/80 bg-emerald-500/30' />
             <span>Selected</span>
           </div>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-amber-500/80 bg-amber-500/30' />
             <span>Locked</span>
+          </div>
+          <div className='flex items-center gap-2'>
+            {/* border-rose-500 for the stroke, bg-rose-500/30 for the translucent fill */}
+            <div className='w-3 h-3 rounded border border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100' />
+            <span>Women</span>
           </div>
           <div className='flex items-center gap-2'>
             <div className='w-3 h-3 rounded border border-red-500/80 bg-red-500/30' />
@@ -969,50 +1000,117 @@ export const BookingSteps: React.FC = () => {
     seatNum: string
     seatObj?: SeatAvailability
   }> = ({ seatNum, seatObj }) => {
-    if (!seatObj) {
-      return <div className='min-w-[52px] min-h-[42px]' />
-    }
+    if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
 
     const isBooked = seatObj.status === 'booked'
     const isSelected = selectedSeats.includes(seatNum)
-    const isLocked =
-      seatObj.status === 'locked' &&
-      seatObj.lockedBy &&
-      seatObj.lockedBy !== user?.id
-    const seatPrice = seatObj.price || 0 // Add this line
+    const isLocked = seatObj.status === 'locked' && seatObj.lockedBy && seatObj.lockedBy !== user?.id
+
+    // High-visibility Female check
+    const isFemaleBooked = isBooked && seatObj.gender?.toLowerCase() === 'female'
+
+    const originalPrice = seatObj.price || 0
+    const discountPrice = Math.max(0, originalPrice - 100)
 
     return (
       <button
         type='button'
         className={[
           'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-          isBooked
-            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-            : isLocked
-              ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-              : isSelected
-                ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-                : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+          // 1. Check Female Booked FIRST with Fuchsia
+          isFemaleBooked
+            ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
+            // 2. Standard Booked
+            : isBooked
+              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+              : isLocked
+                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+                : isSelected
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
         ].join(' ')}
         disabled={isBooked || isLocked}
         onClick={() => {
           if (isBooked || isLocked) return
           setSelectedSeats((prev) =>
-            prev.includes(seatNum)
-              ? prev.filter((s) => s !== seatNum)
-              : [...prev, seatNum],
+            prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
           )
         }}
       >
         <span className='font-bold leading-tight'>{seatNum}</span>
-        {seatPrice > 0 && (
-          <span className='text-[10px] text-white/70 font-medium mt-[1px] leading-none'>
-            ₹{seatPrice}
+        <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
+          ₹{discountPrice}
+        </span>
+        {originalPrice > 0 && (
+          <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
+            ₹{originalPrice}
           </span>
         )}
       </button>
     )
   }
+
+  const renderRoutePopup = () => {
+    if (!viewingRoute) return null;
+
+    const cab = availableCabs.find((c) => c.id === selectedCab);
+    if (!cab) return null;
+
+    // Extract points from your circuit.model structure
+    // We use optional chaining (?.) so it doesn't crash if data is missing
+    const pickups = cab.origin?.pickupPoints || [];
+    const drops = cab.destination?.dropPoints || [];
+
+    const allPoints = [
+      ...pickups.map((p: any) => ({ ...p, type: 'Pickup', color: 'emerald' })),
+      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'rose' }))
+    ];
+
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+        <div className="bg-zinc-950 border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex justify-between items-center bg-zinc-900/30">
+            <h3 className="text-xl font-bold text-white">Route Schedule</h3>
+            <X className="text-white/40 cursor-pointer" onClick={() => setViewingRoute(null)} />
+          </div>
+
+          <div className="p-8 max-h-[60vh] overflow-y-auto">
+            {allPoints.length > 0 ? (
+              <div className="relative space-y-10">
+                {/* Vertical line connecting points */}
+                <div className="absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10" />
+
+                {allPoints.map((point, idx) => (
+                  <div key={idx} className="flex gap-6 relative">
+                    <div className={`mt-1.5 w-7 h-7 rounded-full border-2 border-zinc-950 flex items-center justify-center z-10 bg-${point.color}-500`}>
+                      <MapPin className="h-3.5 w-3.5 text-black" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-base font-bold text-white">{point.name}</p>
+                          <p className="text-sm text-white/40">{point.address}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-emerald-400">{point.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-white/40">No schedule points found for this cab.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1176,18 +1274,47 @@ export const BookingSteps: React.FC = () => {
                             <span className="text-lg font-medium text-white">{arrivalTime}</span>
                           </div>
 
-                          <div className="space-y-1">
+                          <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                              <Badge className="text-[10px] h-5 text-emerald-500 bg-transparent border-0 text-zinc-400 shadow-none">
                                 {cab.routeCode}
                               </Badge>
                               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                                 {cab.capacity || 50} SEATER
                               </span>
                             </div>
+
                             <h4 className='font-bold text-white text-base leading-tight uppercase tracking-tight'>
                               {cab.route || `Standard Seater ${cab.id}`}
                             </h4>
+
+                            {/* NEW: Feature Icons and See Route Button */}
+                            <div className="flex items-center justify-between gap-2 pt-1">
+                              <div className="flex items-center gap-3 text-zinc-500">
+                                <div className="flex flex-col items-center gap-0.5" title="AC">
+                                  <Wind className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">AC</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-0.5" title="Wifi">
+                                  <Wifi className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">Wifi</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-0.5" title="USB">
+                                  <Usb className="h-3.5 w-3.5" />
+                                  <span className="text-[8px] uppercase font-bold">USB</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent card selection when clicking link
+                                  setViewingRoute(cab); // State for the popup
+                                }}
+                                className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors underline underline-offset-4"
+                              >
+                                See Route
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -1234,10 +1361,12 @@ export const BookingSteps: React.FC = () => {
         )
 
       case 4:
-        // Calculate Summary Details
-        const baseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
-        const gst = baseFare * 0.05; // 5% GST
-        const serviceFee = 40; // Fixed Service Fee
+        // 1. Calculations
+        const currentBaseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
+        const currentGst = currentBaseFare * 0.05;
+        const currentServiceFee = 12;
+        const currentDiscount = 100 * passengers.length; // ₹100 discount per passenger
+        const currentTotal = Math.max(0, currentBaseFare + currentGst + currentServiceFee - currentDiscount);
 
         return (
           <div className='max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
@@ -1263,83 +1392,90 @@ export const BookingSteps: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right: Fare Breakdown */}
+              {/* Right: Updated Fare Breakdown with Discount */}
               <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
-                {/* <div className="absolute top-0 right-0 p-2 opacity-10">
-                  <CreditCard className="h-12 w-12 text-emerald-500" />
-                </div> */}
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>Base Fare</span>
-                    <span className="text-white font-medium">₹{baseFare.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentBaseFare.toFixed(2)}</span>
                   </div>
+
+                  {/* Discount Row */}
+                  <div className="flex justify-between text-xs text-emerald-400 font-medium">
+                    <span>Discount Welcome({currentDiscount})</span>
+                    <span>- ₹{currentDiscount.toFixed(2)}</span>
+                  </div>
+
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>GST (5%)</span>
-                    <span className="text-white font-medium">₹{gst.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentGst.toFixed(2)}</span>
                   </div>
+
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>Service Fee</span>
-                    <span className="text-white font-medium">₹{serviceFee.toFixed(2)}</span>
+                    <span className="text-white font-medium">₹{currentServiceFee.toFixed(2)}</span>
                   </div>
+
                   <div className="pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end">
                     <span className="text-sm font-bold text-emerald-400">Total Fare</span>
-                    <span className="text-sm font-black text-white">₹{totalFare}</span>
+                    <span className="text-sm font-black text-white">₹{currentTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Global pickup/drop (shown once) */}
+            {/* Global pickup/drop (using UI Select) */}
             <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   Pickup Point
                 </label>
-                <select
+                <Select
                   value={globalPickup || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                  onValueChange={(value) => {
                     setGlobalPickup(value);
-                    // sync to all passengers
                     const updated = passengers.map((p) => ({ ...p, pickupAddress: value }));
                     setPassengers(updated);
                   }}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="">Select Pickup</option>
-                  {pickupOptions.map((point) => (
-                    <option key={point.name} value={point.name}>
-                      {point.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
+                    <SelectValue placeholder="Select Pickup" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {pickupOptions.map((point) => (
+                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                        {point.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   Drop Point
                 </label>
-                <select
+                <Select
                   value={globalDrop || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
+                  onValueChange={(value) => {
                     setGlobalDrop(value);
-                    // sync to all passengers
                     const updated = passengers.map((p) => ({ ...p, dropAddress: value }));
                     setPassengers(updated);
                   }}
-                  className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <option value="">Select Drop</option>
-                  {dropOptions.map((point) => (
-                    <option key={point.name} value={point.name}>
-                      {point.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
+                    <SelectValue placeholder="Select Drop" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    {dropOptions.map((point) => (
+                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                        {point.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
 
             {/* 2. Passenger Details Section */}
             <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
@@ -1358,11 +1494,17 @@ export const BookingSteps: React.FC = () => {
                       <span className='text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
                         Seat {passenger.seatNumber}
                       </span>
+
+                      {idx === 0 && (
+                        <span className='ml-3 text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
+                          {`Primary Passenger`}
+                        </span>
+                      )}
                     </div>
 
                     <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
                       <div className="md:col-span-2">
-                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Full Name
                         </label>
                         <div className="relative">
@@ -1382,7 +1524,7 @@ export const BookingSteps: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
+                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Age & Gender
                         </label>
                         <div className="flex gap-2">
@@ -1397,68 +1539,35 @@ export const BookingSteps: React.FC = () => {
                             }}
                             className='w-16 py-3 bg-black/40 border border-white/10 rounded-xl text-center text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
                           />
-                          <select
-                            value={passenger.gender}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].gender = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='flex-1 px-3 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 appearance-none'
-                          >
-                            <option value=''>Gender</option>
-                            <option value='male'>Male</option>
-                            <option value='female'>Female</option>
-                          </select>
+
+                          {/* Gender Select Component */}
+                          <div className="flex-1">
+                            <Select
+                              value={passenger.gender}
+                              onValueChange={(value) => {
+                                const newPax = [...passengers];
+                                newPax[idx].gender = value;
+                                setPassengers(newPax);
+                              }}
+                            >
+                              <SelectTrigger className="h-[46px] bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40 text-sm">
+                                <SelectValue placeholder="Gender" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                                <SelectItem value="male" className="focus:bg-emerald-500/10 focus:text-emerald-400">Male</SelectItem>
+                                <SelectItem value="female" className="focus:bg-emerald-500/10 focus:text-emerald-400">Female</SelectItem>
+                                <SelectItem value="other" className="focus:bg-emerald-500/10 focus:text-emerald-400">Others</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
-
-                      {/* <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                            Pickup Point
-                          </label>
-                          <select
-                            value={passenger.pickupAddress || ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].pickupAddress = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          >
-                            <option value=''>Select Pickup</option>
-                            {pickupOptions.map((point) => (
-                              <option key={point.name} value={point.name}>{point.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                            Drop Point
-                          </label>
-                          <select
-                            value={passenger.dropAddress || ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].dropAddress = e.target.value;
-                              setPassengers(newPax);
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          >
-                            <option value=''>Select Drop</option>
-                            {dropOptions.map((point) => (
-                              <option key={point.name} value={point.name}>{point.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div> */}
-
                     </div>
+
                     {idx === 0 && (
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
                             Contact Phone
                           </label>
                           <input
@@ -1476,7 +1585,7 @@ export const BookingSteps: React.FC = () => {
                         </div>
 
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
                             Contact Email
                           </label>
                           <input
@@ -1491,26 +1600,14 @@ export const BookingSteps: React.FC = () => {
                             className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                           />
                         </div>
-                      </div>)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-
-              {/* Action Button */}
-              {/* <div className='flex justify-end mt-10 pt-6 border-t border-white/5'>
-                <Button
-                  disabled={passengers.some((p) => !p.name || !p.age || !p.gender)}
-                  onClick={nextStep}
-                  className='group relative px-12 py-6 rounded-2xl bg-emerald-500 text-black font-black text-lg overflow-hidden transition-all hover:pr-14 hover:bg-emerald-400 disabled:opacity-30'
-                >
-                  <span className="relative z-10">CONTINUE</span>
-                  <ArrowRight className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all h-5 w-5" />
-                </Button>
-              </div> */}
             </div>
           </div>
         );
-
       case 5:
         return (
           <div className='space-y-6'>
@@ -1612,11 +1709,16 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    <div className='min-h-screen bg-black text-white flex flex-col'>
-      {/* <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-10 flex-1 flex flex-col gap-6"> */}
-      <div>
+    // We use flex-col and min-h-screen to ensure the page fills the height, 
+    // but doesn't create extra scroll space unless content is long.
+    <div className='min-h-screen bg-black text-white flex flex-col relative'>
+
+      {/* Main Content Area */}
+      <div className='flex-1 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col'>
+
+        {/* Timer Section */}
         {timerActive && (
-          <div className='flex justify-center mb-4'>
+          <div className='flex justify-center mb-6'>
             <div className='bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono'>
               ⏱️ {Math.floor(timerSeconds / 60)}:
               {(timerSeconds % 60).toString().padStart(2, '0')}
@@ -1625,20 +1727,22 @@ export const BookingSteps: React.FC = () => {
           </div>
         )}
 
-        {/* Step Content */}
-        <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white flex-1'>
-          <CardContent className='p-5 sm:p-7'>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
+        {/* Step Content Wrapper */}
+        <div className='flex-1'>
+          <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white h-full'>
+            <CardContent className='p-5 sm:p-7'>
+              {renderStepContent()}
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Navigation Buttons */}
-        <div className='flex justify-between gap-4 max-w-5xl mx-auto w-full pt-2'>
+        {/* Navigation Buttons (Desktop Only - Inlined) */}
+        <div className='hidden md:flex justify-between gap-4 max-w-5xl mx-auto w-full pt-8'>
           <Button
             variant='outline'
             onClick={prevStep}
             disabled={currentStep === 1}
-            className='rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 disabled:cursor-not-allowed'
+            className='rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 px-8'
           >
             Previous
           </Button>
@@ -1647,27 +1751,58 @@ export const BookingSteps: React.FC = () => {
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              (currentStep === 2 && !selectedCab) ||
+              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
+              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup ||
-                  !globalDrop) && (!passengers[0].phone || !passengers[0].email ))
+                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                (!passengers[0].phone || !passengers[0].email))
             }
-            className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 disabled:cursor-not-allowed'
+            className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 px-8'
           >
             {currentStep === 6 ? 'Complete' : 'Next'}
             {currentStep < 6 && <ArrowRight className='ml-2 h-4 w-4' />}
           </Button>
         </div>
+      </div>
 
-        {/* Login Modal */}
-        {renderLoginModal()}
-        <div className='min-h-screen bg-black text-white flex flex-col'>
-          {/* ... existing code ... */}
-          {renderLoginModal()}
-          {renderPaymentSelectionModal()}
+      {/* Sticky Navigation Footer (Mobile Only) */}
+      <div className='md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg'>
+        <div className='flex justify-between gap-4 p-4'>
+          <Button
+            variant='outline'
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className='flex-1 rounded-full border-white/20 text-white bg-transparent h-12'
+          >
+            Previous
+          </Button>
+          <Button
+            onClick={nextStep}
+            disabled={
+              currentStep === 6 ||
+              (currentStep === 1 && !selectedDate) ||
+              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
+              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 3 && selectedSeats.length === 0) ||
+              (currentStep === 4 &&
+                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                (!passengers[0].phone || !passengers[0].email))
+            }
+            className='flex-1 rounded-full bg-emerald-500 text-black font-bold h-12'
+          >
+            {currentStep === 6 ? 'Complete' : 'Next'}
+          </Button>
         </div>
       </div>
+
+      {/* Spacer so content doesn't get hidden behind the mobile sticky footer */}
+      <div className="h-24 md:hidden" />
+
+      {/* Modals & Popups (Rendered once at the bottom) */}
+      {renderLoginModal()}
+      {renderPaymentSelectionModal()}
+      {renderRoutePopup && renderRoutePopup()}
     </div>
-  )
+  );
 }

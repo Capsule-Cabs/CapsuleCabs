@@ -121,6 +121,7 @@ const Index = () => {
     to: "",
     date: new Date()
   });
+  const [openCalendar, setOpenCalendar] = useState(false);
 
   const handleSearch = () => {
     navigate('/booking', { state: searchData });
@@ -268,7 +269,7 @@ const Index = () => {
                           </div>
                         </div>
 
-                        <Popover>
+                        <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -289,7 +290,12 @@ const Index = () => {
                             <Calendar
                               mode="single"
                               selected={searchData.date}
-                              onSelect={(d) => d && setSearchData({ ...searchData, date: d })}
+                              onSelect={(d) => {
+                                if (d) {
+                                  setSearchData({ ...searchData, date: d });
+                                  setOpenCalendar(false);
+                                }
+                              }}
                               disabled={(date) => date < new Date()}
                               className="bg-zinc-950 text-white rounded-xl"
                             />
@@ -298,13 +304,19 @@ const Index = () => {
 
                         <Button
                           onClick={handleSearch}
-                          className="h-16 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg rounded-2xl shadow-xl shadow-emerald-500/10 group overflow-hidden relative"
+                          // NEW: Add the disabled logic here
+                          disabled={!searchData.from || !searchData.to || !searchData.date}
+                          className="h-16 w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-lg rounded-2xl shadow-xl shadow-emerald-500/10 group overflow-hidden relative disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-500"
                         >
                           <span className="relative z-10 flex items-center justify-center gap-2">
                             Search Cabs
                             <Search className="h-5 w-5 group-hover:scale-110 transition-transform" />
                           </span>
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                          {/* The shine effect should only show if NOT disabled */}
+                          {!(!searchData.from || !searchData.to || !searchData.date) && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                          )}
                         </Button>
                       </div>
                     </div>
