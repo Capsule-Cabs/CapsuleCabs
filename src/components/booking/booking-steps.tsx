@@ -59,6 +59,9 @@ interface CabWithAvailability {
   seatsAvailable: SeatAvailability[]
   departureTime: string
   arrivalTime: string
+  origin: string | any;
+  destination: string | any;
+
 }
 
 interface Passenger {
@@ -288,6 +291,8 @@ export const BookingSteps: React.FC = () => {
           seatsAvailable,
           departureTime,
           arrivalTime,
+          origin: route.origin,
+          destination: route.destination,
         } as CabWithAvailability
       })
 
@@ -992,98 +997,113 @@ export const BookingSteps: React.FC = () => {
   }
 
   const SeatButton: React.FC<{
-  seatNum: string
-  seatObj?: SeatAvailability
-}> = ({ seatNum, seatObj }) => {
-  if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
+    seatNum: string
+    seatObj?: SeatAvailability
+  }> = ({ seatNum, seatObj }) => {
+    if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
 
-  const isBooked = seatObj.status === 'booked'
-  const isSelected = selectedSeats.includes(seatNum)
-  const isLocked = seatObj.status === 'locked' && seatObj.lockedBy && seatObj.lockedBy !== user?.id
-  
-  // High-visibility Female check
-  const isFemaleBooked = isBooked && seatObj.gender?.toLowerCase() === 'female'
+    const isBooked = seatObj.status === 'booked'
+    const isSelected = selectedSeats.includes(seatNum)
+    const isLocked = seatObj.status === 'locked' && seatObj.lockedBy && seatObj.lockedBy !== user?.id
 
-  const originalPrice = seatObj.price || 0
-  const discountPrice = Math.max(0, originalPrice - 100)
+    // High-visibility Female check
+    const isFemaleBooked = isBooked && seatObj.gender?.toLowerCase() === 'female'
 
-  return (
-    <button
-      type='button'
-      className={[
-        'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-        // 1. Check Female Booked FIRST with Fuchsia
-        isFemaleBooked
-          ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
-        // 2. Standard Booked
-        : isBooked
-          ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-        : isLocked
-          ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-        : isSelected
-          ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-          : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
-      ].join(' ')}
-      disabled={isBooked || isLocked}
-      onClick={() => {
-        if (isBooked || isLocked) return
-        setSelectedSeats((prev) =>
-          prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
-        )
-      }}
-    >
-      <span className='font-bold leading-tight'>{seatNum}</span>
-      <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
-        ₹{discountPrice}
-      </span>
-      {originalPrice > 0 && (
-        <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
-          ₹{originalPrice}
+    const originalPrice = seatObj.price || 0
+    const discountPrice = Math.max(0, originalPrice - 100)
+
+    return (
+      <button
+        type='button'
+        className={[
+          'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
+          // 1. Check Female Booked FIRST with Fuchsia
+          isFemaleBooked
+            ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
+            // 2. Standard Booked
+            : isBooked
+              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+              : isLocked
+                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+                : isSelected
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+        ].join(' ')}
+        disabled={isBooked || isLocked}
+        onClick={() => {
+          if (isBooked || isLocked) return
+          setSelectedSeats((prev) =>
+            prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
+          )
+        }}
+      >
+        <span className='font-bold leading-tight'>{seatNum}</span>
+        <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
+          ₹{discountPrice}
         </span>
-      )}
-    </button>
-  )
-}
+        {originalPrice > 0 && (
+          <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
+            ₹{originalPrice}
+          </span>
+        )}
+      </button>
+    )
+  }
 
   const renderRoutePopup = () => {
     if (!viewingRoute) return null;
 
+    const cab = availableCabs.find((c) => c.id === selectedCab);
+    if (!cab) return null;
+
+    // Extract points from your circuit.model structure
+    // We use optional chaining (?.) so it doesn't crash if data is missing
+    const pickups = cab.origin?.pickupPoints || [];
+    const drops = cab.destination?.dropPoints || [];
+
+    const allPoints = [
+      ...pickups.map((p: any) => ({ ...p, type: 'Pickup', color: 'emerald' })),
+      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'rose' }))
+    ];
+
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-        <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-          <div className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-800/50">
-            <h3 className="font-bold text-white">Route Schedule</h3>
-            <Button variant="ghost" size="icon" onClick={() => setViewingRoute(null)} className="text-zinc-400">
-              <X className="h-5 w-5" />
-            </Button>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+        <div className="bg-zinc-950 border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex justify-between items-center bg-zinc-900/30">
+            <h3 className="text-xl font-bold text-white">Route Schedule</h3>
+            <X className="text-white/40 cursor-pointer" onClick={() => setViewingRoute(null)} />
           </div>
 
-          <div className="p-6 space-y-6">
-            {/* Timeline Logic */}
-            <div className="relative space-y-8 before:absolute before:inset-0 before:left-[11px] before:w-[2px] before:bg-emerald-500/20">
-              {/* Example Stops - Map these from your cab object if available */}
-              {[
-                { stop: "First Pickup Point", time: viewingRoute.departureTime },
-                { stop: "Intermediate Stop", time: "10:30 AM" },
-                { stop: "Last Dropping Point", time: viewingRoute.arrivalTime }
-              ].map((item, idx) => (
-                <div key={idx} className="relative flex items-start gap-4 pl-8">
-                  <div className={`absolute left-0 h-6 w-6 rounded-full border-4 border-zinc-900 flex items-center justify-center ${idx === 0 ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
-                    {idx === 0 && <div className="h-2 w-2 bg-white rounded-full" />}
-                  </div>
-                  <div>
-                    <p className="text-white font-bold leading-none">{item.stop}</p>
-                    <p className="text-zinc-500 text-xs mt-1">{item.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <div className="p-8 max-h-[60vh] overflow-y-auto">
+            {allPoints.length > 0 ? (
+              <div className="relative space-y-10">
+                {/* Vertical line connecting points */}
+                <div className="absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10" />
 
-          <div className="p-4 bg-zinc-800/30">
-            <Button onClick={() => setViewingRoute(null)} className="w-full bg-white text-black hover:bg-zinc-200">
-              Close
-            </Button>
+                {allPoints.map((point, idx) => (
+                  <div key={idx} className="flex gap-6 relative">
+                    <div className={`mt-1.5 w-7 h-7 rounded-full border-2 border-zinc-950 flex items-center justify-center z-10 bg-${point.color}-500`}>
+                      <MapPin className="h-3.5 w-3.5 text-black" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-base font-bold text-white">{point.name}</p>
+                          <p className="text-sm text-white/40">{point.address}</p>
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-emerald-400">{point.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-white/40">No schedule points found for this cab.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
