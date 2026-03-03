@@ -1,6 +1,19 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Capacitor } from '@capacitor/core'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { PhonePePaymentPlugin } from 'ionic-capacitor-phonepe-pg'
 import { format } from 'date-fns'
 import { useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api'
@@ -14,7 +27,10 @@ import {
   ArrowRight,
   X,
   Loader2,
-  Wind, Wifi, Usb, Info
+  Wind,
+  Wifi,
+  Usb,
+  Info,
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -59,9 +75,8 @@ interface CabWithAvailability {
   seatsAvailable: SeatAvailability[]
   departureTime: string
   arrivalTime: string
-  origin: string | any;
-  destination: string | any;
-
+  origin: string | any
+  destination: string | any
 }
 
 interface Passenger {
@@ -72,8 +87,8 @@ interface Passenger {
   fare: number
   pickupAddress?: string
   dropAddress?: string
-  email?: string;
-  phone?: string;
+  email?: string
+  phone?: string
 }
 
 interface PickupPoint {
@@ -132,8 +147,8 @@ const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
 }
 
 export const BookingSteps: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = useLocation()
+  const navigate = useNavigate()
   const preFilledData = location.state
   const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -151,8 +166,8 @@ export const BookingSteps: React.FC = () => {
   const [dropOptions, setDropOptions] = useState<DropPoint[]>([])
   const [pickupAddress, setPickupAddress] = useState<string>('')
   const [dropAddress, setDropAddress] = useState<string>('')
-  const [globalPickup, setGlobalPickup] = useState("");
-  const [globalDrop, setGlobalDrop] = useState("");
+  const [globalPickup, setGlobalPickup] = useState('')
+  const [globalDrop, setGlobalDrop] = useState('')
 
   const pickupBoxRef = useRef<google.maps.places.SearchBox | null>(null)
   const dropBoxRef = useRef<google.maps.places.SearchBox | null>(null)
@@ -177,15 +192,14 @@ export const BookingSteps: React.FC = () => {
     'PHONEPE' | 'ZOHO' | null
   >(null)
 
-  const [totalFare, setTotalFare] = useState<number>(0);
+  const [totalFare, setTotalFare] = useState<number>(0)
   const [fareBreakdown, setFareBreakdown] = useState({
     baseFare: 0,
     gst: 0,
     convenienceFee: 0,
-    discount: 0
-  });
-  const [viewingRoute, setViewingRoute] = useState<any>(null);
-
+    discount: 0,
+  })
+  const [viewingRoute, setViewingRoute] = useState<any>(null)
 
   const timerRef = useRef<NodeJS.Timeout>()
 
@@ -201,38 +215,38 @@ export const BookingSteps: React.FC = () => {
 
   useEffect(() => {
     if (currentStep === 4 && passengers.length > 0) {
-      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0);
+      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0)
       setTotalFareSafely({
         baseFare,
         gst: baseFare * 0.05,
         convenienceFee: 12,
-        discount: 100
-      });
+        discount: 100,
+      })
     }
-  }, [currentStep, passengers]);
+  }, [currentStep, passengers])
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentStep]);
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
 
-  useEffect(() => {
-    const initPhonePe = async () => {
-      if (Capacitor.isNativePlatform()) {
-        try {
-          await PhonePePaymentPlugin.init({
-            environment: 'SANDBOX', // Change to "PRODUCTION" when going live
-            merchantId: 'M23EMO4MTCO4P', // Your actual MID
-            flowId: `flow_${user.id}`, // Alphanumeric string for tracking
-            enableLogging: true, // Set to false in production
-          })
-          console.log('PhonePe SDK Initialized')
-        } catch (error) {
-          console.error('PhonePe Init Error:', error)
-        }
-      }
-    }
-    initPhonePe()
-  }, [])
+  // useEffect(() => {
+  //   const initPhonePe = async () => {
+  //     if (Capacitor.isNativePlatform()) {
+  //       try {
+  //         await PhonePePaymentPlugin.init({
+  //           environment: 'PRODUCTION', // Change to "PRODUCTION" when going live
+  //           merchantId: 'M23EMO4MTCO4P', // Your actual MID
+  //           flowId: `flow_${user.id}`, // Alphanumeric string for tracking
+  //           enableLogging: false, // Set to false in production
+  //         })
+  //         console.log('PhonePe SDK Initialized')
+  //       } catch (error) {
+  //         console.error('PhonePe Init Error:', error)
+  //       }
+  //     }
+  //   }
+  //   initPhonePe()
+  // }, [])
   const generateStrongOrderId = (): string => {
     const timestamp = Date.now().toString(36)
     const random = Math.random().toString(36).substring(2, 8)
@@ -397,21 +411,23 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
+  const calculateTotalFare = useCallback(
+    (bd = fareBreakdown) => {
+      const total = bd.baseFare + bd.gst + bd.convenienceFee - bd.discount
+      // Math.max ensures it doesn't go below 0
+      // toFixed(4) fixes the precision, and Number() converts it back to a float
+      return Number(Math.max(0, total).toFixed(4))
+    },
+    [fareBreakdown],
+  )
 
-
-  const calculateTotalFare = useCallback((bd = fareBreakdown) => {
-    const total = bd.baseFare + bd.gst + bd.convenienceFee - bd.discount;
-    // Math.max ensures it doesn't go below 0
-    // toFixed(4) fixes the precision, and Number() converts it back to a float
-    return Number(Math.max(0, total).toFixed(4));
-  }, [fareBreakdown]);
-
-  const setTotalFareSafely = useCallback((breakdown: typeof fareBreakdown) => {
-    setFareBreakdown(breakdown);
-    setTotalFare(calculateTotalFare(breakdown));
-  }, [calculateTotalFare]);
-
-
+  const setTotalFareSafely = useCallback(
+    (breakdown: typeof fareBreakdown) => {
+      setFareBreakdown(breakdown)
+      setTotalFare(calculateTotalFare(breakdown))
+    },
+    [calculateTotalFare],
+  )
 
   const nextStep = async () => {
     if (currentStep === 1) {
@@ -459,8 +475,8 @@ export const BookingSteps: React.FC = () => {
             pickupAddress,
             dropAddress,
           }
-        });
-        console.log('New Passengers: ', newPassengers);
+        })
+        console.log('New Passengers: ', newPassengers)
         // setTotalFare(runningTotal);
         setPassengers(newPassengers)
 
@@ -506,9 +522,9 @@ export const BookingSteps: React.FC = () => {
   const getBookingPayload = () => {
     return {
       routeId: selectedCab,
-      travelDate: format(selectedDate!, "yyyy-MM-dd"),
-      email: passengers[0]?.email || "",
-      phone: passengers[0]?.phone || "",
+      travelDate: format(selectedDate!, 'yyyy-MM-dd'),
+      email: passengers[0]?.email || '',
+      phone: passengers[0]?.phone || '',
       passengers: passengers.map((p) => ({
         name: p.name,
         age: p.age,
@@ -516,11 +532,11 @@ export const BookingSteps: React.FC = () => {
         seatNumber: p.seatNumber,
         fare: p.fare,
         pickupPoint: p.pickupAddress,
-        dropPoint: p.dropAddress
+        dropPoint: p.dropAddress,
       })),
-      paymentMethod: "upi",
-    };
-  };
+      paymentMethod: 'upi',
+    }
+  }
 
   const initiatePaymentFlow = () => {
     setShowPaymentModal(true)
@@ -538,21 +554,24 @@ export const BookingSteps: React.FC = () => {
   const startMobilePayment = async () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
-    const bookingPayload = getBookingPayload();
+    const bookingPayload = getBookingPayload()
     const apiRes = await api.post('/phonePePayments/createOrderForSdk', {
       amount: totalAmount,
       merchantOrderId,
       phone: user?.phone,
-      bookingPayload
+      bookingPayload,
     })
     const { request } = apiRes.data.data
     const decodedRequest = JSON.parse(atob(request))
     console.log('SDK RESPONSE: ', request)
-    localStorage.setItem("pending_booking", JSON.stringify({
-      ...bookingPayload,
-      merchantOrderId,
-      totalFare
-    }));
+    localStorage.setItem(
+      'pending_booking',
+      JSON.stringify({
+        ...bookingPayload,
+        merchantOrderId,
+        totalFare,
+      }),
+    )
     try {
       const txnResult = await PhonePePaymentPlugin.startTransaction({
         request: decodedRequest,
@@ -562,7 +581,7 @@ export const BookingSteps: React.FC = () => {
 
       if (txnResult.status === 'SUCCESS') {
         // const paymentResponse = await verifyPaymentDetails(merchantOrderId);
-        navigate('/booking-status');
+        navigate('/booking-status')
         toast.success('Payment was successfull.')
       } else {
         toast.error('Payment was not successfull.')
@@ -579,19 +598,22 @@ export const BookingSteps: React.FC = () => {
     try {
       const totalAmount = totalFare
       const merchantOrderId = generateStrongOrderId()
-      const bookingPayload = getBookingPayload();
+      const bookingPayload = getBookingPayload()
       const response = await api.post('/phonePePayments/createOrder', {
         amount: totalAmount,
         merchantOrderId,
         phone: user?.phone,
-        bookingPayload
-      });
+        bookingPayload,
+      })
 
-      localStorage.setItem("pending_booking", JSON.stringify({
-        ...bookingPayload,
-        merchantOrderId,
-        totalFare
-      }));
+      localStorage.setItem(
+        'pending_booking',
+        JSON.stringify({
+          ...bookingPayload,
+          merchantOrderId,
+          totalFare,
+        }),
+      )
 
       if (response?.data?.data?.redirectUrl) {
         window.location.href = response?.data?.data?.redirectUrl
@@ -607,7 +629,6 @@ export const BookingSteps: React.FC = () => {
       setIsAuthLoading(false)
     }
   }
-
 
   const handleAuthCheck = async () => {
     if (isAuthenticated) {
@@ -793,10 +814,11 @@ export const BookingSteps: React.FC = () => {
             {/* PhonePe Option */}
             <button
               onClick={() => setSelectedGateway('PHONEPE')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${selectedGateway === 'PHONEPE'
-                ? 'ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]'
-                : 'hover:bg-zinc-50'
-                }`}
+              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${
+                selectedGateway === 'PHONEPE'
+                  ? 'ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]'
+                  : 'hover:bg-zinc-50'
+              }`}
             >
               <div className='flex items-center gap-4 relative z-10'>
                 {/* The Logo Container */}
@@ -838,10 +860,11 @@ export const BookingSteps: React.FC = () => {
 
               {/* Pro Radio Selection UI matching image_b8f838.png */}
               <div
-                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE'
-                  ? 'border-sky-500 bg-white'
-                  : 'border-zinc-200'
-                  }`}
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  selectedGateway === 'PHONEPE'
+                    ? 'border-sky-500 bg-white'
+                    : 'border-zinc-200'
+                }`}
               >
                 {selectedGateway === 'PHONEPE' && (
                   <div className='w-4 h-4 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.4)] animate-in zoom-in duration-200' />
@@ -899,7 +922,7 @@ export const BookingSteps: React.FC = () => {
     seats.forEach((seat) => {
       seatByNum[seat.seatNumber] = seat
     })
-    console.log('seatbyNum: ', seatByNum);
+    console.log('seatbyNum: ', seatByNum)
     const layoutRows: (string | null)[][] = [
       ['A1', null, 'Driver'],
       ['B1', 'B2', 'B3'],
@@ -1004,10 +1027,14 @@ export const BookingSteps: React.FC = () => {
 
     const isBooked = seatObj.status === 'booked'
     const isSelected = selectedSeats.includes(seatNum)
-    const isLocked = seatObj.status === 'locked' && seatObj.lockedBy && seatObj.lockedBy !== user?.id
+    const isLocked =
+      seatObj.status === 'locked' &&
+      seatObj.lockedBy &&
+      seatObj.lockedBy !== user?.id
 
     // High-visibility Female check
-    const isFemaleBooked = isBooked && seatObj.gender?.toLowerCase() === 'female'
+    const isFemaleBooked =
+      isBooked && seatObj.gender?.toLowerCase() === 'female'
 
     const originalPrice = seatObj.price || 0
     const discountPrice = Math.max(0, originalPrice - 100)
@@ -1020,20 +1047,22 @@ export const BookingSteps: React.FC = () => {
           // 1. Check Female Booked FIRST with Fuchsia
           isFemaleBooked
             ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
-            // 2. Standard Booked
-            : isBooked
-              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-              : isLocked
-                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-                : isSelected
-                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+            : // 2. Standard Booked
+            isBooked
+            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+            : isLocked
+            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+            : isSelected
+            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+            : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
         ].join(' ')}
         disabled={isBooked || isLocked}
         onClick={() => {
           if (isBooked || isLocked) return
           setSelectedSeats((prev) =>
-            prev.includes(seatNum) ? prev.filter((s) => s !== seatNum) : [...prev, seatNum]
+            prev.includes(seatNum)
+              ? prev.filter((s) => s !== seatNum)
+              : [...prev, seatNum],
           )
         }}
       >
@@ -1051,48 +1080,59 @@ export const BookingSteps: React.FC = () => {
   }
 
   const renderRoutePopup = () => {
-    if (!viewingRoute) return null;
+    if (!viewingRoute) return null
 
-    const cab = availableCabs.find((c) => c.id === selectedCab);
-    if (!cab) return null;
+    const cab = availableCabs.find((c) => c.id === selectedCab)
+    if (!cab) return null
 
     // Extract points from your circuit.model structure
     // We use optional chaining (?.) so it doesn't crash if data is missing
-    const pickups = cab.origin?.pickupPoints || [];
-    const drops = cab.destination?.dropPoints || [];
+    const pickups = cab.origin?.pickupPoints || []
+    const drops = cab.destination?.dropPoints || []
 
     const allPoints = [
       ...pickups.map((p: any) => ({ ...p, type: 'Pickup', color: 'emerald' })),
-      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'rose' }))
-    ];
+      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'rose' })),
+    ]
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-        <div className="bg-zinc-950 border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex justify-between items-center bg-zinc-900/30">
-            <h3 className="text-xl font-bold text-white">Route Schedule</h3>
-            <X className="text-white/40 cursor-pointer" onClick={() => setViewingRoute(null)} />
+      <div className='fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md'>
+        <div className='bg-zinc-950 border border-white/10 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden'>
+          <div className='p-6 border-b border-white/5 flex justify-between items-center bg-zinc-900/30'>
+            <h3 className='text-xl font-bold text-white'>Route Schedule</h3>
+            <X
+              className='text-white/40 cursor-pointer'
+              onClick={() => setViewingRoute(null)}
+            />
           </div>
 
-          <div className="p-8 max-h-[60vh] overflow-y-auto">
+          <div className='p-8 max-h-[60vh] overflow-y-auto'>
             {allPoints.length > 0 ? (
-              <div className="relative space-y-10">
+              <div className='relative space-y-10'>
                 {/* Vertical line connecting points */}
-                <div className="absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10" />
+                <div className='absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10' />
 
                 {allPoints.map((point, idx) => (
-                  <div key={idx} className="flex gap-6 relative">
-                    <div className={`mt-1.5 w-7 h-7 rounded-full border-2 border-zinc-950 flex items-center justify-center z-10 bg-${point.color}-500`}>
-                      <MapPin className="h-3.5 w-3.5 text-black" />
+                  <div key={idx} className='flex gap-6 relative'>
+                    <div
+                      className={`mt-1.5 w-7 h-7 rounded-full border-2 border-zinc-950 flex items-center justify-center z-10 bg-${point.color}-500`}
+                    >
+                      <MapPin className='h-3.5 w-3.5 text-black' />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
+                    <div className='flex-1'>
+                      <div className='flex justify-between items-start'>
                         <div>
-                          <p className="text-base font-bold text-white">{point.name}</p>
-                          <p className="text-sm text-white/40">{point.address}</p>
+                          <p className='text-base font-bold text-white'>
+                            {point.name}
+                          </p>
+                          <p className='text-sm text-white/40'>
+                            {point.address}
+                          </p>
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-emerald-400">{point.time}</span>
+                          <span className='text-xs font-bold text-emerald-400'>
+                            {point.time}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1100,17 +1140,17 @@ export const BookingSteps: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10">
-                <p className="text-white/40">No schedule points found for this cab.</p>
+              <div className='text-center py-10'>
+                <p className='text-white/40'>
+                  No schedule points found for this cab.
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
-    );
-  };
-
-
+    )
+  }
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1225,27 +1265,45 @@ export const BookingSteps: React.FC = () => {
       case 2:
         return (
           <div className='w-full max-w-4xl mx-auto px-4 py-6 space-y-4'>
-            <div className="text-center mb-6">
-              <h3 className='text-2xl font-bold text-white'>Select Cab & Time</h3>
-              <p className="text-zinc-500 text-sm mt-1">Choose your preferred schedule</p>
+            <div className='text-center mb-6'>
+              <h3 className='text-2xl font-bold text-white'>
+                Select Cab & Time
+              </h3>
+              <p className='text-zinc-500 text-sm mt-1'>
+                Choose your preferred schedule
+              </p>
             </div>
 
-            <div className={
-              availableCabs.length === 1
-                ? 'max-w-xl mx-auto'
-                : 'grid grid-cols-1 gap-3' // Using a single column with horizontal cards feels "thinner"
-            }>
+            <div
+              className={
+                availableCabs.length === 1
+                  ? 'max-w-xl mx-auto'
+                  : 'grid grid-cols-1 gap-3' // Using a single column with horizontal cards feels "thinner"
+              }
+            >
               {availableCabs.length > 0 ? (
                 availableCabs.map((cab) => {
                   const departureTime = cab.departureTime
-                    ? new Date(`2000-01-01T${cab.departureTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
-                    : '09:55 am';
+                    ? new Date(`2000-01-01T${cab.departureTime}`)
+                        .toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })
+                        .toLowerCase()
+                    : '09:55 am'
                   const arrivalTime = cab.arrivalTime
-                    ? new Date(`2000-01-01T${cab.arrivalTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
-                    : '12:30 pm';
+                    ? new Date(`2000-01-01T${cab.arrivalTime}`)
+                        .toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true,
+                        })
+                        .toLowerCase()
+                    : '12:30 pm'
 
-                  const selected = selectedCab === cab.id;
-                  const isAvailable = cab.available;
+                  const selected = selectedCab === cab.id
+                  const isAvailable = cab.available
 
                   return (
                     <Card
@@ -1253,33 +1311,40 @@ export const BookingSteps: React.FC = () => {
                       className={`
                   relative overflow-hidden group transition-all duration-300 cursor-pointer
                   bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl
-                  ${selected ? 'ring-2 ring-emerald-500/50 border-emerald-500/50 bg-emerald-500/5' : 'hover:border-white/20'}
+                  ${
+                    selected
+                      ? 'ring-2 ring-emerald-500/50 border-emerald-500/50 bg-emerald-500/5'
+                      : 'hover:border-white/20'
+                  }
                   ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
                       onClick={() => isAvailable && setSelectedCab(cab.id)}
                     >
                       {/* Selected Indicator Glow */}
                       {selected && (
-                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[2px_0_10px_rgba(16,185,129,0.5)]" />
+                        <div className='absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[2px_0_10px_rgba(16,185,129,0.5)]' />
                       )}
 
                       <CardContent className='p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4'>
-
                         {/* Left Side: Time & Route Info */}
-                        <div className="flex items-center gap-5 w-full sm:w-auto">
-                          <div className="flex flex-col items-center justify-center min-w-[100px] border-r border-white/10 pr-5">
-                            <span className="text-lg font-medium text-white leading-none">{departureTime}</span>
+                        <div className='flex items-center gap-5 w-full sm:w-auto'>
+                          <div className='flex flex-col items-center justify-center min-w-[100px] border-r border-white/10 pr-5'>
+                            <span className='text-lg font-medium text-white leading-none'>
+                              {departureTime}
+                            </span>
                             {/* <ArrowRight className="h-3 w-3 text-emerald-500 my-1" /> */}
-                            <span className="text-white">to</span>
-                            <span className="text-lg font-medium text-white">{arrivalTime}</span>
+                            <span className='text-white'>to</span>
+                            <span className='text-lg font-medium text-white'>
+                              {arrivalTime}
+                            </span>
                           </div>
 
-                          <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-2">
-                              <Badge className="text-[10px] h-5 text-emerald-500 bg-transparent border-0 text-zinc-400 shadow-none">
+                          <div className='space-y-2 flex-1'>
+                            <div className='flex items-center gap-2'>
+                              <Badge className='text-[10px] h-5 text-emerald-500 bg-transparent border-0 text-zinc-400 shadow-none'>
                                 {cab.routeCode}
                               </Badge>
-                              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                              <span className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                                 {cab.capacity || 50} SEATER
                               </span>
                             </div>
@@ -1289,28 +1354,43 @@ export const BookingSteps: React.FC = () => {
                             </h4>
 
                             {/* NEW: Feature Icons and See Route Button */}
-                            <div className="flex items-center justify-between gap-2 pt-1">
-                              <div className="flex items-center gap-3 text-zinc-500">
-                                <div className="flex flex-col items-center gap-0.5" title="AC">
-                                  <Wind className="h-3.5 w-3.5" />
-                                  <span className="text-[8px] uppercase font-bold">AC</span>
+                            <div className='flex items-center justify-between gap-2 pt-1'>
+                              <div className='flex items-center gap-3 text-zinc-500'>
+                                <div
+                                  className='flex flex-col items-center gap-0.5'
+                                  title='AC'
+                                >
+                                  <Wind className='h-3.5 w-3.5' />
+                                  <span className='text-[8px] uppercase font-bold'>
+                                    AC
+                                  </span>
                                 </div>
-                                <div className="flex flex-col items-center gap-0.5" title="Wifi">
-                                  <Wifi className="h-3.5 w-3.5" />
-                                  <span className="text-[8px] uppercase font-bold">Wifi</span>
+                                <div
+                                  className='flex flex-col items-center gap-0.5'
+                                  title='Wifi'
+                                >
+                                  <Wifi className='h-3.5 w-3.5' />
+                                  <span className='text-[8px] uppercase font-bold'>
+                                    Wifi
+                                  </span>
                                 </div>
-                                <div className="flex flex-col items-center gap-0.5" title="USB">
-                                  <Usb className="h-3.5 w-3.5" />
-                                  <span className="text-[8px] uppercase font-bold">USB</span>
+                                <div
+                                  className='flex flex-col items-center gap-0.5'
+                                  title='USB'
+                                >
+                                  <Usb className='h-3.5 w-3.5' />
+                                  <span className='text-[8px] uppercase font-bold'>
+                                    USB
+                                  </span>
                                 </div>
                               </div>
 
                               <button
                                 onClick={(e) => {
-                                  e.stopPropagation(); // Prevent card selection when clicking link
-                                  setViewingRoute(cab); // State for the popup
+                                  e.stopPropagation() // Prevent card selection when clicking link
+                                  setViewingRoute(cab) // State for the popup
                                 }}
-                                className="text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors underline underline-offset-4"
+                                className='text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors underline underline-offset-4'
                               >
                                 See Route
                               </button>
@@ -1319,36 +1399,54 @@ export const BookingSteps: React.FC = () => {
                         </div>
 
                         {/* Right Side: Price & Action */}
-                        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 sm:pl-6 sm:border-l border-white/10">
-                          <div className="text-left sm:text-right">
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase">Starting From</p>
-                            <p className="text-xl font-black text-white">
+                        <div className='flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 sm:pl-6 sm:border-l border-white/10'>
+                          <div className='text-left sm:text-right'>
+                            <p className='text-[10px] text-zinc-500 font-bold uppercase'>
+                              Starting From
+                            </p>
+                            <p className='text-xl font-black text-white'>
                               ₹{cab.price || 349}
-                              <span className="text-[10px] text-zinc-500 ml-1 font-normal">+GST</span>
+                              <span className='text-[10px] text-zinc-500 ml-1 font-normal'>
+                                +GST
+                              </span>
                             </p>
                           </div>
 
-                          <div className={`
+                          <div
+                            className={`
                       h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
-                      ${selected ? 'bg-emerald-500 text-black' : 'bg-zinc-800 text-white/20 group-hover:bg-zinc-700'}
-                    `}>
-                            <CheckCircle className={`h-6 w-6 ${selected ? 'scale-110' : 'scale-90'}`} />
+                      ${
+                        selected
+                          ? 'bg-emerald-500 text-black'
+                          : 'bg-zinc-800 text-white/20 group-hover:bg-zinc-700'
+                      }
+                    `}
+                          >
+                            <CheckCircle
+                              className={`h-6 w-6 ${
+                                selected ? 'scale-110' : 'scale-90'
+                              }`}
+                            />
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  );
+                  )
                 })
               ) : (
                 <Card className='p-12 text-center bg-zinc-950/60 border-white/10 rounded-2xl'>
                   <Clock className='h-12 w-12 mx-auto mb-4 text-zinc-700' />
-                  <h4 className='text-lg font-bold text-white'>No cabs available</h4>
-                  <p className='text-zinc-500 text-sm'>Try different timings or routes</p>
+                  <h4 className='text-lg font-bold text-white'>
+                    No cabs available
+                  </h4>
+                  <p className='text-zinc-500 text-sm'>
+                    Try different timings or routes
+                  </p>
                 </Card>
               )}
             </div>
           </div>
-        );
+        )
 
       case 3:
         return (
@@ -1362,31 +1460,42 @@ export const BookingSteps: React.FC = () => {
 
       case 4:
         // 1. Calculations
-        const currentBaseFare = passengers.reduce((sum, p) => sum + (p.fare || 0), 0);
-        const currentGst = currentBaseFare * 0.05;
-        const currentServiceFee = 12;
-        const currentDiscount = 100 * passengers.length; // ₹100 discount per passenger
-        const currentTotal = Math.max(0, currentBaseFare + currentGst + currentServiceFee - currentDiscount);
+        const currentBaseFare = passengers.reduce(
+          (sum, p) => sum + (p.fare || 0),
+          0,
+        )
+        const currentGst = currentBaseFare * 0.05
+        const currentServiceFee = 12
+        const currentDiscount = 100 * passengers.length // ₹100 discount per passenger
+        const currentTotal = Math.max(
+          0,
+          currentBaseFare + currentGst + currentServiceFee - currentDiscount,
+        )
 
         return (
           <div className='max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
-
             {/* 1. Booking & Fare Summary Section */}
             <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
               {/* Left: Journey Info */}
               <div className='md:col-span-2 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6'>
-                <div className="flex items-start justify-between">
+                <div className='flex items-start justify-between'>
                   <div>
-                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Booking Summary</p>
+                    <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1'>
+                      Booking Summary
+                    </p>
                     <h3 className='text-xl font-bold text-white flex items-center gap-2'>
                       {selectedSeats.length} Seats Reserved
-                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 bg-emerald-500/5">
-                        {selectedSeats.join(", ")}
+                      <Badge
+                        variant='outline'
+                        className='border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
+                      >
+                        {selectedSeats.join(', ')}
                       </Badge>
                     </h3>
-                    <p className="text-zinc-500 text-sm mt-2 flex items-center gap-2">
-                      <MapPin className="h-3 w-3" />
-                      {passengers[0]?.pickupAddress || "Selected Route"} → {passengers[0]?.dropAddress || "Destination"}
+                    <p className='text-zinc-500 text-sm mt-2 flex items-center gap-2'>
+                      <MapPin className='h-3 w-3' />
+                      {passengers[0]?.pickupAddress || 'Selected Route'} →{' '}
+                      {passengers[0]?.dropAddress || 'Destination'}
                     </p>
                   </div>
                 </div>
@@ -1394,56 +1503,73 @@ export const BookingSteps: React.FC = () => {
 
               {/* Right: Updated Fare Breakdown with Discount */}
               <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
-                <div className="space-y-2 relative z-10">
-                  <div className="flex justify-between text-xs text-zinc-400">
+                <div className='space-y-2 relative z-10'>
+                  <div className='flex justify-between text-xs text-zinc-400'>
                     <span>Base Fare</span>
-                    <span className="text-white font-medium">₹{currentBaseFare.toFixed(2)}</span>
+                    <span className='text-white font-medium'>
+                      ₹{currentBaseFare.toFixed(2)}
+                    </span>
                   </div>
 
                   {/* Discount Row */}
-                  <div className="flex justify-between text-xs text-emerald-400 font-medium">
+                  <div className='flex justify-between text-xs text-emerald-400 font-medium'>
                     <span>Discount Welcome({currentDiscount})</span>
                     <span>- ₹{currentDiscount.toFixed(2)}</span>
                   </div>
 
-                  <div className="flex justify-between text-xs text-zinc-400">
+                  <div className='flex justify-between text-xs text-zinc-400'>
                     <span>GST (5%)</span>
-                    <span className="text-white font-medium">₹{currentGst.toFixed(2)}</span>
+                    <span className='text-white font-medium'>
+                      ₹{currentGst.toFixed(2)}
+                    </span>
                   </div>
 
-                  <div className="flex justify-between text-xs text-zinc-400">
+                  <div className='flex justify-between text-xs text-zinc-400'>
                     <span>Service Fee</span>
-                    <span className="text-white font-medium">₹{currentServiceFee.toFixed(2)}</span>
+                    <span className='text-white font-medium'>
+                      ₹{currentServiceFee.toFixed(2)}
+                    </span>
                   </div>
 
-                  <div className="pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end">
-                    <span className="text-sm font-bold text-emerald-400">Total Fare</span>
-                    <span className="text-sm font-black text-white">₹{currentTotal.toFixed(2)}</span>
+                  <div className='pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end'>
+                    <span className='text-sm font-bold text-emerald-400'>
+                      Total Fare
+                    </span>
+                    <span className='text-sm font-black text-white'>
+                      ₹{currentTotal.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Global pickup/drop (using UI Select) */}
-            <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className='mb-8 grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
-                <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                   Pickup Point
                 </label>
                 <Select
-                  value={globalPickup || ""}
+                  value={globalPickup || ''}
                   onValueChange={(value) => {
-                    setGlobalPickup(value);
-                    const updated = passengers.map((p) => ({ ...p, pickupAddress: value }));
-                    setPassengers(updated);
+                    setGlobalPickup(value)
+                    const updated = passengers.map((p) => ({
+                      ...p,
+                      pickupAddress: value,
+                    }))
+                    setPassengers(updated)
                   }}
                 >
-                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
-                    <SelectValue placeholder="Select Pickup" />
+                  <SelectTrigger className='w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40'>
+                    <SelectValue placeholder='Select Pickup' />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                  <SelectContent className='bg-zinc-900 border-white/10 text-white'>
                     {pickupOptions.map((point) => (
-                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                      <SelectItem
+                        key={point.name}
+                        value={point.name}
+                        className='focus:bg-emerald-500/10 focus:text-emerald-400'
+                      >
                         {point.name}
                       </SelectItem>
                     ))}
@@ -1452,23 +1578,30 @@ export const BookingSteps: React.FC = () => {
               </div>
 
               <div>
-                <label className="block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
                   Drop Point
                 </label>
                 <Select
-                  value={globalDrop || ""}
+                  value={globalDrop || ''}
                   onValueChange={(value) => {
-                    setGlobalDrop(value);
-                    const updated = passengers.map((p) => ({ ...p, dropAddress: value }));
-                    setPassengers(updated);
+                    setGlobalDrop(value)
+                    const updated = passengers.map((p) => ({
+                      ...p,
+                      dropAddress: value,
+                    }))
+                    setPassengers(updated)
                   }}
                 >
-                  <SelectTrigger className="w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40">
-                    <SelectValue placeholder="Select Drop" />
+                  <SelectTrigger className='w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40'>
+                    <SelectValue placeholder='Select Drop' />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                  <SelectContent className='bg-zinc-900 border-white/10 text-white'>
                     {dropOptions.map((point) => (
-                      <SelectItem key={point.name} value={point.name} className="focus:bg-emerald-500/10 focus:text-emerald-400">
+                      <SelectItem
+                        key={point.name}
+                        value={point.name}
+                        className='focus:bg-emerald-500/10 focus:text-emerald-400'
+                      >
                         {point.name}
                       </SelectItem>
                     ))}
@@ -1479,9 +1612,11 @@ export const BookingSteps: React.FC = () => {
 
             {/* 2. Passenger Details Section */}
             <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
-              <div className="flex items-center gap-3 mb-8">
-                <div className="h-8 w-1 bg-emerald-500 rounded-full" />
-                <h3 className='text-xl font-bold text-white'>Passenger Details</h3>
+              <div className='flex items-center gap-3 mb-8'>
+                <div className='h-8 w-1 bg-emerald-500 rounded-full' />
+                <h3 className='text-xl font-bold text-white'>
+                  Passenger Details
+                </h3>
               </div>
 
               <div className='space-y-8'>
@@ -1503,20 +1638,20 @@ export const BookingSteps: React.FC = () => {
                     </div>
 
                     <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
-                      <div className="md:col-span-2">
+                      <div className='md:col-span-2'>
                         <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Full Name
                         </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
+                        <div className='relative'>
+                          <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600' />
                           <input
                             type='text'
                             placeholder='Enter passenger name'
                             value={passenger.name}
                             onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].name = e.target.value;
-                              setPassengers(newPax);
+                              const newPax = [...passengers]
+                              newPax[idx].name = e.target.value
+                              setPassengers(newPax)
                             }}
                             className='w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all'
                           />
@@ -1527,36 +1662,51 @@ export const BookingSteps: React.FC = () => {
                         <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                           Age & Gender
                         </label>
-                        <div className="flex gap-2">
+                        <div className='flex gap-2'>
                           <input
                             type='number'
                             placeholder='Age'
                             value={passenger.age || ''}
                             onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].age = Number(e.target.value);
-                              setPassengers(newPax);
+                              const newPax = [...passengers]
+                              newPax[idx].age = Number(e.target.value)
+                              setPassengers(newPax)
                             }}
                             className='w-16 py-3 bg-black/40 border border-white/10 rounded-xl text-center text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
                           />
 
                           {/* Gender Select Component */}
-                          <div className="flex-1">
+                          <div className='flex-1'>
                             <Select
                               value={passenger.gender}
                               onValueChange={(value) => {
-                                const newPax = [...passengers];
-                                newPax[idx].gender = value;
-                                setPassengers(newPax);
+                                const newPax = [...passengers]
+                                newPax[idx].gender = value
+                                setPassengers(newPax)
                               }}
                             >
-                              <SelectTrigger className="h-[46px] bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40 text-sm">
-                                <SelectValue placeholder="Gender" />
+                              <SelectTrigger className='h-[46px] bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40 text-sm'>
+                                <SelectValue placeholder='Gender' />
                               </SelectTrigger>
-                              <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                <SelectItem value="male" className="focus:bg-emerald-500/10 focus:text-emerald-400">Male</SelectItem>
-                                <SelectItem value="female" className="focus:bg-emerald-500/10 focus:text-emerald-400">Female</SelectItem>
-                                <SelectItem value="other" className="focus:bg-emerald-500/10 focus:text-emerald-400">Others</SelectItem>
+                              <SelectContent className='bg-zinc-900 border-white/10 text-white'>
+                                <SelectItem
+                                  value='male'
+                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
+                                >
+                                  Male
+                                </SelectItem>
+                                <SelectItem
+                                  value='female'
+                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
+                                >
+                                  Female
+                                </SelectItem>
+                                <SelectItem
+                                  value='other'
+                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
+                                >
+                                  Others
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1565,39 +1715,41 @@ export const BookingSteps: React.FC = () => {
                     </div>
 
                     {idx === 0 && (
-                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
+                          <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                             Contact Phone
                           </label>
                           <input
-                            type="tel"
+                            type='tel'
                             maxLength={10}
-                            placeholder="Enter contact number"
-                            value={passenger.phone ?? ""}
+                            placeholder='Enter contact number'
+                            value={passenger.phone ?? ''}
                             onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].phone = e.target.value.replace(/\D/g, "").slice(0, 10);
-                              setPassengers(newPax);
+                              const newPax = [...passengers]
+                              newPax[idx].phone = e.target.value
+                                .replace(/\D/g, '')
+                                .slice(0, 10)
+                              setPassengers(newPax)
                             }}
-                            className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
                           />
                         </div>
 
                         <div>
-                          <label className="block mb-2 text-[10px] font-bold text-white uppercase tracking-widest">
+                          <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
                             Contact Email
                           </label>
                           <input
-                            type="email"
-                            placeholder="Enter email for ticket"
-                            value={passenger.email ?? ""}
+                            type='email'
+                            placeholder='Enter email for ticket'
+                            value={passenger.email ?? ''}
                             onChange={(e) => {
-                              const newPax = [...passengers];
-                              newPax[idx].email = e.target.value;
-                              setPassengers(newPax);
+                              const newPax = [...passengers]
+                              newPax[idx].email = e.target.value
+                              setPassengers(newPax)
                             }}
-                            className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
                           />
                         </div>
                       </div>
@@ -1607,7 +1759,7 @@ export const BookingSteps: React.FC = () => {
               </div>
             </div>
           </div>
-        );
+        )
       case 5:
         return (
           <div className='space-y-6'>
@@ -1709,13 +1861,11 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    // We use flex-col and min-h-screen to ensure the page fills the height, 
+    // We use flex-col and min-h-screen to ensure the page fills the height,
     // but doesn't create extra scroll space unless content is long.
     <div className='min-h-screen bg-black text-white flex flex-col relative'>
-
       {/* Main Content Area */}
       <div className='flex-1 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col'>
-
         {/* Timer Section */}
         {timerActive && (
           <div className='flex justify-center mb-6'>
@@ -1752,10 +1902,18 @@ export const BookingSteps: React.FC = () => {
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
               // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
-              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 2 &&
+                (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                passengers.some(
+                  (p) =>
+                    !p.name ||
+                    !p.age ||
+                    !p.gender ||
+                    !globalPickup ||
+                    !globalDrop,
+                ) &&
                 (!passengers[0].phone || !passengers[0].email))
             }
             className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 px-8'
@@ -1783,10 +1941,18 @@ export const BookingSteps: React.FC = () => {
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
               // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
-              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 2 &&
+                (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some((p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop) &&
+                passengers.some(
+                  (p) =>
+                    !p.name ||
+                    !p.age ||
+                    !p.gender ||
+                    !globalPickup ||
+                    !globalDrop,
+                ) &&
                 (!passengers[0].phone || !passengers[0].email))
             }
             className='flex-1 rounded-full bg-emerald-500 text-black font-bold h-12'
@@ -1797,12 +1963,12 @@ export const BookingSteps: React.FC = () => {
       </div>
 
       {/* Spacer so content doesn't get hidden behind the mobile sticky footer */}
-      <div className="h-24 md:hidden" />
+      <div className='h-24 md:hidden' />
 
       {/* Modals & Popups (Rendered once at the bottom) */}
       {renderLoginModal()}
       {renderPaymentSelectionModal()}
       {renderRoutePopup && renderRoutePopup()}
     </div>
-  );
+  )
 }
