@@ -14,10 +14,12 @@ export default {
   otp_key: process.env.OTP_KEY,
   otp_value: process.env.OTP_VALUE,
   zoho_token_url: process.env.ZOHO_API_BASE_TOKEN_URL,
+  zoho_api_base_url: process.env.ZOHO_API_BASE_URL,
   zoho_refresh_token: process.env.ZOHO_REFRESH_TOKEN,
   zoho_client_id: process.env.ZOHO_CLIENT_ID,
   zoho_client_secret: process.env.ZOHO_CLIENT_SECRET,
   zoho_account_id: process.env.ZOHO_ACCOUNT_ID,
+  zoho_signing_key: process.env.ZOHO_SIGNING_KEY,
   trip_sequences: {
     'AGRA-GUR-TRIP': ['Agra', 'Mathura', 'Gurugram'],
   },

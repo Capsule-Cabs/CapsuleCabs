@@ -31,6 +31,14 @@ import {
   Wifi,
   Usb,
   Info,
+  Leaf,
+  ChevronDown,
+  ChevronRight,
+  ShieldCheck,
+  Tag,
+  Droplets,
+  Lightbulb,
+  PhoneForwarded,
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,6 +52,12 @@ import { toast } from 'sonner'
 import phonepe_image from '@/assets/phonepe_image.png'
 import fetchRoutes from '@/services/bookingFunctions'
 import verifyPaymentDetails from '@/services/paymentFunctions'
+
+declare global {
+  interface Window {
+    ZPayments: any;
+  }
+}
 
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
@@ -328,6 +342,7 @@ export const BookingSteps: React.FC = () => {
       const firstAvailableCab = availableCabs.find((cab) => cab.available)
       if (firstAvailableCab) {
         setSelectedCab(firstAvailableCab.id)
+        setSelectedTime(firstAvailableCab.departureTime)
       }
     }
   }, [availableCabs, selectedCab])
@@ -570,6 +585,7 @@ export const BookingSteps: React.FC = () => {
         ...bookingPayload,
         merchantOrderId,
         totalFare,
+        paymentDoneBy: 'PHONEPE',
       }),
     )
     try {
@@ -591,34 +607,124 @@ export const BookingSteps: React.FC = () => {
     }
   }
 
-  const makePayment = async () => {
-    if (selectedGateway !== 'PHONEPE') return
-    setIsAuthLoading(true)
-    setShowPaymentModal(false)
+  const generateStrongInvoiceNumber = () => {
+    const timestamp = Date.now().toString(36)
+    const random = Math.random().toString(36).substring(2, 8)
+    const micro = performance.now().toString(36).replace('.', '')
+
+    return `INV-${(timestamp + random + micro).toUpperCase().slice(0, 12)}`
+  }
+  const zohoPayment = async () => {
+    const bookingPayload = getBookingPayload();
+    const paymentSessionRes = await api.post('/zohoPayments/create-payment-session', {
+      "amount": totalFare.toFixed(2),
+      "currency": "INR",
+      "expires_in": 900,
+      "meta_data": [
+        {
+          "key": "Mobile Number",
+          "value": passengers[0]?.phone || ''
+        }
+      ],
+      "description": `Payment for booking capsule cab by ${passengers[0]?.name || 'customer'}`,
+      "invoice_number": "INV-" + generateStrongInvoiceNumber(),
+      "reference_number": `REF-${passengers[0]?.phone || 'unknown'}`,
+      bookingPayload
+    });
+
+    console.log('Payment session zoho: ', paymentSessionRes);
+    const config = {
+      account_id: '60065063065',
+      domain: "IN",
+      otherOptions: {
+        api_key: "1003.1f9df5a5a293189dbca91067c0d8eb02.a83c0f4fe721f25ebedfcc27545ccfe9",
+        is_test_mode: "true"
+      }
+    };
+
+    const instance = new window.ZPayments(config);
+    const options = {
+      amount: totalFare.toFixed(2).toString(),
+      currency_code: "INR",
+      payments_session_id: paymentSessionRes?.data?.payments_session?.payments_session_id,
+      description: `Booking for ${selectedCab} on ${format(selectedDate!, 'dd MMM yyyy')}`,
+      business: "Capsule Cabs",
+      address: {
+        name: passengers[0]?.name || "",
+        email: passengers[0]?.email || "",
+        phone: passengers[0]?.phone || ""
+      }
+    };
+
+    console.log('OPTIONS: ', options);
+
     try {
-      const totalAmount = totalFare
-      const merchantOrderId = generateStrongOrderId()
-      const bookingPayload = getBookingPayload()
-      const response = await api.post('/phonePePayments/createOrder', {
-        amount: totalAmount,
-        merchantOrderId,
-        phone: user?.phone,
-        bookingPayload,
-      })
+      const response: any = await instance.requestPaymentMethod(options);
+      console.log('Zoho Payment Response:', response);
 
       localStorage.setItem(
         'pending_booking',
         JSON.stringify({
           ...bookingPayload,
-          merchantOrderId,
+          paymentSessionId: options?.payments_session_id || '',
           totalFare,
+          response,
+          paymentDoneBy: 'ZOHO',
         }),
-      )
+      );
 
-      if (response?.data?.data?.redirectUrl) {
-        window.location.href = response?.data?.data?.redirectUrl
-      } else {
-        throw new Error('Payment URL not received')
+      if (response.payment_id) {
+        console.log('Payment successful with Zoho, payment ID:', response.payment_id);
+        window.location.href = '/booking-status';
+      }
+
+    } catch (error) {
+      if (error.code !== 'Widget_closed') {
+        console.log('Zoho Payment Error:', error);
+      }
+    } finally {
+      await instance.close();
+    }
+  }
+
+  const phonePePayments = async () => {
+    const totalAmount = totalFare
+    const merchantOrderId = generateStrongOrderId();
+
+    const bookingPayload = getBookingPayload();
+    const response = await api.post('/phonePePayments/createOrder', {
+      amount: totalAmount,
+      merchantOrderId,
+      phone: user?.phone,
+      bookingPayload,
+    });
+
+    localStorage.setItem(
+      'pending_booking',
+      JSON.stringify({
+        ...bookingPayload,
+        merchantOrderId,
+        totalFare,
+        paymentDoneBy: 'PHONEPE',
+      }),
+    )
+
+    if (response?.data?.data?.redirectUrl) {
+      window.location.href = response?.data?.data?.redirectUrl
+    } else {
+      throw new Error('Payment URL not received')
+    }
+  }
+
+  const makePayment = async () => {
+    setIsAuthLoading(true)
+    setShowPaymentModal(false)
+    try {
+      if (selectedGateway === 'ZOHO') {
+        await zohoPayment();
+        return;
+      } else { // PHONEPE
+        await phonePePayments();
       }
     } catch (error: any) {
       console.log('Payment initation failed', error)
@@ -786,129 +892,147 @@ export const BookingSteps: React.FC = () => {
   }
 
   const renderPaymentSelectionModal = () => {
-    if (!showPaymentModal) return null
+    if (!showPaymentModal) return null;
+
+    // Dynamic Theme Mapping
+    const themes = {
+      ZOHO: {
+        primary: 'bg-[#6739b7]', // UPI / Zoho Purple
+        accent: 'ring-purple-500',
+        shadow: 'shadow-purple-500/20',
+        glow: 'rgba(103, 57, 183, 0.4)'
+      },
+      PHONEPE: {
+        primary: 'bg-[#0070e0]', // Card / Blue theme
+        accent: 'ring-blue-500',
+        shadow: 'shadow-blue-500/20',
+        glow: 'rgba(0, 112, 224, 0.4)'
+      },
+      default: {
+        primary: 'bg-zinc-900',
+        accent: 'ring-emerald-500',
+        shadow: 'shadow-emerald-500/20',
+        glow: 'rgba(16, 185, 129, 0.4)'
+      }
+    };
+
+    const currentTheme = themes[selectedGateway] || themes.default;
 
     return (
-      <div className='fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md p-4'>
-        <div className='relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-zinc-900 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-300'>
-          {/* Header Branding Area - PhonePe Theme */}
-          <div className='bg-[#5f259f] p-8 pb-14 flex justify-between items-start'>
-            <div>
-              <h2 className='text-2xl font-bold text-white tracking-tight'>
+      <div className='fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-xl p-4 transition-all duration-500'>
+        <div className={`relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500`}>
+
+          {/* Dynamic Header Branding Area */}
+          <div className={`transition-colors duration-700 ${currentTheme.primary} p-8 pb-14 flex justify-between items-start relative overflow-hidden`}>
+            {/* Subtle Abstract Background Glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+
+            <div className="relative z-10">
+              <h2 className='text-2xl font-black text-white tracking-tight'>
                 Checkout
               </h2>
-              <p className='text-purple-200/50 text-[10px] font-bold uppercase tracking-[0.2em] mt-1'>
-                Secure Transaction
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+                <p className='text-white/60 text-[10px] font-bold uppercase tracking-[0.2em]'>
+                  Secure Transaction
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => setShowPaymentModal(false)}
-              className='p-2 bg-black/20 rounded-full text-white/50 hover:text-white transition-colors'
+              className='relative z-10 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white/70 hover:text-white transition-all active:scale-90'
             >
               <X className='h-5 w-5' />
             </button>
           </div>
 
           {/* Payment Options Container */}
-          <div className='px-5 -mt-8 space-y-4 pb-8'>
-            {/* PhonePe Option */}
+          <div className='px-5 -mt-8 space-y-3 pb-8 relative z-20'>
+
+            {/* UPI Option */}
             <button
-              onClick={() => setSelectedGateway('PHONEPE')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[2rem] bg-white transition-all duration-500 shadow-xl relative overflow-hidden ${
-                selectedGateway === 'PHONEPE'
-                  ? 'ring-[3px] ring-emerald-500 ring-offset-4 ring-offset-zinc-900 scale-[1.02]'
-                  : 'hover:bg-zinc-50'
-              }`}
+              onClick={() => setSelectedGateway('ZOHO')}
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'ZOHO'
+                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                : 'hover:bg-zinc-50 border border-transparent'
+                }`}
             >
-              <div className='flex items-center gap-4 relative z-10'>
-                {/* The Logo Container */}
-                <div className='relative w-14 h-14 flex-shrink-0'>
-                  {/* Updated: Added PhonePe Brand Purple (#5f259f) and removed border */}
-                  <div className='absolute inset-0 rounded-full flex items-center justify-center overflow-hidden'>
-                    {/* Updated: Removed 'invert' to keep the logo white as per original asset */}
-                    <img
-                      src={phonepe_image}
-                      alt='PhonePe'
-                      className='w-10 h-10 object-contain'
-                    />
-                  </div>
-
-                  {/* Secure Checkmark Badge */}
-                  <div className='absolute -bottom-0.5 -right-0.5 bg-sky-500 rounded-full p-1 border-2 border-white shadow-sm'>
-                    <CheckCircle
-                      className='w-2.5 h-2.5 text-white'
-                      fill='currentColor'
-                    />
-                  </div>
+              <div className='flex items-center gap-4'>
+                <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:rotate-3 transition-transform'>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="w-10 h-10 object-contain" />
                 </div>
-
                 <div className='text-left'>
-                  <p className='font-black text-zinc-900 text-xl tracking-tight leading-none'>
-                    PhonePe
-                  </p>
-                  <div className='flex items-center gap-1 mt-1.5'>
-                    <span className='text-[9px] text-zinc-400 font-bold uppercase tracking-tighter'>
-                      100% Secured
-                    </span>
-                    <div className='h-0.5 w-0.5 rounded-full bg-zinc-300' />
-                    <span className='text-[9px] text-zinc-400 font-bold uppercase tracking-tighter'>
-                      UPI / Cards
-                    </span>
+                  <p className='font-black text-zinc-900 text-xl tracking-tight'>UPI</p>
+                  <div className='flex items-center gap-2 mt-1'>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" className="h-3 grayscale opacity-70 group-hover:grayscale-0 transition-all" alt="GPay" />
+                    <div className="w-[1px] h-2 bg-zinc-300" />
+                    <span className="text-[10px] text-zinc-400 font-bold uppercase">PhonePe & more</span>
                   </div>
                 </div>
               </div>
 
-              {/* Pro Radio Selection UI matching image_b8f838.png */}
-              <div
-                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  selectedGateway === 'PHONEPE'
-                    ? 'border-sky-500 bg-white'
-                    : 'border-zinc-200'
-                }`}
-              >
-                {selectedGateway === 'PHONEPE' && (
-                  <div className='w-4 h-4 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.4)] animate-in zoom-in duration-200' />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'ZOHO' ? 'border-purple-600' : 'border-zinc-200'}`}>
+                {selectedGateway === 'ZOHO' && (
+                  <div className='w-3 h-3 rounded-full bg-purple-600 animate-in zoom-in duration-300' />
                 )}
               </div>
             </button>
 
-            {/* Zoho Option (Disabled) */}
-            <div className='opacity-40 pointer-events-none grayscale px-2'>
-              <div className='flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/5'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center'>
-                    <span className='text-white/20 font-bold text-xs italic'>
-                      Zoho
-                    </span>
-                  </div>
-                  <p className='font-bold text-white/30'>Other Methods</p>
-                </div>
-                <Badge
-                  variant='outline'
-                  className='text-[10px] border-white/10 text-white/20'
-                >
-                  Coming Soon
-                </Badge>
-              </div>
-            </div>
-
-            {/* Confirm Button */}
-            <Button
-              onClick={handlePaymentSelection}
-              disabled={isAuthLoading}
-              className='w-full h-16 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-400 text-black font-black text-lg mt-4 shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all'
+            {/* Other Payment Methods */}
+            <button
+              onClick={() => setSelectedGateway('PHONEPE')}
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'PHONEPE'
+                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                : 'hover:bg-zinc-50 border border-transparent'
+                }`}
             >
-              {isAuthLoading ? (
-                <Loader2 className='animate-spin h-6 w-6' />
-              ) : (
-                `PROCEED TO PAY ₹${selectedSeats.length * 550}`
-              )}
-            </Button>
+              <div className='flex items-center gap-4'>
+                <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:-rotate-3 transition-transform'>
+                  <CreditCard className="w-7 h-7 text-zinc-700" strokeWidth={2.5} />
+                </div>
+                <div className='text-left'>
+                  <p className='font-black text-zinc-900 text-lg tracking-tight'>Other Methods</p>
+                  <div className='flex items-center gap-2 mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity'>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-2" alt="Visa" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="MC" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/d/d1/RuPay.svg" className="h-2" alt="RuPay" />
+                  </div>
+                </div>
+              </div>
+
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE' ? 'border-blue-600' : 'border-zinc-200'}`}>
+                {selectedGateway === 'PHONEPE' && (
+                  <div className='w-3 h-3 rounded-full bg-blue-600 animate-in zoom-in duration-300' />
+                )}
+              </div>
+            </button>
+
+            {/* Proceed Button */}
+            <div className="pt-2">
+              <Button
+                onClick={handlePaymentSelection}
+                disabled={isAuthLoading || !selectedGateway}
+                className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${selectedGateway
+                  ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
+                  : 'bg-zinc-800 text-zinc-500'
+                  }`}
+              >
+                {isAuthLoading ? (
+                  <Loader2 className='animate-spin h-6 w-6' />
+                ) : (
+                  <>
+                    <span>PROCEED TO PAY ₹{selectedSeats.length * 550}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
   const renderSeatLayout = () => {
     if (!selectedCab) return null
 
@@ -1049,12 +1173,12 @@ export const BookingSteps: React.FC = () => {
             ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
             : // 2. Standard Booked
             isBooked
-            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-            : isLocked
-            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-            : isSelected
-            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-            : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+              : isLocked
+                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+                : isSelected
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
         ].join(' ')}
         disabled={isBooked || isLocked}
         onClick={() => {
@@ -1264,189 +1388,150 @@ export const BookingSteps: React.FC = () => {
 
       case 2:
         return (
-          <div className='w-full max-w-4xl mx-auto px-4 py-6 space-y-4'>
+          <div className='w-full max-w-4xl mx-auto px-2 py-6 space-y-4'>
             <div className='text-center mb-6'>
-              <h3 className='text-2xl font-bold text-white'>
+              <h3 className='text-xl md:text-2xl font-bold text-white'>
                 Select Cab & Time
               </h3>
-              <p className='text-zinc-500 text-sm mt-1'>
+              <p className='text-zinc-500 text-xs md:text-sm mt-1'>
                 Choose your preferred schedule
               </p>
             </div>
 
-            <div
-              className={
-                availableCabs.length === 1
-                  ? 'max-w-xl mx-auto'
-                  : 'grid grid-cols-1 gap-3' // Using a single column with horizontal cards feels "thinner"
-              }
-            >
+            <div className="grid grid-cols-1 gap-4">
               {availableCabs.length > 0 ? (
                 availableCabs.map((cab) => {
-                  const departureTime = cab.departureTime
-                    ? new Date(`2000-01-01T${cab.departureTime}`)
-                        .toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        })
-                        .toLowerCase()
-                    : '09:55 am'
-                  const arrivalTime = cab.arrivalTime
-                    ? new Date(`2000-01-01T${cab.arrivalTime}`)
-                        .toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true,
-                        })
-                        .toLowerCase()
-                    : '12:30 pm'
-
-                  const selected = selectedCab === cab.id
-                  const isAvailable = cab.available
-
+                  const selected = selectedCab === cab.id;
+                  const isAvailable = cab.available;
+                  console.log('CAB: ', cab);
                   return (
                     <Card
                       key={cab.id}
-                      className={`
-                  relative overflow-hidden group transition-all duration-300 cursor-pointer
-                  bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl
-                  ${
-                    selected
-                      ? 'ring-2 ring-emerald-500/50 border-emerald-500/50 bg-emerald-500/5'
-                      : 'hover:border-white/20'
-                  }
-                  ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-                      onClick={() => isAvailable && setSelectedCab(cab.id)}
+                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${selected
+                        ? 'ring-1 ring-emerald-500 border-emerald-500/50'
+                        : 'border-white/10 hover:border-white/20'
+                        } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (isAvailable) {
+                          setSelectedCab(cab.id);
+                          setSelectedTime(cab.departureTime);
+                        }
+                      }}
                     >
-                      {/* Selected Indicator Glow */}
-                      {selected && (
-                        <div className='absolute top-0 left-0 w-1 h-full bg-emerald-500 shadow-[2px_0_10px_rgba(16,185,129,0.5)]' />
-                      )}
+                      {/* Header Section: Badge & CNG Info */}
+                      <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
+                        <span className="text-[10px] md:text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                          {cab.capacity || 6} Seater {cab.routeCode}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-emerald-400">
+                          <Leaf className="h-3 w-3" />
+                          <span className="text-[9px] md:text-[10px] font-bold uppercase">
+                            CNG Powered: 25% Less CO₂
+                          </span>
+                        </div>
+                      </div>
 
-                      <CardContent className='p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4'>
-                        {/* Left Side: Time & Route Info */}
-                        <div className='flex items-center gap-5 w-full sm:w-auto'>
-                          <div className='flex flex-col items-center justify-center min-w-[100px] border-r border-white/10 pr-5'>
-                            <span className='text-lg font-medium text-white leading-none'>
-                              {departureTime}
-                            </span>
-                            {/* <ArrowRight className="h-3 w-3 text-emerald-500 my-1" /> */}
-                            <span className='text-white'>to</span>
-                            <span className='text-lg font-medium text-white'>
-                              {arrivalTime}
+                      <CardContent className='p-4 md:p-6'>
+                        {/* Desktop: Horizontal | Mobile: Vertical Stacking */}
+                        <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
+
+                          {/* Time & Path Section */}
+                          <div className='flex items-center justify-between md:justify-start gap-4 md:gap-8'>
+                            <div className='flex flex-col'>
+                              <span className='text-2xl md:text-3xl font-black text-white leading-none'>
+                                {cab.departureTime || '18:00'}
+                              </span>
+                              <span className='text-[10px] font-bold text-emerald-500 mt-1 uppercase'>Available</span>
+                            </div>
+
+                            {/* Visual Path (Dotted line with duration) */}
+                            <div className='flex-1 md:flex-none flex flex-col items-center min-w-[80px]'>
+                              <span className='text-[10px] text-zinc-500 font-bold mb-1'>(4h 55m)</span>
+                              <div className='flex items-center w-full gap-1'>
+                                <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
+                                <div className='flex-1 border-t border-dotted border-zinc-700' />
+                                <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
+                              </div>
+                            </div>
+
+                            <span className='text-2xl md:text-3xl font-black text-white leading-none'>
+                              {cab.arrivalTime || '22:00'}
                             </span>
                           </div>
 
-                          <div className='space-y-2 flex-1'>
-                            <div className='flex items-center gap-2'>
-                              <Badge className='text-[10px] h-5 text-emerald-500 bg-transparent border-0 text-zinc-400 shadow-none'>
-                                {cab.routeCode}
-                              </Badge>
-                              <span className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                                {cab.capacity || 50} SEATER
-                              </span>
-                            </div>
+                          {/* Divider for Mobile (matches screenshot 2) */}
+                          <div className='md:hidden h-px bg-white/5 w-full my-1' />
 
-                            <h4 className='font-bold text-white text-base leading-tight uppercase tracking-tight'>
-                              {cab.route || `Standard Seater ${cab.id}`}
-                            </h4>
-
-                            {/* NEW: Feature Icons and See Route Button */}
-                            <div className='flex items-center justify-between gap-2 pt-1'>
-                              <div className='flex items-center gap-3 text-zinc-500'>
-                                <div
-                                  className='flex flex-col items-center gap-0.5'
-                                  title='AC'
-                                >
-                                  <Wind className='h-3.5 w-3.5' />
-                                  <span className='text-[8px] uppercase font-bold'>
-                                    AC
-                                  </span>
-                                </div>
-                                <div
-                                  className='flex flex-col items-center gap-0.5'
-                                  title='Wifi'
-                                >
-                                  <Wifi className='h-3.5 w-3.5' />
-                                  <span className='text-[8px] uppercase font-bold'>
-                                    Wifi
-                                  </span>
-                                </div>
-                                <div
-                                  className='flex flex-col items-center gap-0.5'
-                                  title='USB'
-                                >
-                                  <Usb className='h-3.5 w-3.5' />
-                                  <span className='text-[8px] uppercase font-bold'>
-                                    USB
-                                  </span>
-                                </div>
+                          {/* Price & Action Section */}
+                          <div className='flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8'>
+                            <div className='flex flex-col'>
+                              <span className='text-[9px] text-zinc-500 font-bold uppercase'>Starting From</span>
+                              <div className='flex items-baseline gap-1.5'>
+                                <span className='text-zinc-500 line-through text-xs'>₹500</span>
+                                <span className='text-2xl md:text-3xl font-black text-emerald-400'>₹{cab.price || 399}</span>
+                                <span className='text-[10px] text-zinc-500'>+GST</span>
                               </div>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation() // Prevent card selection when clicking link
-                                  setViewingRoute(cab) // State for the popup
-                                }}
-                                className='text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors underline underline-offset-4'
-                              >
-                                See Route
-                              </button>
+                              <div className='flex items-center gap-1 mt-1 text-emerald-500 font-bold'>
+                                <Tag className='h-3 w-3' />
+                                <span className='text-[9px] uppercase tracking-tight'>Welcome100 Applied</span>
+                              </div>
                             </div>
+
+                            <button
+                              className={`px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${selected
+                                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+                                : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                }`}
+                            >
+                              {selected ? 'Selected' : 'Select Seat'}
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
 
-                        {/* Right Side: Price & Action */}
-                        <div className='flex items-center justify-between sm:justify-end w-full sm:w-auto gap-6 sm:pl-6 sm:border-l border-white/10'>
-                          <div className='text-left sm:text-right'>
-                            <p className='text-[10px] text-zinc-500 font-bold uppercase'>
-                              Starting From
-                            </p>
-                            <p className='text-xl font-black text-white'>
-                              ₹{cab.price || 349}
-                              <span className='text-[10px] text-zinc-500 ml-1 font-normal'>
-                                +GST
-                              </span>
-                            </p>
+                        {/* Footer: Features & Route Details */}
+                        <div className='flex items-center justify-between mt-6 pt-4 border-t border-white/5'>
+                          <div className='flex items-center gap-4 text-zinc-500'>
+                            <div className='flex flex-col items-center gap-0.5' title='AC'>
+                              <Wind className='h-4 w-4 md:h-5 md:w-5' />
+                              <span className='text-[8px] uppercase font-bold'>AC</span>
+                            </div>
+                            <div className='flex flex-col items-center gap-0.5' title='Wifi'>
+                              <Wifi className='h-4 w-4 md:h-5 md:w-5' />
+                              <span className='text-[8px] uppercase font-bold'>Wifi</span>
+                            </div>
+                            <div className='flex flex-col items-center gap-0.5' title='USB'>
+                              <Usb className='h-4 w-4 md:h-5 md:w-5' />
+                              <span className='text-[8px] uppercase font-bold'>USB</span>
+                            </div>
+                            <div className='flex flex-col items-center gap-0.5' title='CCTV'>
+                              <ShieldCheck className='h-4 w-4 md:h-5 md:w-5' />
+                              <span className='text-[8px] uppercase font-bold'>CCTV</span>
+                            </div>
                           </div>
 
-                          <div
-                            className={`
-                      h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300
-                      ${
-                        selected
-                          ? 'bg-emerald-500 text-black'
-                          : 'bg-zinc-800 text-white/20 group-hover:bg-zinc-700'
-                      }
-                    `}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingRoute(cab);
+                            }}
+                            className='text-[11px] md:text-xs font-bold text-zinc-400 hover:text-white transition-colors flex items-center gap-1'
                           >
-                            <CheckCircle
-                              className={`h-6 w-6 ${
-                                selected ? 'scale-110' : 'scale-90'
-                              }`}
-                            />
-                          </div>
+                            See Route <ChevronDown className="h-3 w-3" />
+                          </button>
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })
               ) : (
-                <Card className='p-12 text-center bg-zinc-950/60 border-white/10 rounded-2xl'>
-                  <Clock className='h-12 w-12 mx-auto mb-4 text-zinc-700' />
-                  <h4 className='text-lg font-bold text-white'>
-                    No cabs available
-                  </h4>
-                  <p className='text-zinc-500 text-sm'>
-                    Try different timings or routes
-                  </p>
-                </Card>
+                <div className="text-white text-center p-12 bg-zinc-950/50 rounded-2xl border border-white/5">
+                  No cabs available at this time.
+                </div>
               )}
             </div>
           </div>
-        )
+        );
 
       case 3:
         return (
@@ -1464,9 +1549,10 @@ export const BookingSteps: React.FC = () => {
           (sum, p) => sum + (p.fare || 0),
           0,
         )
-        const currentGst = currentBaseFare * 0.05
         const currentServiceFee = 12
         const currentDiscount = 100 * passengers.length // ₹100 discount per passenger
+
+        const currentGst = (currentBaseFare - currentDiscount + currentServiceFee) * 0.05
         const currentTotal = Math.max(
           0,
           currentBaseFare + currentGst + currentServiceFee - currentDiscount,

@@ -6,7 +6,7 @@ import asyncHandler from 'express-async-handler'
 import axios from 'axios'
 import https from 'https'
 import config from '../config/config.js'
-import PhonePePayment from '../models/payment.model.js'
+import PhonePePayment from '../models/phonePePayment.model.js'
 import User from '../models/user.model.js'
 import Booking from '../models/booking.model.js'
 import { createInternalBooking } from './bookingRoutes.js'
@@ -134,7 +134,7 @@ const getOAuthToken = async () => {
   })
 
   const response = await axios.post(
-    `${phonePe_authAPI}/v1/oauth/token`,
+    `${paymentUrl}/v1/oauth/token`,
     params,
     {
       httpsAgent,
@@ -418,6 +418,6 @@ router.get('/orderStatus/:merchantOrderId', protect, fetchPaymentStatus)
 router.post('/createOrderForSDK', protect, createOrderForSDK)
 
 // Webhook
-router.post('/paymentWebhook', protect, paymentDetailsFromWebhook)
+router.post('/paymentWebhook', paymentDetailsFromWebhook)
 
 export default router
