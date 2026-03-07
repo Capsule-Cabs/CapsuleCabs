@@ -8,6 +8,8 @@ import ZohoPayment from '../models/zohoPayment.model.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { createInternalBooking } from './bookingRoutes.js';
 import authMiddleware from '../middleware/auth.middleware.js'; // Import auth middleware
+import emailService from '../services/email.service.js';
+import smsService from '../services/sms.service.js';
 const { protect } = authMiddleware;
 
 const router = Router();
@@ -25,9 +27,9 @@ const processZohoPayment = async (paymentSessionId, statusData) => {
 
     // 1. Find and Update with populated user
     const paymentRecord = await ZohoPayment.findOneAndUpdate(
-        { 
+        {
             paymentSessionId,
-            status: { $ne: 'succeeded' } 
+            status: { $ne: 'succeeded' }
         },
         {
             $set: {
@@ -64,6 +66,28 @@ const processZohoPayment = async (paymentSessionId, statusData) => {
             paymentRecord.bookingId = newBooking.bookingId;
             paymentRecord.bookingRefId = newBooking._id;
             await paymentRecord.save();
+
+            await smsService.sendTripConfirmation({
+                sourceCity: newBooking.route.origin,
+                destinationCity: newBooking.route.destination,
+                webLink: 'https://www.capsulecabs.com',
+                supportNumber: '9719226535',
+                customerNumber: newBooking.bookingPhone
+            })
+
+            await emailService.sendBookingEmail(newBooking.bookingEmail, {
+                bookingId: newBooking.bookingId,
+                origin: newBooking.route.origin,
+                destination: newBooking.route.destination,
+                travelDate: newBooking.journey.travelDate,
+                departureTime: newBooking.journey.departureTime,
+                arrivalTime: newBooking.journey.estimatedArrivalTime,
+                vehicleNumber: newBooking.route.vehicleNumber,
+                passengers: newBooking.passengers,
+                totalAmount: newBooking.payment.totalAmount,
+                pickupPoint: newBooking.passengers[0].pickupPoint,
+                dropPoint: newBooking.passengers[0].dropPoint,
+            });
 
             console.log(`[ZOHO] Booking ${newBooking.bookingId} created successfully.`);
         } catch (error) {

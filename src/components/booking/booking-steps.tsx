@@ -91,6 +91,7 @@ interface CabWithAvailability {
   arrivalTime: string
   origin: string | any
   destination: string | any
+  discount: string | any
 }
 
 interface Passenger {
@@ -229,15 +230,18 @@ export const BookingSteps: React.FC = () => {
 
   useEffect(() => {
     if (currentStep === 4 && passengers.length > 0) {
-      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0)
+      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0);
+      // Find the current selected cab to get its specific discount
+      const selectedCabData = availableCabs.find((c) => c.id === selectedCab);
+      const dynamicDiscountPerSeat = selectedCabData?.discount || 0;
       setTotalFareSafely({
         baseFare,
-        gst: baseFare * 0.05,
         convenienceFee: 12,
-        discount: 100,
+        discount: dynamicDiscountPerSeat * passengers.length,
+        gst: (baseFare - (dynamicDiscountPerSeat * passengers.length) + 12) * 0.05
       })
     }
-  }, [currentStep, passengers])
+  }, [currentStep, passengers, selectedCab, availableCabs])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -278,15 +282,14 @@ export const BookingSteps: React.FC = () => {
         selectedDestination,
         selectedSource,
       )
+
       const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
         let seatsAvailable: SeatAvailability[] = []
         let available = false
 
         if (selectedDate) {
-          // if (route._id === selectedCab) {
           setPickupOptions(route.origin?.pickupPoints)
           setDropOptions(route.destination?.dropPoints)
-          // }
 
           const dateStr = format(selectedDate, 'yyyy-MM-dd')
 
@@ -294,6 +297,7 @@ export const BookingSteps: React.FC = () => {
             const seatAvailRes = await api.get(
               `/routes/${route._id}/availability?travelDate=${dateStr}`,
             )
+            // Based on your previous snippet, seatAvailRes.data.data.seatsAvailable contains the info
             seatsAvailable = seatAvailRes.data.data.seatsAvailable
             available = seatsAvailable.some(
               (seat: SeatAvailability) => seat.status === 'available',
@@ -304,8 +308,17 @@ export const BookingSteps: React.FC = () => {
           }
         }
 
-        const departureTime = route.schedule[0].departureTime || ''
-        const arrivalTime = route.schedule[0].arrivalTime || ''
+        const departureTime = route.schedule?.[0]?.departureTime || ''
+        const arrivalTime = route.schedule?.[0]?.arrivalTime || ''
+
+        // DYNAMIC DISCOUNT LOGIC:
+        // Fetch the first object from the discounts array. 
+        // Per your request, treat 'percentage' field as the flat amount to subtract.
+        const firstDiscount = route.pricing?.discounts && route.pricing.discounts.length > 0
+          ? route.pricing.discounts[0]
+          : null;
+
+        const discountAmount = firstDiscount ? firstDiscount.percentage : 0;
 
         return {
           id: route._id,
@@ -313,6 +326,7 @@ export const BookingSteps: React.FC = () => {
           name: route?.vehicle?.type || 'Cab',
           capacity: route?.vehicle?.capacity || 6,
           price: route?.pricing?.baseFare || 550,
+          discount: discountAmount,
           image: '',
           route: `${route?.origin?.city} to ${route?.destination?.city}`,
           available,
@@ -328,10 +342,12 @@ export const BookingSteps: React.FC = () => {
         cabsWithAvailabilityPromises,
       )
       setAvailableCabs(cabsWithAvailability)
-      console.log(
-        'Fetched cabs with availability',
-        await cabsWithAvailability[0],
-      )
+
+      // Safety check for logging
+      if (cabsWithAvailability.length > 0) {
+        console.log('Fetched cabs with availability', cabsWithAvailability[0])
+      }
+
     } catch (error) {
       console.error('Failed to fetch route or availability data', error)
     }
@@ -1036,7 +1052,8 @@ export const BookingSteps: React.FC = () => {
   const renderSeatLayout = () => {
     if (!selectedCab) return null
 
-    const cab = availableCabs.find((c) => c.id === selectedCab)
+    const cab = availableCabs.find((c) => c.id === selectedCab);
+    const currentDiscount = cab?.discount || 0;
 
     if (!cab) return null
 
@@ -1080,6 +1097,7 @@ export const BookingSteps: React.FC = () => {
                     key={seatNum}
                     seatNum={seatNum}
                     seatObj={seatByNum[seatNum]}
+                    dynamicDiscount={currentDiscount}
                   />
                 ) : (
                   <div key={idx} className='min-w-[52px] min-h-[42px]' />
@@ -1095,6 +1113,7 @@ export const BookingSteps: React.FC = () => {
                     key={seatNum}
                     seatNum={seatNum}
                     seatObj={seatByNum[seatNum]}
+                    dynamicDiscount={currentDiscount}
                   />
                 ) : (
                   <div key={idx} className='min-w-[52px] min-h-[42px]' />
@@ -1110,6 +1129,7 @@ export const BookingSteps: React.FC = () => {
                     key={seatNum}
                     seatNum={seatNum}
                     seatObj={seatByNum[seatNum]}
+                    dynamicDiscount={currentDiscount}
                   />
                 ) : (
                   <div key={idx} className='min-w-[52px] min-h-[42px]' />
@@ -1146,7 +1166,8 @@ export const BookingSteps: React.FC = () => {
   const SeatButton: React.FC<{
     seatNum: string
     seatObj?: SeatAvailability
-  }> = ({ seatNum, seatObj }) => {
+    dynamicDiscount: number // Add this prop
+  }> = ({ seatNum, seatObj, dynamicDiscount }) => { // Destructure it here
     if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
 
     const isBooked = seatObj.status === 'booked'
@@ -1161,18 +1182,18 @@ export const BookingSteps: React.FC = () => {
       isBooked && seatObj.gender?.toLowerCase() === 'female'
 
     const originalPrice = seatObj.price || 0
-    const discountPrice = Math.max(0, originalPrice - 100)
+
+    // Replace the hardcoded '100' with 'dynamicDiscount'
+    const discountPrice = Math.max(0, originalPrice - dynamicDiscount)
 
     return (
       <button
         type='button'
         className={[
           'min-w-[52px] min-h-[48px] rounded-lg border-2 text-xs font-semibold flex flex-col items-center justify-center transition-all shadow-sm p-1',
-          // 1. Check Female Booked FIRST with Fuchsia
           isFemaleBooked
             ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
-            : // 2. Standard Booked
-            isBooked
+            : isBooked
               ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
               : isLocked
                 ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
@@ -1194,7 +1215,7 @@ export const BookingSteps: React.FC = () => {
         <span className='text-[11px] font-bold text-emerald-400 mt-1 leading-none'>
           ₹{discountPrice}
         </span>
-        {originalPrice > 0 && (
+        {originalPrice > discountPrice && ( // Only show if there actually is a discount
           <span className='text-[9px] text-white/50 font-medium mt-[1px] leading-none line-through'>
             ₹{originalPrice}
           </span>
@@ -1544,305 +1565,236 @@ export const BookingSteps: React.FC = () => {
         )
 
       case 4:
-        // 1. Calculations
-        const currentBaseFare = passengers.reduce(
-          (sum, p) => sum + (p.fare || 0),
-          0,
-        )
-        const currentServiceFee = 12
-        const currentDiscount = 100 * passengers.length // ₹100 discount per passenger
-
-        const currentGst = (currentBaseFare - currentDiscount + currentServiceFee) * 0.05
-        const currentTotal = Math.max(
-          0,
-          currentBaseFare + currentGst + currentServiceFee - currentDiscount,
-        )
-
         return (
-          <div className='max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500'>
-            {/* 1. Booking & Fare Summary Section */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              {/* Left: Journey Info */}
-              <div className='md:col-span-2 bg-zinc-900/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6'>
-                <div className='flex items-start justify-between'>
-                  <div>
-                    <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1'>
-                      Booking Summary
-                    </p>
-                    <h3 className='text-xl font-bold text-white flex items-center gap-2'>
-                      {selectedSeats.length} Seats Reserved
-                      <Badge
-                        variant='outline'
-                        className='border-emerald-500/30 text-emerald-400 bg-emerald-500/5'
-                      >
-                        {selectedSeats.join(', ')}
-                      </Badge>
-                    </h3>
-                    <p className='text-zinc-500 text-sm mt-2 flex items-center gap-2'>
-                      <MapPin className='h-3 w-3' />
-                      {passengers[0]?.pickupAddress || 'Selected Route'} →{' '}
-                      {passengers[0]?.dropAddress || 'Destination'}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          <div className='max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
 
-              {/* Right: Updated Fare Breakdown with Discount */}
-              <div className='bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden'>
-                <div className='space-y-2 relative z-10'>
-                  <div className='flex justify-between text-xs text-zinc-400'>
-                    <span>Base Fare</span>
-                    <span className='text-white font-medium'>
-                      ₹{currentBaseFare.toFixed(2)}
-                    </span>
+              {/* LEFT COLUMN: Passenger Details & Points (8 Units wide on Desktop) */}
+              <div className='lg:col-span-8 space-y-8 order-2 lg:order-1'>
+
+                {/* Pickup & Drop Selection Group */}
+                <div className='bg-zinc-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl'>
+                  <div className='flex items-center gap-3 mb-6'>
+                    <div className='h-6 w-1 bg-emerald-500 rounded-full' />
+                    <h3 className='text-lg font-bold text-white'>Boarding & Dropping</h3>
                   </div>
 
-                  {/* Discount Row */}
-                  <div className='flex justify-between text-xs text-emerald-400 font-medium'>
-                    <span>Discount Welcome({currentDiscount})</span>
-                    <span>- ₹{currentDiscount.toFixed(2)}</span>
-                  </div>
-
-                  <div className='flex justify-between text-xs text-zinc-400'>
-                    <span>GST (5%)</span>
-                    <span className='text-white font-medium'>
-                      ₹{currentGst.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className='flex justify-between text-xs text-zinc-400'>
-                    <span>Service Fee</span>
-                    <span className='text-white font-medium'>
-                      ₹{currentServiceFee.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className='pt-2 mt-2 border-t border-emerald-500/20 flex justify-between items-end'>
-                    <span className='text-sm font-bold text-emerald-400'>
-                      Total Fare
-                    </span>
-                    <span className='text-sm font-black text-white'>
-                      ₹{currentTotal.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Global pickup/drop (using UI Select) */}
-            <div className='mb-8 grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                  Pickup Point
-                </label>
-                <Select
-                  value={globalPickup || ''}
-                  onValueChange={(value) => {
-                    setGlobalPickup(value)
-                    const updated = passengers.map((p) => ({
-                      ...p,
-                      pickupAddress: value,
-                    }))
-                    setPassengers(updated)
-                  }}
-                >
-                  <SelectTrigger className='w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40'>
-                    <SelectValue placeholder='Select Pickup' />
-                  </SelectTrigger>
-                  <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                    {pickupOptions.map((point) => (
-                      <SelectItem
-                        key={point.name}
-                        value={point.name}
-                        className='focus:bg-emerald-500/10 focus:text-emerald-400'
-                      >
-                        {point.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className='block mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>
-                  Drop Point
-                </label>
-                <Select
-                  value={globalDrop || ''}
-                  onValueChange={(value) => {
-                    setGlobalDrop(value)
-                    const updated = passengers.map((p) => ({
-                      ...p,
-                      dropAddress: value,
-                    }))
-                    setPassengers(updated)
-                  }}
-                >
-                  <SelectTrigger className='w-full h-12 bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40'>
-                    <SelectValue placeholder='Select Drop' />
-                  </SelectTrigger>
-                  <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                    {dropOptions.map((point) => (
-                      <SelectItem
-                        key={point.name}
-                        value={point.name}
-                        className='focus:bg-emerald-500/10 focus:text-emerald-400'
-                      >
-                        {point.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* 2. Passenger Details Section */}
-            <div className='bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl'>
-              <div className='flex items-center gap-3 mb-8'>
-                <div className='h-8 w-1 bg-emerald-500 rounded-full' />
-                <h3 className='text-xl font-bold text-white'>
-                  Passenger Details
-                </h3>
-              </div>
-
-              <div className='space-y-8'>
-                {passengers.map((passenger, idx) => (
-                  <div
-                    key={passenger.seatNumber}
-                    className='group relative border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors rounded-2xl p-6'
-                  >
-                    <div className='absolute -top-3 left-6 px-3 py-1 bg-zinc-900 border border-white/10 rounded-full'>
-                      <span className='text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
-                        Seat {passenger.seatNumber}
-                      </span>
-
-                      {idx === 0 && (
-                        <span className='ml-3 text-[10px] font-black text-emerald-400 uppercase tracking-tighter'>
-                          {`Primary Passenger`}
-                        </span>
-                      )}
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className="space-y-2">
+                      <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1'>
+                        Pickup Point
+                      </label>
+                      <Select value={globalPickup || ''} onValueChange={(val) => {
+                        setGlobalPickup(val);
+                        setPassengers(passengers.map(p => ({ ...p, pickupAddress: val })));
+                      }}>
+                        <SelectTrigger className='h-12 bg-black/40 border-white/5 rounded-xl text-white'>
+                          <SelectValue placeholder='Select Point' />
+                        </SelectTrigger>
+                        <SelectContent className='bg-zinc-900 border-white/10 text-white'>
+                          {pickupOptions.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    <div className='grid grid-cols-1 md:grid-cols-3 gap-6 pt-2'>
-                      <div className='md:col-span-2'>
-                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
-                          Full Name
-                        </label>
-                        <div className='relative'>
-                          <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600' />
-                          <input
-                            type='text'
-                            placeholder='Enter passenger name'
-                            value={passenger.name}
-                            onChange={(e) => {
-                              const newPax = [...passengers]
-                              newPax[idx].name = e.target.value
-                              setPassengers(newPax)
-                            }}
-                            className='w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all'
-                          />
+                    <div className="space-y-2">
+                      <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1'>
+                        Drop Point
+                      </label>
+                      <Select value={globalDrop || ''} onValueChange={(val) => {
+                        setGlobalDrop(val);
+                        setPassengers(passengers.map(p => ({ ...p, dropAddress: val })));
+                      }}>
+                        <SelectTrigger className='h-12 bg-black/40 border-white/5 rounded-xl text-white'>
+                          <SelectValue placeholder='Select Point' />
+                        </SelectTrigger>
+                        <SelectContent className='bg-zinc-900 border-white/10 text-white'>
+                          {dropOptions.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Passenger Details List */}
+                <div className='bg-zinc-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 lg:p-8 shadow-xl'>
+                  <div className='flex items-center gap-3 mb-8'>
+                    <div className='h-6 w-1 bg-emerald-500 rounded-full' />
+                    <h3 className='text-lg font-bold text-white'>Passenger Details</h3>
+                  </div>
+
+                  <div className='space-y-10'>
+                    {passengers.map((passenger, idx) => (
+                      <div key={passenger.seatNumber} className='relative group'>
+                        <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
+                          Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
                         </div>
-                      </div>
 
-                      <div>
-                        <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
-                          Age & Gender
-                        </label>
-                        <div className='flex gap-2'>
-                          <input
-                            type='number'
-                            placeholder='Age'
-                            value={passenger.age || ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers]
-                              newPax[idx].age = Number(e.target.value)
-                              setPassengers(newPax)
-                            }}
-                            className='w-16 py-3 bg-black/40 border border-white/10 rounded-xl text-center text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          />
-
-                          {/* Gender Select Component */}
-                          <div className='flex-1'>
-                            <Select
-                              value={passenger.gender}
-                              onValueChange={(value) => {
-                                const newPax = [...passengers]
-                                newPax[idx].gender = value
-                                setPassengers(newPax)
+                        <div className='grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
+                          <div className='md:col-span-7'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
+                            <div className='relative'>
+                              <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600' />
+                              <input
+                                type='text'
+                                placeholder='Full Name'
+                                value={passenger.name}
+                                onChange={(e) => {
+                                  const newPax = [...passengers];
+                                  newPax[idx].name = e.target.value;
+                                  setPassengers(newPax);
+                                }}
+                                className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
+                              />
+                            </div>
+                          </div>
+                          <div className='md:col-span-2'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
+                            <input
+                              type='number'
+                              value={passenger.age || ''}
+                              onChange={(e) => {
+                                const newPax = [...passengers];
+                                newPax[idx].age = Number(e.target.value);
+                                setPassengers(newPax);
                               }}
-                            >
-                              <SelectTrigger className='h-[46px] bg-black/40 border-white/10 rounded-xl text-white focus:ring-emerald-500/40 text-sm'>
-                                <SelectValue placeholder='Gender' />
+                              className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
+                            />
+                          </div>
+                          <div className='md:col-span-3'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
+                            <Select value={passenger.gender} onValueChange={(val) => {
+                              const newPax = [...passengers];
+                              newPax[idx].gender = val;
+                              setPassengers(newPax);
+                            }}>
+                              <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
+                                <SelectValue placeholder='Select' />
                               </SelectTrigger>
                               <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                                <SelectItem
-                                  value='male'
-                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
-                                >
-                                  Male
-                                </SelectItem>
-                                <SelectItem
-                                  value='female'
-                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
-                                >
-                                  Female
-                                </SelectItem>
-                                <SelectItem
-                                  value='other'
-                                  className='focus:bg-emerald-500/10 focus:text-emerald-400'
-                                >
-                                  Others
-                                </SelectItem>
+                                <SelectItem value='male'>Male</SelectItem>
+                                <SelectItem value='female'>Female</SelectItem>
+                                <SelectItem value='other'>Other</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
+
+                          {idx === 0 && (
+                            <div className='md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
+                              <div>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
+                                <input
+                                  type='tel'
+                                  maxLength={10}
+                                  value={passenger.phone ?? ''}
+                                  onChange={(e) => {
+                                    const newPax = [...passengers];
+                                    newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                    setPassengers(newPax);
+                                  }}
+                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+                                />
+                              </div>
+                              <div>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
+                                <input
+                                  type='email'
+                                  value={passenger.email ?? ''}
+                                  onChange={(e) => {
+                                    const newPax = [...passengers];
+                                    newPax[idx].email = e.target.value;
+                                    setPassengers(newPax);
+                                  }}
+                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Fare Breakdown (4 Units wide - STICKY) */}
+              <div className='lg:col-span-4 order-1 lg:order-2'>
+                <div className='lg:sticky lg:top-24 space-y-4'>
+
+                  {/* Journey Summary */}
+                  <div className='bg-zinc-900/60 border border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden group'>
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                      <MapPin className="h-12 w-12 text-emerald-500" />
+                    </div>
+                    <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3'>Route Summary</p>
+                    <h4 className='text-lg font-bold text-white mb-2 leading-tight'>
+                      {globalPickup || 'Origin'} <ArrowRight className="inline h-4 w-4 mx-1 text-zinc-500" /> {globalDrop || 'Destination'}
+                    </h4>
+                    <div className='flex flex-wrap gap-2 mt-4'>
+                      <Badge variant='outline' className='bg-emerald-500/5 border-emerald-500/20 text-emerald-400'>
+                        {selectedSeats.length} Seats: {selectedSeats.join(', ')}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Fare Details */}
+                  <div className='bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl relative'>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+
+                    <h3 className='text-sm font-bold text-white uppercase tracking-tighter mb-6'>Payment Details</h3>
+
+                    <div className='space-y-4'>
+                      {/* Base Fare */}
+                      <div className='flex justify-between text-sm'>
+                        <span className='text-zinc-500'>Base Fare ({passengers.length}x)</span>
+                        <span className='text-white font-medium'>₹{fareBreakdown.baseFare}</span>
+                      </div>
+
+                      {/* Dynamic Discount */}
+                      {fareBreakdown.discount > 0 && (
+                        <div className='flex justify-between text-sm items-center'>
+                          <div className="flex items-center gap-1.5 text-emerald-400">
+                            <Tag className="h-3.5 w-3.5" />
+                            <span className="font-medium">Route Discount</span>
+                          </div>
+                          <span className='text-emerald-400 font-bold'>- ₹{fareBreakdown.discount}</span>
+                        </div>
+                      )}
+
+                      {/* Separated Convenience Fee */}
+                      <div className='flex justify-between text-sm'>
+                        <span className='text-zinc-500'>Convenience Fee</span>
+                        <span className='text-white font-medium'>₹{fareBreakdown.convenienceFee}</span>
+                      </div>
+
+                      {/* Separated GST */}
+                      <div className='flex justify-between text-sm'>
+                        <span className='text-zinc-500'>GST (5%)</span>
+                        <span className='text-white font-medium'>₹{fareBreakdown.gst.toFixed(2)}</span>
+                      </div>
+
+                      {/* Final Total */}
+                      <div className='pt-6 mt-2 border-t border-white/5 flex justify-between items-end'>
+                        <div>
+                          <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>Final Total</p>
+                          <p className='text-3xl font-black text-white tracking-tighter'>
+                            ₹{Math.round(
+                              fareBreakdown.baseFare +
+                              fareBreakdown.gst +
+                              fareBreakdown.convenienceFee -
+                              fareBreakdown.discount
+                            )}
+                          </p>
+                        </div>
+                        <div className='bg-emerald-500/10 px-2 py-1 rounded text-[10px] font-bold text-emerald-500 border border-emerald-500/20 mb-1'>
+                          SECURE
                         </div>
                       </div>
                     </div>
-
-                    {idx === 0 && (
-                      <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
-                            Contact Phone
-                          </label>
-                          <input
-                            type='tel'
-                            maxLength={10}
-                            placeholder='Enter contact number'
-                            value={passenger.phone ?? ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers]
-                              newPax[idx].phone = e.target.value
-                                .replace(/\D/g, '')
-                                .slice(0, 10)
-                              setPassengers(newPax)
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          />
-                        </div>
-
-                        <div>
-                          <label className='block mb-2 text-[10px] font-bold text-white uppercase tracking-widest'>
-                            Contact Email
-                          </label>
-                          <input
-                            type='email'
-                            placeholder='Enter email for ticket'
-                            value={passenger.email ?? ''}
-                            onChange={(e) => {
-                              const newPax = [...passengers]
-                              newPax[idx].email = e.target.value
-                              setPassengers(newPax)
-                            }}
-                            className='w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40'
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
-                ))}
+                </div>
               </div>
+
             </div>
           </div>
         )
