@@ -71,7 +71,7 @@ const processZohoPayment = async (paymentSessionId, statusData) => {
                 sourceCity: newBooking.route.origin,
                 destinationCity: newBooking.route.destination,
                 webLink: 'https://www.capsulecabs.com',
-                supportNumber: '9719226535',
+                pickupAt: newBooking.journey.departureTime,
                 customerNumber: newBooking.bookingPhone
             })
 

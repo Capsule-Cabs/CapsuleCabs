@@ -52,6 +52,7 @@ import { toast } from 'sonner'
 import phonepe_image from '@/assets/phonepe_image.png'
 import fetchRoutes from '@/services/bookingFunctions'
 import verifyPaymentDetails from '@/services/paymentFunctions'
+import { LoadingSplash } from '../ui/splashScreen'
 
 declare global {
   interface Window {
@@ -165,6 +166,7 @@ export const BookingSteps: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const preFilledData = location.state
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     preFilledData?.date ? new Date(preFilledData.date) : undefined,
@@ -247,41 +249,23 @@ export const BookingSteps: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentStep])
 
-  // useEffect(() => {
-  //   const initPhonePe = async () => {
-  //     if (Capacitor.isNativePlatform()) {
-  //       try {
-  //         await PhonePePaymentPlugin.init({
-  //           environment: 'PRODUCTION', // Change to "PRODUCTION" when going live
-  //           merchantId: 'M23EMO4MTCO4P', // Your actual MID
-  //           flowId: `flow_${user.id}`, // Alphanumeric string for tracking
-  //           enableLogging: false, // Set to false in production
-  //         })
-  //         console.log('PhonePe SDK Initialized')
-  //       } catch (error) {
-  //         console.error('PhonePe Init Error:', error)
-  //       }
-  //     }
-  //   }
-  //   initPhonePe()
-  // }, [])
   const generateStrongOrderId = (): string => {
     const timestamp = Date.now().toString(36)
     const random = Math.random().toString(36).substring(2, 8)
 
-    // High-precision alternative for browser
     const micro = performance.now().toString(36).replace('.', '')
 
     return (timestamp + random + micro).toUpperCase().slice(0, 14)
   }
 
   const fetchRoutesAndAvailability = async () => {
+    setIsLoading(true); // Start loading
+    const minimumDelay = new Promise(resolve => setTimeout(resolve, 2000));
     try {
-      const routes = await fetchRoutes(
-        selectedDate,
-        selectedDestination,
-        selectedSource,
-      )
+      const [routes] = await Promise.all([
+      fetchRoutes(selectedDate, selectedDestination, selectedSource),
+      minimumDelay 
+    ]);
 
       const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
         let seatsAvailable: SeatAvailability[] = []
@@ -350,6 +334,8 @@ export const BookingSteps: React.FC = () => {
 
     } catch (error) {
       console.error('Failed to fetch route or availability data', error)
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -1902,6 +1888,9 @@ export const BookingSteps: React.FC = () => {
     // We use flex-col and min-h-screen to ensure the page fills the height,
     // but doesn't create extra scroll space unless content is long.
     <div className='min-h-screen bg-black text-white flex flex-col relative'>
+
+      {/* Conditionally Render the Loading Splash Screen */}
+      {isLoading && <LoadingSplash />}
       {/* Main Content Area */}
       <div className='flex-1 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col'>
         {/* Timer Section */}

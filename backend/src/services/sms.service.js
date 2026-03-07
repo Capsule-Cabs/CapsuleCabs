@@ -36,7 +36,7 @@ class SmsService {
     }
   }
 
-  async sendTripConfirmation({ sourceCity, destinationCity, webLink, supportNumber, customerNumber }) {
+  async sendTripConfirmation({ sourceCity, destinationCity, webLink, pickupAt, customerNumber }) {
     try {
       const payload = {
         sender_id: config.trip_confirm_key,
@@ -45,7 +45,7 @@ class SmsService {
         route: 'dlt',
         numbers: customerNumber,
         variables: '{#AA#}|{#BB#}|{#CC#}|{#DD#}',
-        variables_values: `${sourceCity}|${destinationCity}|${webLink}|${supportNumber}`,
+        variables_values: `${sourceCity}|${destinationCity}|${pickupAt}|${webLink}`,
         flash: 0
       };
 
