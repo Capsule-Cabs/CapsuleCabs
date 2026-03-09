@@ -39,6 +39,7 @@ import {
   Droplets,
   Lightbulb,
   PhoneForwarded,
+  GlassWater
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -260,12 +261,12 @@ export const BookingSteps: React.FC = () => {
 
   const fetchRoutesAndAvailability = async () => {
     setIsLoading(true); // Start loading
-    const minimumDelay = new Promise(resolve => setTimeout(resolve, 2000));
+    const minimumDelay = new Promise(resolve => setTimeout(resolve, 900));
     try {
       const [routes] = await Promise.all([
-      fetchRoutes(selectedDate, selectedDestination, selectedSource),
-      minimumDelay 
-    ]);
+        fetchRoutes(selectedDate, selectedDestination, selectedSource),
+        minimumDelay
+      ]);
 
       const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
         let seatsAvailable: SeatAvailability[] = []
@@ -965,11 +966,11 @@ export const BookingSteps: React.FC = () => {
                   <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="w-10 h-10 object-contain" />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-zinc-900 text-xl tracking-tight'>UPI</p>
+                  <p className='font-black text-white-900 text-xl tracking-tight'>UPI</p>
                   <div className='flex items-center gap-2 mt-1'>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" className="h-3 grayscale opacity-70 group-hover:grayscale-0 transition-all" alt="GPay" />
                     <div className="w-[1px] h-2 bg-zinc-300" />
-                    <span className="text-[10px] text-zinc-400 font-bold uppercase">PhonePe & more</span>
+                    <span className="text-[10px] text-white-400 font-bold uppercase">PhonePe & more</span>
                   </div>
                 </div>
               </div>
@@ -991,10 +992,10 @@ export const BookingSteps: React.FC = () => {
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:-rotate-3 transition-transform'>
-                  <CreditCard className="w-7 h-7 text-zinc-700" strokeWidth={2.5} />
+                  <CreditCard className="w-7 h-7 text-white-700" strokeWidth={2.5} />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-zinc-900 text-lg tracking-tight'>Other Methods</p>
+                  <p className='font-black text-white-900 text-lg tracking-tight'>Other Methods</p>
                   <div className='flex items-center gap-2 mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity'>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-2" alt="Visa" />
                     <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="MC" />
@@ -1017,7 +1018,7 @@ export const BookingSteps: React.FC = () => {
                 disabled={isAuthLoading || !selectedGateway}
                 className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${selectedGateway
                   ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
-                  : 'bg-zinc-800 text-zinc-500'
+                  : 'bg-zinc-800 text-white-500'
                   }`}
               >
                 {isAuthLoading ? (
@@ -1223,7 +1224,7 @@ export const BookingSteps: React.FC = () => {
 
     const allPoints = [
       ...pickups.map((p: any) => ({ ...p, type: 'Pickup', color: 'emerald' })),
-      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'rose' })),
+      ...drops.map((d: any) => ({ ...d, type: 'Drop', color: 'red' })),
     ]
 
     return (
@@ -1400,7 +1401,7 @@ export const BookingSteps: React.FC = () => {
               <h3 className='text-xl md:text-2xl font-bold text-white'>
                 Select Cab & Time
               </h3>
-              <p className='text-zinc-500 text-xs md:text-sm mt-1'>
+              <p className='text-white-500 text-xs md:text-sm mt-1'>
                 Choose your preferred schedule
               </p>
             </div>
@@ -1427,7 +1428,7 @@ export const BookingSteps: React.FC = () => {
                     >
                       {/* Header Section: Badge & CNG Info */}
                       <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
-                        <span className="text-[10px] md:text-xs font-bold text-zinc-300 uppercase tracking-wider">
+                        <span className="text-[10px] md:text-xs font-bold text-white-300 uppercase tracking-wider">
                           {cab.capacity || 6} Seater {cab.routeCode}
                         </span>
                         <div className="flex items-center gap-1.5 text-emerald-400">
@@ -1453,7 +1454,7 @@ export const BookingSteps: React.FC = () => {
 
                             {/* Visual Path (Dotted line with duration) */}
                             <div className='flex-1 md:flex-none flex flex-col items-center min-w-[80px]'>
-                              <span className='text-[10px] text-zinc-500 font-bold mb-1'>(4h 55m)</span>
+                              <span className='text-[10px] text-white-500 font-bold mb-1'>(4h 55m)</span>
                               <div className='flex items-center w-full gap-1'>
                                 <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
                                 <div className='flex-1 border-t border-dotted border-zinc-700' />
@@ -1472,11 +1473,11 @@ export const BookingSteps: React.FC = () => {
                           {/* Price & Action Section */}
                           <div className='flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8'>
                             <div className='flex flex-col'>
-                              <span className='text-[9px] text-zinc-500 font-bold uppercase'>Starting From</span>
+                              <span className='text-[9px] text-white-500 font-bold uppercase'>Starting From</span>
                               <div className='flex items-baseline gap-1.5'>
-                                <span className='text-zinc-500 line-through text-xs'>₹500</span>
+                                <span className='text-white-500 line-through text-xs'>₹500</span>
                                 <span className='text-2xl md:text-3xl font-black text-emerald-400'>₹{cab.price || 399}</span>
-                                <span className='text-[10px] text-zinc-500'>+GST</span>
+                                <span className='text-[10px] text-white-500'>+GST</span>
                               </div>
                               <div className='flex items-center gap-1 mt-1 text-emerald-500 font-bold'>
                                 <Tag className='h-3 w-3' />
@@ -1496,21 +1497,23 @@ export const BookingSteps: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Footer: Features & Route Details */}
                         <div className='flex items-center justify-between mt-6 pt-4 border-t border-white/5'>
-                          <div className='flex items-center gap-4 text-zinc-500'>
+                          <div className='flex items-center gap-4 text-white-500'>
                             <div className='flex flex-col items-center gap-0.5' title='AC'>
                               <Wind className='h-4 w-4 md:h-5 md:w-5' />
                               <span className='text-[8px] uppercase font-bold'>AC</span>
                             </div>
-                            <div className='flex flex-col items-center gap-0.5' title='Wifi'>
-                              <Wifi className='h-4 w-4 md:h-5 md:w-5' />
-                              <span className='text-[8px] uppercase font-bold'>Wifi</span>
+
+                            <div className='flex flex-col items-center gap-0.5' title='Water Bottle'>
+                              <GlassWater className='h-4 w-4 md:h-5 md:w-5' />
+                              <span className='text-[8px] uppercase font-bold'>Water</span>
                             </div>
+
                             <div className='flex flex-col items-center gap-0.5' title='USB'>
                               <Usb className='h-4 w-4 md:h-5 md:w-5' />
                               <span className='text-[8px] uppercase font-bold'>USB</span>
                             </div>
+
                             <div className='flex flex-col items-center gap-0.5' title='CCTV'>
                               <ShieldCheck className='h-4 w-4 md:h-5 md:w-5' />
                               <span className='text-[8px] uppercase font-bold'>CCTV</span>
@@ -1522,7 +1525,7 @@ export const BookingSteps: React.FC = () => {
                               e.stopPropagation();
                               setViewingRoute(cab);
                             }}
-                            className='text-[11px] md:text-xs font-bold text-zinc-400 hover:text-white transition-colors flex items-center gap-1'
+                            className='text-[11px] md:text-xs font-bold text-white-400 hover:text-white transition-colors flex items-center gap-1'
                           >
                             See Route <ChevronDown className="h-3 w-3" />
                           </button>
@@ -1567,7 +1570,7 @@ export const BookingSteps: React.FC = () => {
 
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className="space-y-2">
-                      <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1'>
+                      <label className='text-[10px] font-bold text-white-500 uppercase tracking-widest ml-1'>
                         Pickup Point
                       </label>
                       <Select value={globalPickup || ''} onValueChange={(val) => {
@@ -1584,7 +1587,7 @@ export const BookingSteps: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1'>
+                      <label className='text-[10px] font-bold text-white-500 uppercase tracking-widest ml-1'>
                         Drop Point
                       </label>
                       <Select value={globalDrop || ''} onValueChange={(val) => {
@@ -1618,9 +1621,9 @@ export const BookingSteps: React.FC = () => {
 
                         <div className='grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
                           <div className='md:col-span-7'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
+                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Full Name</label>
                             <div className='relative'>
-                              <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600' />
+                              <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white-600' />
                               <input
                                 type='text'
                                 placeholder='Full Name'
@@ -1635,7 +1638,7 @@ export const BookingSteps: React.FC = () => {
                             </div>
                           </div>
                           <div className='md:col-span-2'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
+                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Age</label>
                             <input
                               type='number'
                               value={passenger.age || ''}
@@ -1645,10 +1648,11 @@ export const BookingSteps: React.FC = () => {
                                 setPassengers(newPax);
                               }}
                               className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
+                              placeholder='Age'
                             />
                           </div>
                           <div className='md:col-span-3'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
+                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Gender</label>
                             <Select value={passenger.gender} onValueChange={(val) => {
                               const newPax = [...passengers];
                               newPax[idx].gender = val;
@@ -1668,10 +1672,11 @@ export const BookingSteps: React.FC = () => {
                           {idx === 0 && (
                             <div className='md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
                               <div>
-                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
+                                <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
                                 <input
                                   type='tel'
                                   maxLength={10}
+                                  placeholder='Enter contact to get ticket details'
                                   value={passenger.phone ?? ''}
                                   onChange={(e) => {
                                     const newPax = [...passengers];
@@ -1682,9 +1687,10 @@ export const BookingSteps: React.FC = () => {
                                 />
                               </div>
                               <div>
-                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
+                                <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Contact Email</label>
                                 <input
                                   type='email'
+                                  placeholder='Enter email to get ticket details'
                                   value={passenger.email ?? ''}
                                   onChange={(e) => {
                                     const newPax = [...passengers];
@@ -1714,7 +1720,7 @@ export const BookingSteps: React.FC = () => {
                     </div>
                     <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3'>Route Summary</p>
                     <h4 className='text-lg font-bold text-white mb-2 leading-tight'>
-                      {globalPickup || 'Origin'} <ArrowRight className="inline h-4 w-4 mx-1 text-zinc-500" /> {globalDrop || 'Destination'}
+                      {globalPickup || 'Origin'} <ArrowRight className="inline h-4 w-4 mx-1 text-white-500" /> {globalDrop || 'Destination'}
                     </h4>
                     <div className='flex flex-wrap gap-2 mt-4'>
                       <Badge variant='outline' className='bg-emerald-500/5 border-emerald-500/20 text-emerald-400'>
@@ -1732,7 +1738,7 @@ export const BookingSteps: React.FC = () => {
                     <div className='space-y-4'>
                       {/* Base Fare */}
                       <div className='flex justify-between text-sm'>
-                        <span className='text-zinc-500'>Base Fare ({passengers.length}x)</span>
+                        <span className='text-white-500'>Base Fare ({passengers.length}x)</span>
                         <span className='text-white font-medium'>₹{fareBreakdown.baseFare}</span>
                       </div>
 
@@ -1749,20 +1755,20 @@ export const BookingSteps: React.FC = () => {
 
                       {/* Separated Convenience Fee */}
                       <div className='flex justify-between text-sm'>
-                        <span className='text-zinc-500'>Convenience Fee</span>
+                        <span className='text-white-500'>Convenience Fee</span>
                         <span className='text-white font-medium'>₹{fareBreakdown.convenienceFee}</span>
                       </div>
 
                       {/* Separated GST */}
                       <div className='flex justify-between text-sm'>
-                        <span className='text-zinc-500'>GST (5%)</span>
+                        <span className='text-white-500'>GST (5%)</span>
                         <span className='text-white font-medium'>₹{fareBreakdown.gst.toFixed(2)}</span>
                       </div>
 
                       {/* Final Total */}
                       <div className='pt-6 mt-2 border-t border-white/5 flex justify-between items-end'>
                         <div>
-                          <p className='text-[10px] font-bold text-zinc-500 uppercase tracking-widest'>Final Total</p>
+                          <p className='text-[10px] font-bold text-white-500 uppercase tracking-widest'>Final Total</p>
                           <p className='text-3xl font-black text-white tracking-tighter'>
                             ₹{Math.round(
                               fareBreakdown.baseFare +

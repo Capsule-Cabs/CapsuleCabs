@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2, Calendar, Armchair, IndianRupee, ArrowLeft, Home } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Calendar, Armchair, IndianRupee, ArrowLeft, Home, MailCheck, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ const PaymentStatus = () => {
           if (isSuccess && bookingId) {
             stopPolling();
             setBookingDetails({ ...parsedData, bookingId });
+            console.log('Booking details: ', bookingDetails);
             setStatus("success");
             localStorage.removeItem("pending_booking");
             localStorage.removeItem("paymentDoneBy"); // Cleanup
@@ -98,122 +99,136 @@ const PaymentStatus = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col font-sans selection:bg-emerald-500/30">
       <Navigation />
-      <main className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        {/* Animated Background Glow */}
-        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] blur-[120px] rounded-full transition-colors duration-1000 opacity-20 -z-10 ${status === 'success' ? 'bg-emerald-500' : status === 'failed' ? 'bg-red-500' : 'bg-blue-500'
-          }`} />
+
+      <main className="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.05),transparent_50%)]" />
 
         <AnimatePresence mode="wait">
           {status === "loading" ? (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="text-center space-y-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center"
             >
-              <div className="relative h-24 w-24 mx-auto">
-                <div className="absolute inset-0 border-t-2 border-emerald-500 rounded-full animate-spin" />
-                <Loader2 className="h-24 w-24 animate-pulse text-emerald-500/20 p-6" />
-              </div>
-              <h2 className="text-xl font-medium tracking-tight text-white/80">Verifying Ticket...</h2>
-              <p className="text-sm text-white/40 italic">We are securing your seats, please wait</p>
+              <Loader2 className="h-12 w-12 animate-spin text-emerald-500 mx-auto mb-4" />
+              <p className="text-sm font-medium tracking-widest uppercase text-emerald-500/60">Verifying</p>
             </motion.div>
           ) : status === "success" ? (
             <motion.div
               key="success"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              className="max-w-md w-full"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-[400px]"
             >
+              {/* Status Header */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-500" />
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/10 mb-4">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight">Ride Confirmed!</h1>
-                <p className="text-zinc-400 mt-2">Pack your bags, your driver is notified.</p>
+                <h1 className="text-2xl font-bold tracking-tight">Booking Confirmed</h1>
+                <p className="text-zinc-500 text-sm mt-1">Your journey is all set to go.</p>
               </div>
 
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-b from-emerald-500/20 to-transparent rounded-[2rem] blur opacity-50 group-hover:opacity-75 transition duration-1000" />
-
-                <Card className="relative bg-zinc-950 border-white/5 rounded-[1.8rem] overflow-hidden shadow-2xl">
-                  <CardContent className="p-0">
-                    <div className="p-6 space-y-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <span className="text-[10px] uppercase tracking-[0.2em] text-emerald-500 font-bold">Booking Details</span>
-                          <h4 className="text-lg font-semibold text-white/90">CapsuleCabs</h4>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold">Booking ID</span>
-                          <p className="text-xs font-mono text-zinc-400 mt-1">{bookingDetails?.bookingId}</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-8 py-2">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2.5 bg-zinc-900 rounded-xl border border-white/5"><Calendar className="h-4 w-4 text-zinc-400" /></div>
-                          <div>
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase">Travel Date</p>
-                            <p className="text-sm font-medium">{bookingDetails?.travelDate ? format(new Date(bookingDetails.travelDate), "MMM dd, yyyy") : ""}</p>
-                          </div>
-                        </div>
-                      </div>
+              {/* Minimalist Summary Card */}
+              <div className="bg-zinc-900/40 border border-white/5 rounded-[2rem] overflow-hidden backdrop-blur-md">
+                <div className="p-6 space-y-6">
+                  {/* Route Row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Booking ID</span>
+                      <span className="text-sm font-mono text-zinc-300">#{bookingDetails?.bookingId?.slice(-8).toUpperCase()}</span>
                     </div>
-
-                    <div className="relative flex items-center px-2 py-2">
-                      <div className="absolute left-[-12px] w-6 h-6 rounded-full bg-[#050505] border-r border-white/5" />
-                      <div className="flex-1 border-t border-dashed border-white/10 mx-4" />
-                      <div className="absolute right-[-12px] w-6 h-6 rounded-full bg-[#050505] border-l border-white/5" />
+                    <div className="h-8 w-[1px] bg-white/5" />
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Travel Date</span>
+                      <span className="text-sm font-semibold">
+                        {bookingDetails?.travelDate ? format(new Date(bookingDetails.travelDate), "MMM dd") : "N/A"}
+                      </span>
                     </div>
+                  </div>
 
-                    <div className="p-6 bg-white/[0.02] flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Amount Paid</p>
-                        <div className="flex items-center text-2xl font-black text-emerald-400 italic">
-                          <IndianRupee className="h-5 w-5" />
-                          <span>{totalPaid}</span>
-                        </div>
-                      </div>
-                      {/* <div className="h-14 w-14 bg-white p-1 rounded-lg opacity-80">
-                            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${bookingDetails?.bookingId}`} alt="QR" className="w-full h-full" />
-                        </div> */}
+                  <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+
+                  {/* Route Visual */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                      <p className="text-sm font-medium text-zinc-300">{bookingDetails.passengers[0]?.pickupPoint}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full border border-zinc-600 bg-red-500" />
+                      <p className="text-sm font-medium text-zinc-300">{bookingDetails.passengers[0]?.dropPoint}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* The "Mail Info" Section */}
+                <div className="px-6 py-4 bg-emerald-500/5 border-t border-emerald-500/10 flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <MailCheck className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-emerald-400/80">
+                    A digital copy of your <span className="text-emerald-400 font-bold uppercase tracking-tighter">QR Ticket</span> has been dispatched to your registered email.
+                  </p>
+                </div>
               </div>
 
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <Button variant="outline" onClick={() => navigate("/")} className="h-14 rounded-2xl border-white/5 bg-zinc-900/50 text-zinc-300 hover:bg-zinc-800 transition-all gap-2">
-                  <Home className="h-4 w-4" /> Home
-                </Button>
-                <Button onClick={() => window.print()} className="h-14 rounded-2xl bg-white text-black hover:bg-zinc-200 font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all">
-                  Save Ticket
-                </Button>
+              {/* Action Buttons */}
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex-1 h-12 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-sm font-medium transition-all"
+                >
+                  Return Home
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 h-12 rounded-2xl bg-white text-black hover:bg-zinc-200 text-sm font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <ShieldCheck className="h-4 w-4" /> Secure Pass
+                </button>
               </div>
             </motion.div>
           ) : (
-            <motion.div key="failed" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full text-center">
-              <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 mb-4">
-                  <XCircle className="h-10 w-10 text-red-500" />
-                </div>
-                <h1 className="text-3xl font-bold tracking-tight">Payment Failed</h1>
-                <p className="text-zinc-400 mt-2 px-6">Your transaction was declined. Don't worry, your money is safe if deducted.</p>
+            <motion.div
+              key="failed"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="max-w-[360px] w-full text-center"
+            >
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 mb-4">
+                <XCircle className="h-7 w-7 text-red-500" />
               </div>
-              <Card className="bg-zinc-950 border-red-500/20 rounded-[2rem] overflow-hidden mb-6">
-                <CardContent className="p-8 space-y-4">
-                  <p className="text-sm text-zinc-400 leading-relaxed">This usually happens due to bank timeouts. Your seat lock will be held for the next 5 minutes.</p>
-                  <Button onClick={() => navigate("/booking")} className="w-full h-14 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-bold transition-all shadow-[0_0_20px_rgba(239,68,68,0.2)]">
-                    Retry Payment Now
-                  </Button>
-                </CardContent>
-              </Card>
-              <button onClick={() => navigate("/")} className="inline-flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-medium">
-                <ArrowLeft className="h-4 w-4" /> Cancel and return home
-              </button>
+              <h1 className="text-2xl font-bold tracking-tight">Error in booking, Sorry for the inconvience caused</h1>
+              <p className="text-zinc-500 text-sm mt-2 leading-relaxed">
+                The transaction couldn't be completed. Don't worry, any deducted amount will be auto-refunded.
+              </p>
+
+              <div className="mt-8 space-y-3">
+                <button
+                  onClick={() => {
+                    console.log('Button hit');
+                    navigate("/booking")
+                  }
+                  }
+                  className="w-full h-12 rounded-2xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold transition-all shadow-lg shadow-red-500/20"
+                >
+                  Retry Booking
+                </button>
+                <button
+                  onClick={() => navigate("/")}
+                  className="w-full h-12 rounded-2xl bg-transparent border border-white/5 text-zinc-500 hover:text-white text-sm transition-all"
+                >
+                  Cancel Booking
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+
       <Footer />
     </div>
   );

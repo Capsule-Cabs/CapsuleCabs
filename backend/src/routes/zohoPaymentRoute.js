@@ -67,13 +67,13 @@ const processZohoPayment = async (paymentSessionId, statusData) => {
             paymentRecord.bookingRefId = newBooking._id;
             await paymentRecord.save();
 
-            await smsService.sendTripConfirmation({
-                sourceCity: newBooking.route.origin,
-                destinationCity: newBooking.route.destination,
-                webLink: 'https://www.capsulecabs.com',
-                pickupAt: newBooking.journey.departureTime,
-                customerNumber: newBooking.bookingPhone
-            })
+            // await smsService.sendTripConfirmation({
+            //     sourceCity: newBooking.route.origin,
+            //     destinationCity: newBooking.route.destination,
+            //     webLink: 'https://www.capsulecabs.com',
+            //     pickupAt: newBooking.journey.departureTime,
+            //     customerNumber: newBooking.bookingPhone
+            // })
 
             await emailService.sendBookingEmail(newBooking.bookingEmail, {
                 bookingId: newBooking.bookingId,
