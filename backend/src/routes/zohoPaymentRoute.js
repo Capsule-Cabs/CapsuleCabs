@@ -60,7 +60,8 @@ const processZohoPayment = async (paymentSessionId, statusData) => {
             const newBooking = await createInternalBooking(
                 paymentRecord.user,
                 paymentRecord.pendingBookingData,
-                paymentRecord.paymentId || paymentSessionId
+                paymentRecord.paymentId || paymentSessionId,
+                paymentRecord.amount
             );
 
             paymentRecord.bookingId = newBooking.bookingId;

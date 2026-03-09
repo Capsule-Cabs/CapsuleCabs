@@ -53,6 +53,23 @@ const searchRoutes = async (req, res) => {
       searchQuery['destination.city'] = { $regex: destination, $options: 'i' };
     }
 
+    const searchDate = new Date(travelDate);
+    const today = new Date();
+
+    // Check if travelDate is today (ignoring time)
+    const isToday = searchDate.toDateString() === today.toDateString();
+
+    if (isToday) {
+      // Get current time in HH:mm format (e.g., "14:05")
+      const currentHH = today.getHours().toString().padStart(2, '0');
+      const currentMM = today.getMinutes().toString().padStart(2, '0');
+      const currentTimeString = `${currentHH}:${currentMM}`;
+
+      // Only find routes where departureTime is GREATER than current time
+      // This correctly targets origin.departureTime inside your model
+      query['schedule[0].departureTime'] = { $gt: currentTimeString };
+    }
+
     if (vehicleType) {
       searchQuery['vehicle.type'] = vehicleType;
     }
@@ -225,7 +242,7 @@ const getSeatAvailability = async (req, res) => {
     }
 
     const dateObj = new Date(travelDate);
-    
+
     // Check if route is available on this date
     if (!route.isAvailableOnDate(dateObj)) {
       return res.status(400).json(
@@ -299,19 +316,19 @@ const createRoute = async (req, res) => {
     );
   } catch (error) {
     logger.error('Create route error:', error);
-    
+
     if (error.code === 11000) {
       return res.status(409).json(
         ApiResponse.error('Route code already exists', 409, 'ROUTE_CODE_EXISTS')
       );
     }
-    
+
     if (error.name === 'ValidationError') {
       return res.status(400).json(
         ApiResponse.error('Validation failed', 400, 'VALIDATION_ERROR', Object.values(error.errors).map(e => e.message))
       );
     }
-    
+
     res.status(500).json(
       ApiResponse.error('Server error while creating route', 500, 'SERVER_ERROR')
     );
@@ -354,13 +371,13 @@ const updateRoute = async (req, res) => {
     );
   } catch (error) {
     logger.error('Update route error:', error);
-    
+
     if (error.name === 'ValidationError') {
       return res.status(400).json(
         ApiResponse.error('Validation failed', 400, 'VALIDATION_ERROR', Object.values(error.errors).map(e => e.message))
       );
     }
-    
+
     res.status(500).json(
       ApiResponse.error('Server error while updating route', 500, 'SERVER_ERROR')
     );
@@ -377,7 +394,7 @@ const deleteRoute = async (req, res) => {
     const { id } = req.params;
 
     const route = await Route.findById(id);
-    
+
     if (!route) {
       return res.status(404).json(
         ApiResponse.error('Route not found', 404, 'ROUTE_NOT_FOUND')

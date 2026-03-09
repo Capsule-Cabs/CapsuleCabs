@@ -86,7 +86,7 @@ const lockSeats = asyncHandler(async (req, res) => {
  * @param {String} paymentId - The merchantOrderId
  */
 // bookingRoutes.js - UPDATED createInternalBooking
-export const createInternalBooking = async (user, payload, paymentId) => {
+export const createInternalBooking = async (user, payload, paymentId, paymentAmount) => {
   const { routeId, travelDate, passengers, paymentMethod, email, phone } = payload;
   const userId = user._id;
   const seatNumbers = passengers.map(p => p.seatNumber);
@@ -97,7 +97,7 @@ export const createInternalBooking = async (user, payload, paymentId) => {
     throw new Error('Route not found or inactive');
   }
 
-  const totalAmount = passengers.reduce((s, p) => s + p.fare, 0);
+  const totalAmount = paymentAmount;
   const session = await mongoose.startSession();
 
   try {
@@ -232,7 +232,7 @@ const getMyBookings = asyncHandler(async (req, res) => {
   if (status) {
     query.status = status;
   }
-
+  
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
   const bookings = await Booking.find(query)
