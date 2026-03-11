@@ -1288,70 +1288,61 @@ export const BookingSteps: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className='max-w-md mx-auto space-y-6'>
-            {/* Compact Header */}
-            <div className='text-center space-y-2'>
-              <h3 className='text-lg font-semibold text-white tracking-tight'>
-                Select Route & Date
+          <div className='w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500'>
+            {/* 1. Header Section - Clean & Centered */}
+            <div className='text-center space-y-2 mb-8'>
+              <h3 className='text-xl font-black text-white'>
+                Select Journey
               </h3>
-              <p className='text-xs text-white/50'>
-                Choose your journey details
+              <p className='text-zinc-500 text-[10px] font-bold uppercase tracking-widest'>
+                Where and when are you traveling?
               </p>
             </div>
 
-            {/* Single Compact Card */}
-            <Card className='bg-zinc-950/50 border-white/5 backdrop-blur-sm shadow-lg hover:shadow-emerald/10 transition-shadow'>
-              <CardContent className='p-6 space-y-5'>
-                {/* Source + Destination */}
-                <div className='space-y-3'>
-                  <div className='flex items-center gap-3 text-xs font-medium text-white/60 uppercase tracking-wider'>
-                    <MapPin className='h-3 w-3' />
-                    Route
-                  </div>
-                  <div className='grid grid-cols-2 gap-3'>
-                    <div>
-                      <select
-                        value={selectedSource || ''}
-                        onChange={(e) => setSelectedSource(e.target.value)}
-                        className='w-full h-11 px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-sm font-medium text-white focus:outline-none focus:border-emerald/50 focus:ring-1 focus:ring-emerald/30 transition-all hover:border-white/20'
-                      >
-                        <option value=''>From</option>
-                        {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
-                          <option key={city} value={city}>
-                            {city}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <select
-                        value={selectedDestination || ''}
-                        onChange={(e) => setSelectedDestination(e.target.value)}
-                        disabled={!selectedSource}
-                        className='w-full h-11 px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-xl text-sm font-medium text-white focus:outline-none focus:border-emerald/50 focus:ring-1 focus:ring-emerald/30 transition-all hover:border-white/20 disabled:bg-zinc-800/50 disabled:border-zinc-700/50 disabled:text-white/40'
-                      >
-                        <option value=''>
-                          {selectedSource ? 'To' : 'Source first'}
-                        </option>
-                        {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
-                          <option
-                            key={city}
-                            value={city}
-                            disabled={city === selectedSource}
-                          >
-                            {city}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+            {/* 2. Route Selection - Full width on mobile, constrained on laptop */}
+            <div className='w-full max-w-md space-y-6 px-4 sm:px-0'>
+              <div className='grid grid-cols-2 gap-3'>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-1">From</label>
+                  <select
+                    value={selectedSource || ''}
+                    onChange={(e) => setSelectedSource(e.target.value)}
+                    className='w-full h-12 px-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none'
+                  >
+                    <option value='' className="bg-zinc-950">Source</option>
+                    {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
+                      <option key={city} value={city} className="bg-zinc-950">{city}</option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Date Separator + Calendar */}
-                <div className='relative'>
-                  <div className='absolute -top-6 left-1/2 transform -translate-x-1/2'>
-                    <div className='w-20 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent' />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-1">To</label>
+                  <select
+                    value={selectedDestination || ''}
+                    onChange={(e) => setSelectedDestination(e.target.value)}
+                    disabled={!selectedSource}
+                    className='w-full h-12 px-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none disabled:opacity-40'
+                  >
+                    <option value='' className="bg-zinc-950">{selectedSource ? 'Destination' : '---'}</option>
+                    {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
+                      <option
+                        key={city}
+                        value={city}
+                        className="bg-zinc-950"
+                        disabled={city === selectedSource}
+                      >
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* 3. Calendar Wrapper - Centers the calendar exactly */}
+              <div className='flex flex-col items-center space-y-3 pt-4'>
+                <label className="text-[10px] font-black text-zinc-500 uppercase">Select Travel Date</label>
+                <div className='inline-block p-4 bg-zinc-900/40 border border-white/5 rounded-[2rem] backdrop-blur-md'>
                   <Calendar
                     mode='single'
                     selected={selectedDate}
@@ -1368,28 +1359,42 @@ export const BookingSteps: React.FC = () => {
                     disabled={(date) =>
                       date < new Date(new Date().setHours(0, 0, 0, 0))
                     }
-                    className='rounded-lg border border-white/10 bg-zinc-900/70 text-white shadow-sm hover:shadow-md transition-shadow'
+                    className='p-0'
                     classNames={{
-                      day: 'h-9 w-9 text-sm hover:bg-white/10 rounded-lg text-white',
-                      day_selected:
-                        '!bg-emerald-600 !text-emerald-50 font-semibold shadow-md border-2 border-emerald-700/50 rounded-lg hover:!bg-emerald-700',
-                      day_today: 'ring-1 ring-emerald/40',
+                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                      month: "space-y-4",
+                      caption: "flex justify-center pt-1 relative items-center text-white font-bold uppercase text-xs tracking-widest",
+                      caption_label: "text-sm font-black",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-white",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex",
+                      head_cell: "text-zinc-500 rounded-md w-9 font-black text-[10px] uppercase",
+                      row: "flex w-full mt-2",
+                      cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                      day: "h-9 w-9 p-0 font-bold aria-selected:opacity-100 hover:bg-white/10 rounded-xl transition-all",
+                      day_selected: "!bg-emerald-500 !text-black hover:!bg-emerald-400 focus:!bg-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]",
+                      day_today: "bg-zinc-800 text-emerald-400",
+                      day_outside: "text-zinc-700 opacity-50",
+                      day_disabled: "text-zinc-800 opacity-20",
                     }}
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Minimal Selection Indicators */}
-            <div className='flex items-center justify-center gap-4 text-xs text-white/40'>
-              {selectedSource && selectedDestination && selectedDate && (
-                <div className='flex items-center gap-1 px-2 py-1 bg-emerald/10 border border-emerald/30 rounded-lg'>
-                  <span className='text-emerald/80 font-medium'>
-                    {selectedSource} to {selectedDestination} on{' '}
-                    {format(selectedDate, 'MMM dd')}
-                  </span>
-                </div>
-              )}
+              {/* 4. Selection Confirmation Pill */}
+              <div className='h-8 flex items-center justify-center'>
+                {selectedSource && selectedDestination && selectedDate && (
+                  <div className='flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-in zoom-in duration-300'>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className='text-emerald-500 text-[10px] font-black uppercase tracking-tighter'>
+                      {selectedSource} to {selectedDestination} • {format(selectedDate, 'MMM dd')}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )
@@ -1428,14 +1433,14 @@ export const BookingSteps: React.FC = () => {
                     >
                       {/* Header Section: Badge & CNG Info */}
                       <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
-                        <span className="text-[10px] md:text-xs font-bold text-white-300 uppercase tracking-wider">
+                        <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-wider">
                           {cab.capacity || 6} Seater {cab.routeCode}
                         </span>
                         <div className="flex items-center gap-1.5 text-emerald-400">
                           <Leaf className="h-3 w-3" />
-                          <span className="text-[9px] md:text-[10px] font-bold uppercase">
+                          {/* <span className="text-[9px] md:text-[10px] font-bold uppercase">
                             CNG Powered: 25% Less CO₂
-                          </span>
+                          </span> */}
                         </div>
                       </div>
 
@@ -1473,7 +1478,7 @@ export const BookingSteps: React.FC = () => {
                           {/* Price & Action Section */}
                           <div className='flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8'>
                             <div className='flex flex-col'>
-                              <span className='text-[9px] text-white-500 font-bold uppercase'>Starting From</span>
+                              <span className='text-[9px] text-white font-bold uppercase'>Starting From</span>
                               <div className='flex items-baseline gap-1.5'>
                                 <span className='text-white-500 line-through text-xs'>₹500</span>
                                 <span className='text-2xl md:text-3xl font-black text-emerald-400'>₹{cab.price || 399}</span>
@@ -1491,31 +1496,31 @@ export const BookingSteps: React.FC = () => {
                                 : 'bg-zinc-800 text-white hover:bg-zinc-700'
                                 }`}
                             >
-                              {selected ? 'Selected' : 'Select Seat'}
-                              <ChevronRight className="h-4 w-4" />
+                              {selected ? 'Selected' : 'Select Cab'}
+                              {/* <ChevronRight className="h-4 w-4" /> */}
                             </button>
                           </div>
                         </div>
 
-                        <div className='flex items-center justify-between mt-6 pt-4 border-t border-white/5'>
+                        <div className='flex items-center justify-between mt-2 pt-4 border-t border-white/5'>
                           <div className='flex items-center gap-4 text-white-500'>
                             <div className='flex flex-col items-center gap-0.5' title='AC'>
-                              <Wind className='h-4 w-4 md:h-5 md:w-5' />
+                              <Wind className='h-4 w-4 md:h-5 md:w-5' color='white' />
                               <span className='text-[8px] uppercase font-bold'>AC</span>
                             </div>
 
                             <div className='flex flex-col items-center gap-0.5' title='Water Bottle'>
-                              <GlassWater className='h-4 w-4 md:h-5 md:w-5' />
+                              <GlassWater className='h-4 w-4 md:h-5 md:w-5' color='white' />
                               <span className='text-[8px] uppercase font-bold'>Water</span>
                             </div>
 
                             <div className='flex flex-col items-center gap-0.5' title='USB'>
-                              <Usb className='h-4 w-4 md:h-5 md:w-5' />
+                              <Usb className='h-4 w-4 md:h-5 md:w-5' color='white' />
                               <span className='text-[8px] uppercase font-bold'>USB</span>
                             </div>
 
                             <div className='flex flex-col items-center gap-0.5' title='CCTV'>
-                              <ShieldCheck className='h-4 w-4 md:h-5 md:w-5' />
+                              <ShieldCheck className='h-4 w-4 md:h-5 md:w-5' color='white' />
                               <span className='text-[8px] uppercase font-bold'>CCTV</span>
                             </div>
                           </div>
@@ -1525,7 +1530,7 @@ export const BookingSteps: React.FC = () => {
                               e.stopPropagation();
                               setViewingRoute(cab);
                             }}
-                            className='text-[11px] md:text-xs font-bold text-white-400 hover:text-white transition-colors flex items-center gap-1'
+                            className='text-[11px] md:text-xs font-bold text-white hover:text-white transition-colors flex items-center gap-1'
                           >
                             See Route <ChevronDown className="h-3 w-3" />
                           </button>
@@ -1613,99 +1618,106 @@ export const BookingSteps: React.FC = () => {
                   </div>
 
                   <div className='space-y-10'>
-                    {passengers.map((passenger, idx) => (
-                      <div key={passenger.seatNumber} className='relative group'>
-                        <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
-                          Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
-                        </div>
+  {passengers.map((passenger, idx) => (
+    <div key={passenger.seatNumber} className='relative group'>
+      <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
+        Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
+      </div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-12 gap-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
-                          <div className='md:col-span-7'>
-                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Full Name</label>
-                            <div className='relative'>
-                              <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white-600' />
-                              <input
-                                type='text'
-                                placeholder='Full Name'
-                                value={passenger.name}
-                                onChange={(e) => {
-                                  const newPax = [...passengers];
-                                  newPax[idx].name = e.target.value;
-                                  setPassengers(newPax);
-                                }}
-                                className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
-                              />
-                            </div>
-                          </div>
-                          <div className='md:col-span-2'>
-                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Age</label>
-                            <input
-                              type='number'
-                              value={passenger.age || ''}
-                              onChange={(e) => {
-                                const newPax = [...passengers];
-                                newPax[idx].age = Number(e.target.value);
-                                setPassengers(newPax);
-                              }}
-                              className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
-                              placeholder='Age'
-                            />
-                          </div>
-                          <div className='md:col-span-3'>
-                            <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Gender</label>
-                            <Select value={passenger.gender} onValueChange={(val) => {
-                              const newPax = [...passengers];
-                              newPax[idx].gender = val;
-                              setPassengers(newPax);
-                            }}>
-                              <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
-                                <SelectValue placeholder='Select' />
-                              </SelectTrigger>
-                              <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                                <SelectItem value='male'>Male</SelectItem>
-                                <SelectItem value='female'>Female</SelectItem>
-                                <SelectItem value='other'>Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+      {/* Changed grid-cols-1 to grid-cols-2 to allow Age/Gender to sit side-by-side on mobile */}
+      <div className='grid grid-cols-2 md:grid-cols-12 gap-x-4 gap-y-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
+        
+        {/* Name takes full width (2 columns) on mobile, 7 columns on desktop */}
+        <div className='col-span-2 md:col-span-7'>
+          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
+          <div className='relative'>
+            <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400' />
+            <input
+              type='text'
+              placeholder='Full Name'
+              value={passenger.name}
+              onChange={(e) => {
+                const newPax = [...passengers];
+                newPax[idx].name = e.target.value;
+                setPassengers(newPax);
+              }}
+              className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
+            />
+          </div>
+        </div>
 
-                          {idx === 0 && (
-                            <div className='md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
-                              <div>
-                                <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
-                                <input
-                                  type='tel'
-                                  maxLength={10}
-                                  placeholder='Enter contact to get ticket details'
-                                  value={passenger.phone ?? ''}
-                                  onChange={(e) => {
-                                    const newPax = [...passengers];
-                                    newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                    setPassengers(newPax);
-                                  }}
-                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
-                                />
-                              </div>
-                              <div>
-                                <label className='text-[9px] font-bold text-white-500 uppercase tracking-widest block mb-2'>Contact Email</label>
-                                <input
-                                  type='email'
-                                  placeholder='Enter email to get ticket details'
-                                  value={passenger.email ?? ''}
-                                  onChange={(e) => {
-                                    const newPax = [...passengers];
-                                    newPax[idx].email = e.target.value;
-                                    setPassengers(newPax);
-                                  }}
-                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        {/* Age takes 1 column on mobile, 2 on desktop */}
+        <div className='col-span-1 md:col-span-2'>
+          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
+          <input
+            type='number'
+            value={passenger.age || ''}
+            onChange={(e) => {
+              const newPax = [...passengers];
+              newPax[idx].age = Number(e.target.value);
+              setPassengers(newPax);
+            }}
+            className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
+            placeholder='Age'
+          />
+        </div>
+
+        {/* Gender takes 1 column on mobile, 3 on desktop */}
+        <div className='col-span-1 md:col-span-3'>
+          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
+          <Select value={passenger.gender} onValueChange={(val) => {
+            const newPax = [...passengers];
+            newPax[idx].gender = val;
+            setPassengers(newPax);
+          }}>
+            <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
+              <SelectValue placeholder='Select' />
+            </SelectTrigger>
+            <SelectContent className='bg-zinc-900 border-white/10 text-white'>
+              <SelectItem value='male'>Male</SelectItem>
+              <SelectItem value='female'>Female</SelectItem>
+              <SelectItem value='other'>Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {idx === 0 && (
+          <div className='col-span-2 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
+            <div>
+              <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
+              <input
+                type='tel'
+                maxLength={10}
+                placeholder='Enter contact to get ticket details'
+                value={passenger.phone ?? ''}
+                onChange={(e) => {
+                  const newPax = [...passengers];
+                  newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setPassengers(newPax);
+                }}
+                className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+              />
+            </div>
+            <div>
+              <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
+              <input
+                type='email'
+                placeholder='Enter email to get ticket details'
+                value={passenger.email ?? ''}
+                onChange={(e) => {
+                  const newPax = [...passengers];
+                  newPax[idx].email = e.target.value;
+                  setPassengers(newPax);
+                }}
+                className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
                 </div>
               </div>
 
@@ -1891,117 +1903,116 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    // We use flex-col and min-h-screen to ensure the page fills the height,
-    // but doesn't create extra scroll space unless content is long.
-    <div className='min-h-screen bg-black text-white flex flex-col relative'>
-
-      {/* Conditionally Render the Loading Splash Screen */}
+    <div className="w-full text-white flex flex-col relative">
+      {/* Loading overlay */}
       {isLoading && <LoadingSplash />}
-      {/* Main Content Area */}
-      <div className='flex-1 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col'>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col gap-6">
         {/* Timer Section */}
         {timerActive && (
-          <div className='flex justify-center mb-6'>
-            <div className='bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono'>
-              ⏱️ {Math.floor(timerSeconds / 60)}:
-              {(timerSeconds % 60).toString().padStart(2, '0')}
-              <span className='ml-1 text-xs'>(Seat lock expires)</span>
+          <div className="flex justify-center">
+            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono">
+              {Math.floor(timerSeconds / 60)
+                .toString()
+                .padStart(2, "0")}
+              :
+              {(timerSeconds % 60).toString().padStart(2, "0")}
+              <span className="ml-1 text-xs">Seat lock expires</span>
             </div>
           </div>
         )}
 
-        {/* Step Content Wrapper */}
-        <div className='flex-1'>
-          <Card className='bg-gradient-to-b from-zinc-950 to-black border-white/10 text-white h-full'>
-            <CardContent className='p-5 sm:p-7'>
-              {renderStepContent()}
-            </CardContent>
-          </Card>
+        {/* Step content – NO background card wrapper */}
+        <div className="flex-1">
+          {renderStepContent()}
         </div>
+      </div>
 
-        {/* Navigation Buttons (Desktop Only - Inlined) */}
-        <div className='hidden md:flex justify-between gap-4 max-w-5xl mx-auto w-full pt-8'>
+      {/* Desktop navigation buttons (inline) */}
+      {/* Navigation Buttons (Desktop Only) */}
+      <div className='hidden md:flex flex-col items-center w-full max-w-2xl mx-auto mt-8 pb-12'>
+        {/* Divider Line */}
+        <div className="w-full h-px bg-white/5 mb-8" />
+
+        <div className="flex justify-between w-full px-4">
           <Button
             variant='outline'
             onClick={prevStep}
             disabled={currentStep === 1}
-            className='rounded-full border-white/20 text-white hover:bg-white/10 bg-transparent disabled:opacity-50 px-8'
+            className='rounded-xl border-white/10 text-white hover:bg-white/5 bg-transparent h-12 px-8 transition-all active:scale-95'
           >
             Previous
           </Button>
+
           <Button
             onClick={nextStep}
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
-              (currentStep === 2 &&
-                (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
                 passengers.some(
-                  (p) =>
-                    !p.name ||
-                    !p.age ||
-                    !p.gender ||
-                    !globalPickup ||
-                    !globalDrop,
+                  (p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop
                 ) &&
-                (!passengers[0].phone || !passengers[0].email))
+                (!passengers[0].phone || !passengers[0].email)) ||
+              (currentStep === 5 )
             }
-            className='rounded-full bg-emerald-500 text-black hover:bg-emerald-400 font-semibold disabled:opacity-50 px-8'
+            className='rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-black h-12 px-10 transition-all active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
           >
-            {currentStep === 6 ? 'Complete' : 'Next'}
-            {currentStep < 6 && <ArrowRight className='ml-2 h-4 w-4' />}
+            {currentStep === 6 ? 'Complete' : currentStep === 1 ? 'Select Cab' : currentStep === 2 ? 'Select Seats' : currentStep === 3 ? 'Passenger Details' : currentStep === 4 ? 'Checkout' : 'Complete Payment'}
+            {currentStep < 5 && <ArrowRight className='ml-2 h-4 w-4' />}
           </Button>
         </div>
       </div>
 
-      {/* Sticky Navigation Footer (Mobile Only) */}
-      <div className='md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg'>
-        <div className='flex justify-between gap-4 p-4'>
+      {/* Sticky Navigation Footer – Mobile only */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg">
+        <div className="flex justify-between gap-4 p-4">
           <Button
-            variant='outline'
+            variant="outline"
             onClick={prevStep}
             disabled={currentStep === 1}
-            className='flex-1 rounded-full border-white/20 text-white bg-transparent h-12'
+            className="flex-1 rounded-full border-white/20 text-white bg-transparent h-12"
           >
             Previous
           </Button>
+
           <Button
             onClick={nextStep}
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              // DISABLED IF ON STEP 2 AND (NO CABS FOUND OR NONE SELECTED)
               (currentStep === 2 &&
                 (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                passengers.some(
-                  (p) =>
-                    !p.name ||
-                    !p.age ||
-                    !p.gender ||
-                    !globalPickup ||
-                    !globalDrop,
-                ) &&
-                (!passengers[0].phone || !passengers[0].email))
+                (passengers.some(
+                  (p) => !p.name || !p.age || !p.gender
+                ) ||
+                  !globalPickup ||
+                  !globalDrop ||
+                  !passengers[0]?.phone ||
+                  !passengers[0]?.email))
+                   ||
+              (currentStep === 5 )
             }
-            className='flex-1 rounded-full bg-emerald-500 text-black font-bold h-12'
+            className="flex-1 rounded-full bg-emerald-500 text-black font-bold h-12"
           >
-            {currentStep === 6 ? 'Complete' : 'Next'}
+            {currentStep === 6 ? 'Complete' : currentStep === 1 ? 'Select Cab' : currentStep === 2 ? 'Select Seats' : currentStep === 3 ? 'Passenger Details' : currentStep === 4 ? 'Checkout' : 'Complete Payment'}
           </Button>
         </div>
       </div>
 
-      {/* Spacer so content doesn't get hidden behind the mobile sticky footer */}
-      <div className='h-24 md:hidden' />
+      {/* Spacer so content doesn't sit under the mobile footer */}
+      <div className="h-20 md:hidden" />
 
-      {/* Modals & Popups (Rendered once at the bottom) */}
+      {/* Modals & popups */}
       {renderLoginModal()}
       {renderPaymentSelectionModal()}
-      {renderRoutePopup && renderRoutePopup()}
+      {renderRoutePopup()}
     </div>
-  )
+  );
+
 }
