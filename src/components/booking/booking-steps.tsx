@@ -604,17 +604,24 @@ export const BookingSteps: React.FC = () => {
   }
 
   const initiatePaymentFlow = () => {
-    setShowPaymentModal(true)
+    const platform = Capacitor.getPlatform();
+
+    if (platform === 'android' || platform === 'ios') {
+      startMobilePayment();
+    } else {
+      setShowPaymentModal(true);
+    }
   }
 
   const handlePaymentSelection = async () => {
-    const platform = Capacitor.getPlatform()
-    if (platform === 'web') {
-      makePayment()
+    const platform = Capacitor.getPlatform();
+
+    if (platform === 'android' || platform === 'ios') {
+      await startMobilePayment();
     } else {
-      startMobilePayment()
+      await makePayment();
     }
-  }
+  };
 
   const startMobilePayment = async () => {
     const totalAmount = totalFare
@@ -1018,7 +1025,7 @@ export const BookingSteps: React.FC = () => {
                   <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="w-10 h-10 object-contain" />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-white-900 text-xl tracking-tight'>UPI</p>
+                  <p className='font-black text-black text-xl tracking-tight'>UPI</p>
                   <div className='flex items-center gap-2 mt-1'>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" className="h-3 grayscale opacity-70 group-hover:grayscale-0 transition-all" alt="GPay" />
                     <div className="w-[1px] h-2 bg-zinc-300" />
@@ -1044,10 +1051,10 @@ export const BookingSteps: React.FC = () => {
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:-rotate-3 transition-transform'>
-                  <CreditCard className="w-7 h-7 text-white-700" strokeWidth={2.5} />
+                  <CreditCard className="w-7 h-7 text-blue-600" strokeWidth={2.5} />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-white-900 text-lg tracking-tight'>Other Methods</p>
+                  <p className='font-black text-black text-lg tracking-tight'>Other Methods</p>
                   <div className='flex items-center gap-2 mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity'>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-2" alt="Visa" />
                     <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="MC" />
