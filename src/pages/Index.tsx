@@ -315,8 +315,8 @@ const Index = () => {
                                 day: "h-9 w-9 p-0 font-bold text-white aria-selected:opacity-100 hover:bg-white/10 rounded-xl transition-all",
                                 day_selected: "!bg-emerald-500 !text-black hover:!bg-emerald-400 focus:!bg-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]",
                                 day_today: "bg-zinc-800 text-emerald-400",
-                                day_outside: "text-white",
-                                day_disabled: "text-zinc-800 opacity-20",
+                                day_outside: "text-zinc-300 opacity-50",
+                                day_disabled: "text-zinc-300 opacity-50",
                               }}
                             />
                           </PopoverContent>

@@ -1455,7 +1455,7 @@ export const BookingSteps: React.FC = () => {
         return (
           <div className='w-full max-w-4xl mx-auto px-2 py-6 space-y-4'>
             {/* DATE SLIDER */}
-            <div className="relative w-full mb-10">
+            <div className="relative w-full mb-5">
 
               {/* LEFT ARROW */}
               <button
@@ -1501,8 +1501,8 @@ export const BookingSteps: React.FC = () => {
               </button>
 
               {/* EDGE GRADIENTS */}
-              <div className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-5" />
-              <div className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-5" />
+              <div className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent " />
+              <div className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent" />
 
               {/* SCROLL CONTAINER */}
               <div
@@ -1518,7 +1518,7 @@ export const BookingSteps: React.FC = () => {
                       key={key}
                       ref={(el) => (dateRefs.current[key] = el)}
                       onClick={() => handleDateChange(date)}
-                      className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-2xl border transition-all duration-300
+                      className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-xl border transition-all duration-300
                       ${isSelected
                           ? "bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105"
                           : "bg-zinc-900 border-white/10 text-white hover:bg-zinc-800"
@@ -1606,7 +1606,7 @@ export const BookingSteps: React.FC = () => {
                         </div>
                       </div>
 
-                      <CardContent className='p-4 md:p-6'>
+                      <CardContent className='p-2 md:p-6'>
                         {/* Desktop: Horizontal | Mobile: Vertical Stacking */}
                         <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
 
