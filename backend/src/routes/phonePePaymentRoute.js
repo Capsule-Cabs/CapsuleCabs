@@ -134,7 +134,7 @@ const getOAuthToken = async () => {
     grant_type: 'client_credentials',
   })
 
-  const response = await axios.post(`${paymentUrl}/v1/oauth/token`, params, {
+  const response = await axios.post(`${phonePe_authAPI}/v1/oauth/token`, params, {
     httpsAgent,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -206,7 +206,6 @@ const createOrder = asyncHandler(async (req, res) => {
 
     const phonePeData = response.data
 
-    // >>> DB LOGIC (no change to API response)
     await PhonePePayment.findOneAndUpdate(
       { merchantOrderId },
       {
@@ -228,7 +227,6 @@ const createOrder = asyncHandler(async (req, res) => {
       },
       { upsert: true, new: true },
     )
-    // <<< DB LOGIC
 
     return res.json(ApiResponse.success(response.data, 'Checkout link created'))
   } catch (error) {
