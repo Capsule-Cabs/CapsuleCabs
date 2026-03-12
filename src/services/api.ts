@@ -2,8 +2,8 @@ import axios from 'axios';
 import { getAccessToken, setAccessToken, clearTokens } from './authTokens';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: '/api/v1',  // ✅ Nginx proxy
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // Attach access token to every request
@@ -23,10 +23,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/auth/refresh-token`,
-          { refreshToken: localStorage.getItem('refreshToken') }
-        );
+        // ✅ Use the SAME proxied API for refresh
+        const { data } = await api.post('/auth/refresh-token', {
+          refreshToken: localStorage.getItem('refreshToken')
+        });
+        
         setAccessToken(data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         original.headers.Authorization = `Bearer ${data.data.accessToken}`;
