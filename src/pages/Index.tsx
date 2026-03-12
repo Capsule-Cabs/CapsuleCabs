@@ -220,7 +220,7 @@ const Index = () => {
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500/50 group-focus-within:text-emerald-500 transition-colors z-10">
                               <MapPin size={18} />
                             </div>
-                            <Select value={searchData.from} onValueChange={(v) => setSearchData({ ...searchData, from: v })}>
+                            <Select value={searchData.from || ""} onValueChange={(v) => setSearchData({ ...searchData, from: v })}>
                               <SelectTrigger className="h-16 pl-12 bg-white/5 border-white/5 rounded-2xl text-white hover:bg-white/10 transition-all text-base focus:ring-1 focus:ring-emerald-500/50">
                                 <SelectValue placeholder="Pickup City" />
                               </SelectTrigger>
@@ -230,7 +230,7 @@ const Index = () => {
                                     key={city.id}
                                     value={city.name}
                                     disabled={isCityDisabled(city.name, 'from')}
-                                    className="focus:bg-emerald-500/10 focus:text-emerald-400"
+                                    className="data-[highlighted]:bg-white/5 data-[highlighted]:text-white"
                                   >
                                     {city.name}
                                   </SelectItem>
@@ -259,7 +259,7 @@ const Index = () => {
                                     key={city.id}
                                     value={city.name}
                                     disabled={isCityDisabled(city.name, 'to')}
-                                    className="focus:bg-emerald-500/10 focus:text-emerald-400"
+                                    className="data-[highlighted]:bg-white/5 data-[highlighted]:text-white"
                                   >
                                     {city.name}
                                   </SelectItem>
@@ -297,7 +297,27 @@ const Index = () => {
                                 }
                               }}
                               disabled={(date) => date < new Date()}
-                              className="bg-zinc-950 text-white rounded-xl"
+                              className='p-0'
+                              classNames={{
+                                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                                month: "space-y-4",
+                                caption: "flex justify-center pt-1 relative items-center text-white font-bold uppercase text-xs tracking-widest",
+                                caption_label: "text-sm font-black",
+                                nav: "space-x-1 flex items-center",
+                                nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-white",
+                                nav_button_previous: "absolute left-1",
+                                nav_button_next: "absolute right-1",
+                                table: "w-full border-collapse space-y-1",
+                                head_row: "flex",
+                                head_cell: "text-zinc-500 rounded-md w-9 font-black text-[10px] uppercase",
+                                row: "flex w-full mt-2",
+                                cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                                day: "h-9 w-9 p-0 font-bold text-white aria-selected:opacity-100 hover:bg-white/10 rounded-xl transition-all",
+                                day_selected: "!bg-emerald-500 !text-black hover:!bg-emerald-400 focus:!bg-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]",
+                                day_today: "bg-zinc-800 text-emerald-400",
+                                day_outside: "text-white",
+                                day_disabled: "text-zinc-800 opacity-20",
+                              }}
                             />
                           </PopoverContent>
                         </Popover>

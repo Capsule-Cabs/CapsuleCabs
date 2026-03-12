@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { PhonePePaymentPlugin } from 'ionic-capacitor-phonepe-pg'
-import { format } from 'date-fns'
+import { format, addDays, isSameDay } from 'date-fns'
 import { useJsApiLoader, StandaloneSearchBox } from '@react-google-maps/api'
 import {
   Calendar as CalendarIcon,
@@ -34,12 +34,13 @@ import {
   Leaf,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   ShieldCheck,
   Tag,
   Droplets,
   Lightbulb,
   PhoneForwarded,
-  GlassWater
+  GlassWater,
 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -163,10 +164,19 @@ const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
   'GUR-AGR-003': ['22:00'],
 }
 
+const getNext30Days = () => {
+  const days = [];
+  for (let i = 0; i < 30; i++) {
+    days.push(addDays(new Date(), i));
+  }
+  return days;
+};
+
 export const BookingSteps: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const preFilledData = location.state
+  const next30Days = useMemo(() => getNext30Days(), []);
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -199,7 +209,6 @@ export const BookingSteps: React.FC = () => {
   const [selectedDestination, setSelectedDestination] = useState<string>(
     preFilledData?.to || '',
   )
-
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [loginStep, setLoginStep] = useState<'PHONE' | 'OTP'>('PHONE')
   const [loginPhone, setLoginPhone] = useState('')
@@ -209,7 +218,6 @@ export const BookingSteps: React.FC = () => {
   const [selectedGateway, setSelectedGateway] = useState<
     'PHONEPE' | 'ZOHO' | null
   >(null)
-
   const [totalFare, setTotalFare] = useState<number>(0)
   const [fareBreakdown, setFareBreakdown] = useState({
     baseFare: 0,
@@ -218,8 +226,10 @@ export const BookingSteps: React.FC = () => {
     discount: 0,
   })
   const [viewingRoute, setViewingRoute] = useState<any>(null)
-
+  const [showEcoInfo, setShowEcoInfo] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>()
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const dateRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // If the user is coming after selecting source and destination
   useEffect(() => {
@@ -250,6 +260,43 @@ export const BookingSteps: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentStep])
 
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    const key = format(selectedDate, "yyyy-MM-dd");
+    const el = dateRefs.current[key];
+    const container = scrollRef.current;
+
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+
+      const offset =
+        el.offsetLeft -
+        containerRect.width / 2 +
+        elRect.width / 2;
+
+      container.scrollTo({
+        left: offset,
+        behavior: "smooth",
+      });
+    }
+  }, [selectedDate]);
+
+  const scrollLeft = () => {
+    scrollRef.current?.scrollBy({
+      left: -300,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollRight = () => {
+    scrollRef.current?.scrollBy({
+      left: 300,
+      behavior: "smooth",
+    });
+  };
+
   const generateStrongOrderId = (): string => {
     const timestamp = Date.now().toString(36)
     const random = Math.random().toString(36).substring(2, 8)
@@ -259,24 +306,24 @@ export const BookingSteps: React.FC = () => {
     return (timestamp + random + micro).toUpperCase().slice(0, 14)
   }
 
-  const fetchRoutesAndAvailability = async () => {
+  const fetchRoutesAndAvailability = async (specificDate?: Date) => {
     setIsLoading(true); // Start loading
     const minimumDelay = new Promise(resolve => setTimeout(resolve, 900));
+    const useDate = specificDate || selectedDate;
     try {
       const [routes] = await Promise.all([
-        fetchRoutes(selectedDate, selectedDestination, selectedSource),
+        fetchRoutes(useDate, selectedDestination, selectedSource),
         minimumDelay
       ]);
 
       const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
         let seatsAvailable: SeatAvailability[] = []
         let available = false
-
-        if (selectedDate) {
+        if (useDate) {
           setPickupOptions(route.origin?.pickupPoints)
           setDropOptions(route.destination?.dropPoints)
 
-          const dateStr = format(selectedDate, 'yyyy-MM-dd')
+          const dateStr = format(useDate, 'yyyy-MM-dd')
 
           try {
             const seatAvailRes = await api.get(
@@ -454,7 +501,7 @@ export const BookingSteps: React.FC = () => {
         return
       }
       setCurrentStep((prev) => prev + 1)
-      await fetchRoutesAndAvailability()
+      await fetchRoutesAndAvailability(selectedDate)
     } else if (currentStep === 2) {
       // setTimerActive(true);
       // setTimerSeconds(300);
@@ -795,6 +842,11 @@ export const BookingSteps: React.FC = () => {
       setIsAuthLoading(false)
     }
   }
+
+  const handleDateChange = async (date: Date) => {
+    setSelectedDate(date);
+    await fetchRoutesAndAvailability(date);
+  };
 
   const renderLoginModal = () => {
     if (!showLoginModal) return null
@@ -1402,6 +1454,92 @@ export const BookingSteps: React.FC = () => {
       case 2:
         return (
           <div className='w-full max-w-4xl mx-auto px-2 py-6 space-y-4'>
+            {/* DATE SLIDER */}
+            <div className="relative w-full mb-10">
+
+              {/* LEFT ARROW */}
+              <button
+                onClick={scrollLeft}
+                className="
+                  hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20
+                  h-11 w-11 items-center justify-center
+                  rounded-full
+                  bg-zinc-900/70 backdrop-blur-md
+                  border border-white/10
+                  text-white/80
+                  transition-all duration-300
+                  hover:bg-zinc-800
+                  hover:text-white
+                  hover:scale-105
+                  hover:shadow-lg hover:shadow-black/40
+                  active:scale-95
+                  "
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+
+              {/* RIGHT ARROW */}
+              <button
+                onClick={scrollRight}
+                className="
+                  hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20
+                  h-11 w-11 items-center justify-center
+                  rounded-full
+                  bg-zinc-900/70 backdrop-blur-md
+                  border border-white/10
+                  text-white/80
+                  transition-all duration-300
+                  hover:bg-zinc-800
+                  hover:text-white
+                  hover:scale-105
+                  hover:shadow-lg hover:shadow-black/40
+                  active:scale-95
+                  "
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              {/* EDGE GRADIENTS */}
+              <div className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent z-5" />
+              <div className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent z-5" />
+
+              {/* SCROLL CONTAINER */}
+              <div
+                ref={scrollRef}
+                className="flex gap-3 overflow-x-auto no-scrollbar px-12 py-2 scroll-smooth"
+              >
+                {next30Days.map((date) => {
+                  const key = format(date, "yyyy-MM-dd");
+                  const isSelected = selectedDate && isSameDay(date, selectedDate);
+
+                  return (
+                    <button
+                      key={key}
+                      ref={(el) => (dateRefs.current[key] = el)}
+                      onClick={() => handleDateChange(date)}
+                      className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-2xl border transition-all duration-300
+                      ${isSelected
+                          ? "bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105"
+                          : "bg-zinc-900 border-white/10 text-white hover:bg-zinc-800"
+                        }`}
+                    >
+                      <span className="text-[10px] font-bold uppercase">
+                        {format(date, "EEE")}
+                      </span>
+
+                      <span className="text-lg font-black leading-none">
+                        {format(date, "dd")}
+                      </span>
+
+                      <span className="text-[10px] opacity-70">
+                        {format(date, "MMM")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className='text-center mb-6'>
               <h3 className='text-xl md:text-2xl font-bold text-white'>
                 Select Cab & Time
@@ -1436,11 +1574,35 @@ export const BookingSteps: React.FC = () => {
                         <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-wider">
                           {cab.capacity || 6} Seater {cab.routeCode}
                         </span>
-                        <div className="flex items-center gap-1.5 text-emerald-400">
-                          <Leaf className="h-3 w-3" />
-                          {/* <span className="text-[9px] md:text-[10px] font-bold uppercase">
-                            CNG Powered: 25% Less CO₂
-                          </span> */}
+                        <div className="relative flex items-center gap-1.5 text-emerald-400">
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowEcoInfo((prev) => !prev);
+                            }}
+                            className="flex items-center justify-center h-5 w-5 rounded-full hover:bg-emerald-500/10 transition"
+                          >
+                            <Leaf className="h-3.5 w-3.5" />
+                          </button>
+
+                          {showEcoInfo && (
+                            <div
+                              className="
+                                absolute top-7 right-0
+                                bg-zinc-900 border border-emerald-500/20
+                                text-emerald-400
+                                text-[10px] font-bold
+                                px-3 py-1.5
+                                rounded-lg
+                                shadow-lg
+                                animate-in fade-in zoom-in-95
+                                whitespace-nowrap
+                                "
+                            >
+                              25% less CO₂ than typical rides
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1618,106 +1780,106 @@ export const BookingSteps: React.FC = () => {
                   </div>
 
                   <div className='space-y-10'>
-  {passengers.map((passenger, idx) => (
-    <div key={passenger.seatNumber} className='relative group'>
-      <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
-        Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
-      </div>
+                    {passengers.map((passenger, idx) => (
+                      <div key={passenger.seatNumber} className='relative group'>
+                        <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
+                          Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
+                        </div>
 
-      {/* Changed grid-cols-1 to grid-cols-2 to allow Age/Gender to sit side-by-side on mobile */}
-      <div className='grid grid-cols-2 md:grid-cols-12 gap-x-4 gap-y-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
-        
-        {/* Name takes full width (2 columns) on mobile, 7 columns on desktop */}
-        <div className='col-span-2 md:col-span-7'>
-          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
-          <div className='relative'>
-            <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400' />
-            <input
-              type='text'
-              placeholder='Full Name'
-              value={passenger.name}
-              onChange={(e) => {
-                const newPax = [...passengers];
-                newPax[idx].name = e.target.value;
-                setPassengers(newPax);
-              }}
-              className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
-            />
-          </div>
-        </div>
+                        {/* Changed grid-cols-1 to grid-cols-2 to allow Age/Gender to sit side-by-side on mobile */}
+                        <div className='grid grid-cols-2 md:grid-cols-12 gap-x-4 gap-y-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
 
-        {/* Age takes 1 column on mobile, 2 on desktop */}
-        <div className='col-span-1 md:col-span-2'>
-          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
-          <input
-            type='number'
-            value={passenger.age || ''}
-            onChange={(e) => {
-              const newPax = [...passengers];
-              newPax[idx].age = Number(e.target.value);
-              setPassengers(newPax);
-            }}
-            className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
-            placeholder='Age'
-          />
-        </div>
+                          {/* Name takes full width (2 columns) on mobile, 7 columns on desktop */}
+                          <div className='col-span-2 md:col-span-7'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
+                            <div className='relative'>
+                              <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400' />
+                              <input
+                                type='text'
+                                placeholder='Full Name'
+                                value={passenger.name}
+                                onChange={(e) => {
+                                  const newPax = [...passengers];
+                                  newPax[idx].name = e.target.value;
+                                  setPassengers(newPax);
+                                }}
+                                className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
+                              />
+                            </div>
+                          </div>
 
-        {/* Gender takes 1 column on mobile, 3 on desktop */}
-        <div className='col-span-1 md:col-span-3'>
-          <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
-          <Select value={passenger.gender} onValueChange={(val) => {
-            const newPax = [...passengers];
-            newPax[idx].gender = val;
-            setPassengers(newPax);
-          }}>
-            <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
-              <SelectValue placeholder='Select' />
-            </SelectTrigger>
-            <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-              <SelectItem value='male'>Male</SelectItem>
-              <SelectItem value='female'>Female</SelectItem>
-              <SelectItem value='other'>Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+                          {/* Age takes 1 column on mobile, 2 on desktop */}
+                          <div className='col-span-1 md:col-span-2'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
+                            <input
+                              type='number'
+                              value={passenger.age || ''}
+                              onChange={(e) => {
+                                const newPax = [...passengers];
+                                newPax[idx].age = Number(e.target.value);
+                                setPassengers(newPax);
+                              }}
+                              className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
+                              placeholder='Age'
+                            />
+                          </div>
 
-        {idx === 0 && (
-          <div className='col-span-2 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
-            <div>
-              <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
-              <input
-                type='tel'
-                maxLength={10}
-                placeholder='Enter contact to get ticket details'
-                value={passenger.phone ?? ''}
-                onChange={(e) => {
-                  const newPax = [...passengers];
-                  newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  setPassengers(newPax);
-                }}
-                className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
-              />
-            </div>
-            <div>
-              <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
-              <input
-                type='email'
-                placeholder='Enter email to get ticket details'
-                value={passenger.email ?? ''}
-                onChange={(e) => {
-                  const newPax = [...passengers];
-                  newPax[idx].email = e.target.value;
-                  setPassengers(newPax);
-                }}
-                className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  ))}
-</div>
+                          {/* Gender takes 1 column on mobile, 3 on desktop */}
+                          <div className='col-span-1 md:col-span-3'>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
+                            <Select value={passenger.gender} onValueChange={(val) => {
+                              const newPax = [...passengers];
+                              newPax[idx].gender = val;
+                              setPassengers(newPax);
+                            }}>
+                              <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
+                                <SelectValue placeholder='Select' />
+                              </SelectTrigger>
+                              <SelectContent className='bg-zinc-900 border-white/10 text-white'>
+                                <SelectItem value='male'>Male</SelectItem>
+                                <SelectItem value='female'>Female</SelectItem>
+                                <SelectItem value='other'>Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {idx === 0 && (
+                            <div className='col-span-2 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
+                              <div>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
+                                <input
+                                  type='tel'
+                                  maxLength={10}
+                                  placeholder='Enter contact to get ticket details'
+                                  value={passenger.phone ?? ''}
+                                  onChange={(e) => {
+                                    const newPax = [...passengers];
+                                    newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                    setPassengers(newPax);
+                                  }}
+                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+                                />
+                              </div>
+                              <div>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
+                                <input
+                                  type='email'
+                                  placeholder='Enter email to get ticket details'
+                                  value={passenger.email ?? ''}
+                                  onChange={(e) => {
+                                    const newPax = [...passengers];
+                                    newPax[idx].email = e.target.value;
+                                    setPassengers(newPax);
+                                  }}
+                                  className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -1957,7 +2119,7 @@ export const BookingSteps: React.FC = () => {
                   (p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop
                 ) &&
                 (!passengers[0].phone || !passengers[0].email)) ||
-              (currentStep === 5 )
+              (currentStep === 5)
             }
             className='rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-black h-12 px-10 transition-all active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
           >
@@ -1995,8 +2157,8 @@ export const BookingSteps: React.FC = () => {
                   !globalDrop ||
                   !passengers[0]?.phone ||
                   !passengers[0]?.email))
-                   ||
-              (currentStep === 5 )
+              ||
+              (currentStep === 5)
             }
             className="flex-1 rounded-full bg-emerald-500 text-black font-bold h-12"
           >
