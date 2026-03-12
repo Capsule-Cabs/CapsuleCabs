@@ -5,28 +5,34 @@
 /* CapsuleCabs Design System - Modern transportation theme with blue gradients */
 
 /* === UNIVERSAL FULLSCREEN LAYOUT (works on web + Capacitor) === */
+:root {
+  background-color: #000000; /* Pre-loads black before CSS variables even initialize */
+}
 html {
-  height: -webkit-fill-available;
-  height: 100%;
+  height: 100dvh; 
+  background-color: #000000 !important;
+  /* Prevent the "rubber-band" white background on iOS */
+  overscroll-behavior: none;
 }
 
 body {
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
+  min-height: 100dvh;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  background-color: #000000 !important;
+  color: white;
+  /* Prevents horizontal "shifting" when keyboard opens */
   overflow-x: hidden;
+  /* Ensures background stays fixed even if content is pulled */
+  background-attachment: fixed;
 }
 
 /* Root container */
 #root {
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  overflow-x: hidden;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: #000000;
 }
 
 /* === CAPACITOR/MOBILE ONLY: Status Bar Overlay (Black for your theme) === */
@@ -37,6 +43,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
+    /* Forces the top status bar area to stay black always */
     height: env(safe-area-inset-top, 25px);
     background: #000000;
     z-index: 9999;
@@ -47,6 +54,10 @@ body {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+input:focus, select:focus, textarea:focus {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* === DESKTOP WEB ONLY: No safe-area interference === */
@@ -61,7 +72,7 @@ body {
   :root {
     /* Base colors */
     --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    --foreground: 210 40% 98%;
     
     /* Card components */
     --card: 0 0% 100%;
@@ -124,8 +135,8 @@ body {
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 0%;
+    --card: 0 0% 0%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;

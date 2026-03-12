@@ -2065,7 +2065,7 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    <div className="w-full text-white flex flex-col relative">
+    <div className="min-h-[100dvh] w-full bg-black text-white flex flex-col relative overflow-x-hidden selection:bg-emerald-500/30">
       {/* Loading overlay */}
       {isLoading && <LoadingSplash />}
 
@@ -2130,8 +2130,8 @@ export const BookingSteps: React.FC = () => {
       </div>
 
       {/* Sticky Navigation Footer – Mobile only */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg">
-        <div className="flex justify-between gap-4 p-4">
+      <div className="md:hidden sticky bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-black pb-safe">
+        <div className="flex justify-between gap-4 p-4 bg-black">
           <Button
             variant="outline"
             onClick={prevStep}

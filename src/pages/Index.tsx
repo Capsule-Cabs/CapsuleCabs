@@ -168,40 +168,7 @@ const Index = () => {
 
           <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24'>
             <div className='grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-10 items-center'>
-              {/* Left: Text */}
-              {/* <div className='space-y-6'>
-                <Badge className='bg-white/10 text-xs uppercase tracking-[0.2em] border border-white/15 text-white/80 rounded-full px-3 py-1'>
-                  Constant Fares. Consitent Care.
-                </Badge>
-                <h1 className='text-3.5xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-tight'>
-                  The intercity{' '}
-                  <span className='inline-block bg-gradient-to-r from-emerald-400 to-lime-300 bg-clip-text text-transparent'>
-                    commute you've
-                  </span>
-                  <br className='hidden sm:block' /> been waiting for.
-                </h1>
 
-                <p className='text-base sm:text-lg text-white/60 max-w-xl'>
-                  Premium intercity travel with guaranteed seats, live tracking,
-                  and transparent pricing. Starting with daily rides between
-                  Gurugram and Agra — more routes coming soon.
-                </p>
-
-                <div className='flex flex-col sm:flex-row gap-3 sm:items-center'>
-                  <Link to='/booking'>
-                    <Button className='group bg-white text-black hover:bg-zinc-100 px-6 py-5 text-base rounded-full shadow-lg shadow-emerald-500/15'>
-                      Book your first ride
-                      <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
-                    </Button>
-                  </Link>
-                  <div className='flex items-center gap-2 text-xs sm:text-sm text-white/60'>
-                    <div className='flex -space-x-2'>
-                      
-                    </div>
-                  </div>
-                </div>
-
-              </div> */}
               <div className="flex flex-col justify-center lg:items-end w-full max-w-xl ml-auto">
                 <div className="w-full space-y-6 animate-in fade-in slide-in-from-right duration-700">
 
