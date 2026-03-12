@@ -79,6 +79,7 @@ const processSuccessfulPayment = async (merchantOrderId, statusData) => {
           paymentDoc.user,
           paymentDoc.pendingBookingData,
           merchantOrderId,
+          paymentDoc.amount,
         )
         console.log('NEW BOOKING: ', newBooking)
         paymentDoc.bookingRefId = newBooking._id
@@ -133,16 +134,12 @@ const getOAuthToken = async () => {
     grant_type: 'client_credentials',
   })
 
-  const response = await axios.post(
-    `${paymentUrl}/v1/oauth/token`,
-    params,
-    {
-      httpsAgent,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+  const response = await axios.post(`${paymentUrl}/v1/oauth/token`, params, {
+    httpsAgent,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-  )
+  })
 
   return response.data.access_token
 }
