@@ -111,7 +111,7 @@ async function getAccessToken() {
     params.append('client_id', config.zoho_client_id);
     params.append('client_secret', config.zoho_client_secret);
     params.append('grant_type', 'refresh_token');
-    params.append('soid', 'zohopaysandbox.60065063065');
+    params.append('soid', `zohopay.${config.zoho_account_id}`);
 
     try {
         const response = await axios.post(tokenUrl, params);
