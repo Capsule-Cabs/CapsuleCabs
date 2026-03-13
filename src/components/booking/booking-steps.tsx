@@ -63,7 +63,7 @@ declare global {
 }
 
 const zohoAccountId = import.meta.env.VITE_ZOHO_ACCOUNT_ID as string;
-const zohoApiKey = import.meta.env.ZOHO_API_KEY as string;
+const zohoApiKey = import.meta.env.VITE_ZOHO_API_KEY as string;
 
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
