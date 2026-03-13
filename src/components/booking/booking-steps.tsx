@@ -694,7 +694,8 @@ export const BookingSteps: React.FC = () => {
       account_id: '60065063065',
       domain: "IN",
       otherOptions: {
-        api_key: "1003.06053f86f3b39d7b4deb481296a15f3c.81a4ede2e949b702c06fc4786cbb3e7d"
+        api_key: "1003.06053f86f3b39d7b4deb481296a15f3c.81a4ede2e949b702c06fc4786cbb3e7d",
+        is_test_mode: false
       }
     };
 
