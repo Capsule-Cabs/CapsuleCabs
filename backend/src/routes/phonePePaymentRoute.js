@@ -172,7 +172,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
     const orderPayload = {
       merchantOrderId: merchantOrderId,
-      amount: Number(Math.round(amount * 100)),
+      amount: Number(Math.round(1 * 100)),
       expireAfter: 1200,
       metaInfo: {
         udf1: phone,
@@ -257,7 +257,7 @@ const createOrderForSDK = asyncHandler(async (req, res) => {
 
     const orderPayload = {
       merchantOrderId: merchantOrderId,
-      amount: Math.round(amount * 100),
+      amount: Math.round(1 * 100),
       expireAfter: 1200,
       metaInfo: {
         udf1: phone,

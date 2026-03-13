@@ -139,7 +139,7 @@ router.post('/create-payment-session', protect, asyncHandler(async (req, res) =>
 
     try {
         const response = await axios.post(url, {
-            amount: amount,
+            amount: 1.00,
             currency: currency || 'INR',
             description: description || 'Order Payment'
         }, {
