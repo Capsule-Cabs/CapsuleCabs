@@ -705,7 +705,7 @@ export const BookingSteps: React.FC = () => {
     const instance = new window.ZPayments(config);
     const options = {
       // amount: totalFare.toFixed(2).toString(),
-      amount: 1.00,
+      amount: '1.00',
       currency_code: "INR",
       payments_session_id: paymentSessionRes?.data?.payments_session?.payments_session_id,
       description: `Booking for ${selectedCab} on ${format(selectedDate!, 'dd MMM yyyy')}`,
