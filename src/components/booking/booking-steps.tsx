@@ -1044,8 +1044,8 @@ export const BookingSteps: React.FC = () => {
             <button
               onClick={() => setSelectedGateway('ZOHO')}
               className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'ZOHO'
-                  ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
-                  : 'hover:bg-zinc-50 border border-transparent'
+                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                : 'hover:bg-zinc-50 border border-transparent'
                 }`}
             >
               <div className='flex items-center gap-4'>
@@ -1076,8 +1076,8 @@ export const BookingSteps: React.FC = () => {
 
               <div
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'ZOHO'
-                    ? 'border-purple-600'
-                    : 'border-zinc-200'
+                  ? 'border-purple-600'
+                  : 'border-zinc-200'
                   }`}
               >
                 {selectedGateway === 'ZOHO' && (
@@ -1090,8 +1090,8 @@ export const BookingSteps: React.FC = () => {
             <button
               onClick={() => setSelectedGateway('PHONEPE')}
               className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'PHONEPE'
-                  ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
-                  : 'hover:bg-zinc-50 border border-transparent'
+                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                : 'hover:bg-zinc-50 border border-transparent'
                 }`}
             >
               <div className='flex items-center gap-4'>
@@ -1127,8 +1127,8 @@ export const BookingSteps: React.FC = () => {
 
               <div
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE'
-                    ? 'border-blue-600'
-                    : 'border-zinc-200'
+                  ? 'border-blue-600'
+                  : 'border-zinc-200'
                   }`}
               >
                 {selectedGateway === 'PHONEPE' && (
@@ -1143,8 +1143,8 @@ export const BookingSteps: React.FC = () => {
                 onClick={handlePaymentSelection}
                 disabled={isAuthLoading || !selectedGateway}
                 className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${selectedGateway
-                    ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
-                    : 'bg-zinc-800 text-white-500'
+                  ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
+                  : 'bg-zinc-800 text-white-500'
                   }`}
               >
                 {isAuthLoading ? (
@@ -1541,124 +1541,122 @@ export const BookingSteps: React.FC = () => {
 
       case 2:
         return (
-          <div className='w-full max-w-4xl mx-auto px-2 py-6 space-y-4'>
+          <div className="w-full max-w-4xl mx-auto px-2 py-6 space-y-4">
             {/* DATE SLIDER */}
-            <div className='relative w-full mb-5'>
+            <div className="relative w-full mb-5">
               {/* LEFT ARROW */}
               <button
                 onClick={scrollLeft}
-                className='
-                  hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20
-                  h-11 w-11 items-center justify-center
-                  rounded-full
-                  bg-zinc-900/70 backdrop-blur-md
-                  border border-white/10
-                  text-white/80
-                  transition-all duration-300
-                  hover:bg-zinc-800
-                  hover:text-white
-                  hover:scale-105
-                  hover:shadow-lg hover:shadow-black/40
-                  active:scale-95
-                  '
+                className="
+            hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20
+            h-11 w-11 items-center justify-center
+            rounded-full bg-zinc-900/70 backdrop-blur-md
+            border border-white/10 text-white/80
+            transition-all duration-300
+            hover:bg-zinc-800 hover:text-white
+            hover:scale-105 hover:shadow-lg hover:shadow-black/40
+            active:scale-95
+          "
               >
-                <ChevronLeft className='h-5 w-5' />
+                <ChevronLeft className="h-5 w-5" />
               </button>
 
               {/* RIGHT ARROW */}
               <button
                 onClick={scrollRight}
-                className='
-                  hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20
-                  h-11 w-11 items-center justify-center
-                  rounded-full
-                  bg-zinc-900/70 backdrop-blur-md
-                  border border-white/10
-                  text-white/80
-                  transition-all duration-300
-                  hover:bg-zinc-800
-                  hover:text-white
-                  hover:scale-105
-                  hover:shadow-lg hover:shadow-black/40
-                  active:scale-95
-                  '
+                className="
+            hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20
+            h-11 w-11 items-center justify-center
+            rounded-full bg-zinc-900/70 backdrop-blur-md
+            border border-white/10 text-white/80
+            transition-all duration-300
+            hover:bg-zinc-800 hover:text-white
+            hover:scale-105 hover:shadow-lg hover:shadow-black/40
+            active:scale-95
+          "
               >
-                <ChevronRight className='h-5 w-5' />
+                <ChevronRight className="h-5 w-5" />
               </button>
 
               {/* EDGE GRADIENTS */}
-              <div className='hidden md:block pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent ' />
-              <div className='hidden md:block pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent' />
+              <div className="hidden md:block pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent" />
+              <div className="hidden md:block pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent" />
 
               {/* SCROLL CONTAINER */}
               <div
                 ref={scrollRef}
-                className='flex gap-3 overflow-x-auto no-scrollbar px-12 py-2 scroll-smooth'
+                className="flex gap-3 overflow-x-auto no-scrollbar px-12 py-2 scroll-smooth"
               >
                 {next30Days.map((date) => {
-                  const key = format(date, 'yyyy-MM-dd')
-                  const isSelected =
-                    selectedDate && isSameDay(date, selectedDate)
+                  const key = format(date, "yyyy-MM-dd");
+                  const isSelected = selectedDate && isSameDay(date, selectedDate);
 
                   return (
                     <button
                       key={key}
                       ref={(el) => (dateRefs.current[key] = el)}
                       onClick={() => handleDateChange(date)}
-                      className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-xl border transition-all duration-300
-                      ${isSelected
-                          ? 'bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105'
-                          : 'bg-zinc-900 border-white/10 text-white hover:bg-zinc-800'
-                        }`}
+                      className={`
+                  flex flex-col items-center justify-center 
+                  min-w-[72px] h-[64px] rounded-xl border 
+                  transition-all duration-300
+                  ${isSelected
+                          ? "bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105"
+                          : "bg-zinc-900 border-white/10 text-white hover:bg-zinc-800"
+                        }
+                `}
                     >
-                      <span className='text-[10px] font-bold uppercase'>
-                        {format(date, 'EEE')}
+                      <span className="text-[10px] font-bold uppercase">
+                        {format(date, "EEE")}
                       </span>
-
-                      <span className='text-lg font-black leading-none'>
-                        {format(date, 'dd')}
+                      <span className="text-base md:text-lg font-black leading-none">
+                        {format(date, "dd")}
                       </span>
-
-                      <span className='text-[10px] opacity-70'>
-                        {format(date, 'MMM')}
+                      <span className="text-[10px] opacity-70">
+                        {format(date, "MMM")}
                       </span>
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
-            <div className='text-center mb-6'>
-              <h3 className='text-xl md:text-2xl font-bold text-white'>
-                Select Cab & Time
+
+            <div className="text-center mb-4">
+              <h3 className="text-lg md:text-2xl font-bold text-white">
+                Select Cab &amp; Time
               </h3>
             </div>
 
-            <div className='grid grid-cols-1 gap-4'>
+            <div className="grid grid-cols-1 gap-4">
               {availableCabs.length > 0 ? (
                 availableCabs.map((cab) => {
-                  const selected = selectedCab === cab.id
-                  const isAvailable = cab.available
-                  console.log('CAB: ', cab)
+                  const selected = selectedCab === cab.id;
+                  const isAvailable = cab.available;
+
                   return (
                     <Card
                       key={cab.id}
-                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${selected
-                          ? 'ring-1 ring-emerald-500 border-emerald-500/50'
-                          : 'border-white/10 hover:border-white/20'
-                        } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`
+                  relative overflow-hidden cursor-pointer
+                  bg-zinc-950/50 backdrop-blur-xl border rounded-2xl
+                  transition-all duration-300
+                  ${selected
+                          ? "ring-1 ring-emerald-500 border-emerald-500/50"
+                          : "border-white/10 hover:border-white/20"
+                        }
+                  ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""}
+                `}
                       onClick={() => {
                         if (isAvailable) {
-                          setSelectedCab(cab.id)
-                          setSelectedTime(cab.departureTime)
+                          setSelectedCab(cab.id);
+                          setSelectedTime(cab.departureTime);
                         }
                       }}
                     >
-
                       <CardContent className="p-0">
-
-                        {/* SOFT HEADER */}
-                        <div className="bg-white/5 px-4 py-3 flex justify-between items-center">
-                          <span className="text-xs font-bold text-white tracking-wide">
+                        {/* HEADER */}
+                        <div className="bg-white/5 px-4 py-2.5 flex items-center justify-between">
+                          <span className="text-[11px] md:text-xs font-bold text-white tracking-wide">
                             {cab.capacity || 6} Seater {cab.routeCode}
                           </span>
 
@@ -1667,112 +1665,107 @@ export const BookingSteps: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="p-4 space-y-4">
-
+                        <div className="p-3.5 md:p-4 space-y-3 md:space-y-4">
                           {/* TIME + PRICE ROW */}
-                          <div className="flex justify-between items-start">
-
+                          <div className="flex justify-between items-start gap-3">
                             {/* LEFT SIDE TIMES */}
                             <div className="flex flex-col gap-1">
-
-                              <div className="flex items-center gap-2 text-white font-bold text-lg">
+                              <div className="flex items-center gap-2 md:gap-3 text-white font-semibold text-sm md:text-lg">
                                 <span>{cab.departureTime || "18:00"}</span>
 
-                                <span className="text-xs text-zinc-400 font-semibold">
+                                <span className="text-[10px] md:text-xs text-zinc-400 font-semibold whitespace-nowrap md:whitespace-normal min-w-[80px] text-center">
                                   ••• (4h 55m) •••
                                 </span>
 
                                 <span>{cab.arrivalTime || "22:00"}</span>
                               </div>
 
-                              <span className="text-xs font-semibold text-emerald-500">
+                              <span className="text-[11px] md:text-xs font-semibold text-emerald-500">
                                 Available
                               </span>
-
                             </div>
 
                             {/* PRICE */}
-                            <div className="text-right">
-
-                              <div className="text-xs text-white font-semibold">
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="text-[11px] md:text-xs text-white font-semibold">
                                 Starting From
                               </div>
 
-                              <div className="flex items-center gap-2 justify-end">
-
-                                <span className="line-through text-xs text-zinc-400">
+                              {/* price + gst */}
+                              <div className="flex flex-wrap items-baseline justify-end gap-1 md:gap-2 max-w-[140px]">
+                                <span className="line-through text-[10px] md:text-xs text-zinc-400">
                                   ₹500
                                 </span>
 
-                                <span className="text-lg font-black text-emerald-400">
+                                <span className="text-base md:text-lg font-black text-emerald-400">
                                   ₹{cab.price || 399}
                                 </span>
 
-                                <span className="text-xs text-zinc-400">+ GST</span>
-
+                                <span className="text-[10px] md:text-xs text-zinc-400 whitespace-nowrap">
+                                  + GST
+                                </span>
                               </div>
 
-                              <div className="flex justify-end items-center gap-1 text-emerald-500 text-xs font-semibold mt-1">
-                                <Tag className="h-3 w-3" />
-                                Welcome100 Applied
+                              {/* coupon row */}
+                              <div className="flex flex-wrap justify-end items-center gap-1 text-emerald-500 text-[10px] md:text-xs font-semibold">
+                                <Tag className="h-3 w-3 shrink-0" />
+                                <span className="whitespace-nowrap">
+                                  Welcome100 Applied
+                                </span>
                               </div>
-
                             </div>
                           </div>
 
-
                           {/* AMENITIES */}
-                          <div className="flex items-center gap-5 text-zinc-400">
-
+                          <div className="flex items-center gap-4 text-zinc-400 text-xs">
                             <Wind className="h-4 w-4" />
                             <GlassWater className="h-4 w-4" />
                             <Usb className="h-4 w-4" />
                             <ShieldCheck className="h-4 w-4" />
-
                           </div>
 
-                          {/* DIVIDER */}
                           <div className="border-t border-white/10" />
 
                           {/* ACTION BUTTONS */}
-                          <div className="flex justify-between items-center">
-
+                          <div className="flex justify-between items-center gap-3">
                             <button
                               onClick={(e) => {
-                                e.stopPropagation()
-                                setViewingRoute(cab)
+                                e.stopPropagation();
+                                setViewingRoute(cab);
                               }}
-                              className="text-xs font-semibold text-zinc-300 flex items-center gap-1 hover:text-white"
+                              className="text-[11px] md:text-xs font-semibold text-zinc-300 flex items-center gap-1 hover:text-white"
                             >
                               Bus Details
                               <ChevronDown className="h-3 w-3" />
                             </button>
 
                             <button
-                              className={`px-5 py-2 rounded-xl font-bold text-sm transition ${selected
+                              className={`
+                          px-4 md:px-5 py-1.5 md:py-2 rounded-xl font-bold 
+                          text-xs md:text-sm transition
+                          ${selected
                                   ? "bg-emerald-500 text-black"
                                   : "bg-zinc-800 text-white hover:bg-zinc-700"
-                                }`}
+                                }
+                        `}
                             >
                               {selected ? "Selected" : "Select Seats"}
                             </button>
-
                           </div>
-
                         </div>
-
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })
               ) : (
-                <div className='text-white text-center p-12 bg-zinc-950/50 rounded-2xl border border-white/5'>
+                <div className="text-white text-center p-10 bg-zinc-950/50 rounded-2xl border border-white/5 text-sm md:text-base">
                   No cabs available at this time.
                 </div>
               )}
             </div>
           </div>
-        )
+        );
+
 
       case 3:
         return (
