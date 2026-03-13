@@ -62,6 +62,9 @@ declare global {
   }
 }
 
+const zohoAccountId = import.meta.env.VITE_ZOHO_ACCOUNT_ID as string;
+const zohoApiKey = import.meta.env.ZOHO_API_KEY as string;
+
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
 interface BookingStep {
@@ -691,10 +694,10 @@ export const BookingSteps: React.FC = () => {
 
     console.log('Payment session zoho: ', paymentSessionRes);
     const config = {
-      account_id: '60065063065',
+      account_id: zohoAccountId,
       domain: "IN",
       otherOptions: {
-        api_key: "1003.06053f86f3b39d7b4deb481296a15f3c.81a4ede2e949b702c06fc4786cbb3e7d",
+        api_key: zohoApiKey,
         is_test_mode: false
       }
     };
