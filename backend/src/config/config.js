@@ -20,6 +20,7 @@ export default {
   zoho_client_secret: process.env.ZOHO_CLIENT_SECRET,
   zoho_account_id: process.env.ZOHO_ACCOUNT_ID,
   zoho_signing_key: process.env.ZOHO_SIGNING_KEY,
+  zoho_webhook_secret: process.env.WEBHOOK_SECRET,
   trip_sequences: {
     'AGRA-GUR-TRIP': ['Agra', 'Mathura', 'Gurugram'],
   },
