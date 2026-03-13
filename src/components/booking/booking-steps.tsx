@@ -699,9 +699,8 @@ export const BookingSteps: React.FC = () => {
             value: passengers[0]?.phone || '',
           },
         ],
-        description: `Payment for booking capsule cab by ${
-          passengers[0]?.name || 'customer'
-        }`,
+        description: `Payment for booking capsule cab by ${passengers[0]?.name || 'customer'
+          }`,
         invoice_number: 'INV-' + generateStrongInvoiceNumber(),
         reference_number: `REF-${passengers[0]?.phone || 'unknown'}`,
         bookingPayload,
@@ -1044,11 +1043,10 @@ export const BookingSteps: React.FC = () => {
             {/* UPI Option */}
             <button
               onClick={() => setSelectedGateway('ZOHO')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${
-                selectedGateway === 'ZOHO'
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'ZOHO'
                   ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
                   : 'hover:bg-zinc-50 border border-transparent'
-              }`}
+                }`}
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:rotate-3 transition-transform'>
@@ -1077,11 +1075,10 @@ export const BookingSteps: React.FC = () => {
               </div>
 
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  selectedGateway === 'ZOHO'
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'ZOHO'
                     ? 'border-purple-600'
                     : 'border-zinc-200'
-                }`}
+                  }`}
               >
                 {selectedGateway === 'ZOHO' && (
                   <div className='w-3 h-3 rounded-full bg-purple-600 animate-in zoom-in duration-300' />
@@ -1092,11 +1089,10 @@ export const BookingSteps: React.FC = () => {
             {/* Other Payment Methods */}
             <button
               onClick={() => setSelectedGateway('PHONEPE')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${
-                selectedGateway === 'PHONEPE'
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'PHONEPE'
                   ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
                   : 'hover:bg-zinc-50 border border-transparent'
-              }`}
+                }`}
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:-rotate-3 transition-transform'>
@@ -1130,11 +1126,10 @@ export const BookingSteps: React.FC = () => {
               </div>
 
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                  selectedGateway === 'PHONEPE'
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE'
                     ? 'border-blue-600'
                     : 'border-zinc-200'
-                }`}
+                  }`}
               >
                 {selectedGateway === 'PHONEPE' && (
                   <div className='w-3 h-3 rounded-full bg-blue-600 animate-in zoom-in duration-300' />
@@ -1147,11 +1142,10 @@ export const BookingSteps: React.FC = () => {
               <Button
                 onClick={handlePaymentSelection}
                 disabled={isAuthLoading || !selectedGateway}
-                className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${
-                  selectedGateway
+                className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${selectedGateway
                     ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
                     : 'bg-zinc-800 text-white-500'
-                }`}
+                  }`}
               >
                 {isAuthLoading ? (
                   <Loader2 className='animate-spin h-6 w-6' />
@@ -1314,12 +1308,12 @@ export const BookingSteps: React.FC = () => {
           isFemaleBooked
             ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
             : isBooked
-            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-            : isLocked
-            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-            : isSelected
-            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-            : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+              : isLocked
+                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+                : isSelected
+                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
         ].join(' ')}
         disabled={isBooked || isLocked}
         onClick={() => {
@@ -1425,9 +1419,6 @@ export const BookingSteps: React.FC = () => {
             {/* 1. Header Section - Clean & Centered */}
             <div className='text-center space-y-2 mb-8'>
               <h3 className='text-xl font-black text-white'>Select Journey</h3>
-              <p className='text-zinc-500 text-[10px] font-bold uppercase tracking-widest'>
-                Where and when are you traveling?
-              </p>
             </div>
 
             {/* 2. Route Selection - Full width on mobile, constrained on laptop */}
@@ -1596,8 +1587,8 @@ export const BookingSteps: React.FC = () => {
               </button>
 
               {/* EDGE GRADIENTS */}
-              <div className='pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent ' />
-              <div className='pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent' />
+              <div className='hidden md:block pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent ' />
+              <div className='hidden md:block pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent' />
 
               {/* SCROLL CONTAINER */}
               <div
@@ -1615,11 +1606,10 @@ export const BookingSteps: React.FC = () => {
                       ref={(el) => (dateRefs.current[key] = el)}
                       onClick={() => handleDateChange(date)}
                       className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-xl border transition-all duration-300
-                      ${
-                        isSelected
+                      ${isSelected
                           ? 'bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105'
                           : 'bg-zinc-900 border-white/10 text-white hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       <span className='text-[10px] font-bold uppercase'>
                         {format(date, 'EEE')}
@@ -1641,9 +1631,6 @@ export const BookingSteps: React.FC = () => {
               <h3 className='text-xl md:text-2xl font-bold text-white'>
                 Select Cab & Time
               </h3>
-              <p className='text-white-500 text-xs md:text-sm mt-1'>
-                Choose your preferred schedule
-              </p>
             </div>
 
             <div className='grid grid-cols-1 gap-4'>
@@ -1655,11 +1642,10 @@ export const BookingSteps: React.FC = () => {
                   return (
                     <Card
                       key={cab.id}
-                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${
-                        selected
+                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${selected
                           ? 'ring-1 ring-emerald-500 border-emerald-500/50'
                           : 'border-white/10 hover:border-white/20'
-                      } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => {
                         if (isAvailable) {
                           setSelectedCab(cab.id)
@@ -1667,179 +1653,114 @@ export const BookingSteps: React.FC = () => {
                         }
                       }}
                     >
-                      {/* Header Section: Badge & CNG Info */}
-                      <div className='bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5'>
-                        <span className='text-[10px] md:text-xs font-bold text-white uppercase tracking-wider'>
-                          {cab.capacity || 6} Seater {cab.routeCode}
-                        </span>
-                        <div className='relative flex items-center gap-1.5 text-emerald-400'>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setShowEcoInfo((prev) => !prev)
-                            }}
-                            className='flex items-center justify-center h-5 w-5 rounded-full hover:bg-emerald-500/10 transition'
-                          >
-                            <Leaf className='h-3.5 w-3.5' />
-                          </button>
 
-                          {showEcoInfo && (
-                            <div
-                              className='
-                                absolute top-7 right-0
-                                bg-zinc-900 border border-emerald-500/20
-                                text-emerald-400
-                                text-[10px] font-bold
-                                px-3 py-1.5
-                                rounded-lg
-                                shadow-lg
-                                animate-in fade-in zoom-in-95
-                                whitespace-nowrap
-                                '
-                            >
-                              25% less CO₂ than typical rides
-                            </div>
-                          )}
+                      <CardContent className="p-0">
+
+                        {/* SOFT HEADER */}
+                        <div className="bg-white/5 px-4 py-3 flex justify-between items-center">
+                          <span className="text-xs font-bold text-white tracking-wide">
+                            {cab.capacity || 6} Seater {cab.routeCode}
+                          </span>
+
+                          <div className="flex items-center gap-1 text-emerald-400">
+                            <Leaf className="h-4 w-4" />
+                          </div>
                         </div>
-                      </div>
 
-                      <CardContent className='p-2 md:p-6'>
-                        {/* Desktop: Horizontal | Mobile: Vertical Stacking */}
-                        <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
-                          {/* Time & Path Section */}
-                          <div className='flex items-center justify-between md:justify-start gap-4 md:gap-8'>
-                            <div className='flex flex-col'>
-                              <span className='text-2xl md:text-3xl font-black text-white leading-none'>
-                                {cab.departureTime || '18:00'}
-                              </span>
-                              <span className='text-[10px] font-bold text-emerald-500 mt-1 uppercase'>
+                        <div className="p-4 space-y-4">
+
+                          {/* TIME + PRICE ROW */}
+                          <div className="flex justify-between items-start">
+
+                            {/* LEFT SIDE TIMES */}
+                            <div className="flex flex-col gap-1">
+
+                              <div className="flex items-center gap-2 text-white font-bold text-lg">
+                                <span>{cab.departureTime || "18:00"}</span>
+
+                                <span className="text-xs text-zinc-400 font-semibold">
+                                  ••• (4h 55m) •••
+                                </span>
+
+                                <span>{cab.arrivalTime || "22:00"}</span>
+                              </div>
+
+                              <span className="text-xs font-semibold text-emerald-500">
                                 Available
                               </span>
+
                             </div>
 
-                            {/* Visual Path (Dotted line with duration) */}
-                            <div className='flex-1 md:flex-none flex flex-col items-center min-w-[80px]'>
-                              <span className='text-[10px] text-white-500 font-bold mb-1'>
-                                (4h 55m)
-                              </span>
-                              <div className='flex items-center w-full gap-1'>
-                                <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
-                                <div className='flex-1 border-t border-dotted border-zinc-700' />
-                                <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
-                              </div>
-                            </div>
+                            {/* PRICE */}
+                            <div className="text-right">
 
-                            <span className='text-2xl md:text-3xl font-black text-white leading-none'>
-                              {cab.arrivalTime || '22:00'}
-                            </span>
-                          </div>
-
-                          {/* Divider for Mobile (matches screenshot 2) */}
-                          <div className='md:hidden bg-black h-px bg-white/5 w-full my-1' />
-
-                          {/* Price & Action Section */}
-                          <div className='flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8'>
-                            <div className='flex flex-col'>
-                              <span className='text-[9px] text-white font-bold uppercase'>
+                              <div className="text-xs text-white font-semibold">
                                 Starting From
-                              </span>
-                              <div className='flex items-baseline gap-1.5'>
-                                <span className='text-white-500 line-through text-xs'>
+                              </div>
+
+                              <div className="flex items-center gap-2 justify-end">
+
+                                <span className="line-through text-xs text-zinc-400">
                                   ₹500
                                 </span>
-                                <span className='text-2xl md:text-3xl font-black text-emerald-400'>
+
+                                <span className="text-lg font-black text-emerald-400">
                                   ₹{cab.price || 399}
                                 </span>
-                                <span className='text-[10px] text-white-500'>
-                                  +GST
-                                </span>
+
+                                <span className="text-xs text-zinc-400">+ GST</span>
+
                               </div>
-                              <div className='flex items-center gap-1 mt-1 text-emerald-500 font-bold'>
-                                <Tag className='h-3 w-3' />
-                                <span className='text-[9px] uppercase tracking-tight'>
-                                  Welcome100 Applied
-                                </span>
+
+                              <div className="flex justify-end items-center gap-1 text-emerald-500 text-xs font-semibold mt-1">
+                                <Tag className="h-3 w-3" />
+                                Welcome100 Applied
                               </div>
+
                             </div>
+                          </div>
+
+
+                          {/* AMENITIES */}
+                          <div className="flex items-center gap-5 text-zinc-400">
+
+                            <Wind className="h-4 w-4" />
+                            <GlassWater className="h-4 w-4" />
+                            <Usb className="h-4 w-4" />
+                            <ShieldCheck className="h-4 w-4" />
+
+                          </div>
+
+                          {/* DIVIDER */}
+                          <div className="border-t border-white/10" />
+
+                          {/* ACTION BUTTONS */}
+                          <div className="flex justify-between items-center">
 
                             <button
-                              className={`px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
-                                selected
-                                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                                  : 'bg-zinc-800 text-white hover:bg-zinc-700'
-                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setViewingRoute(cab)
+                              }}
+                              className="text-xs font-semibold text-zinc-300 flex items-center gap-1 hover:text-white"
                             >
-                              {selected ? 'Selected' : 'Select Cab'}
-                              {/* <ChevronRight className="h-4 w-4" /> */}
+                              Bus Details
+                              <ChevronDown className="h-3 w-3" />
                             </button>
-                          </div>
-                        </div>
 
-                        <div className='flex items-center justify-between mt-2 pt-4 border-t border-white/5'>
-                          <div className='flex items-center gap-4 text-white-500'>
-                            <div
-                              className='flex flex-col items-center gap-0.5'
-                              title='AC'
+                            <button
+                              className={`px-5 py-2 rounded-xl font-bold text-sm transition ${selected
+                                  ? "bg-emerald-500 text-black"
+                                  : "bg-zinc-800 text-white hover:bg-zinc-700"
+                                }`}
                             >
-                              <Wind
-                                className='h-4 w-4 md:h-5 md:w-5'
-                                color='white'
-                              />
-                              <span className='text-[8px] uppercase font-bold'>
-                                AC
-                              </span>
-                            </div>
+                              {selected ? "Selected" : "Select Seats"}
+                            </button>
 
-                            <div
-                              className='flex flex-col items-center gap-0.5'
-                              title='Water Bottle'
-                            >
-                              <GlassWater
-                                className='h-4 w-4 md:h-5 md:w-5'
-                                color='white'
-                              />
-                              <span className='text-[8px] uppercase font-bold'>
-                                Water
-                              </span>
-                            </div>
-
-                            <div
-                              className='flex flex-col items-center gap-0.5'
-                              title='USB'
-                            >
-                              <Usb
-                                className='h-4 w-4 md:h-5 md:w-5'
-                                color='white'
-                              />
-                              <span className='text-[8px] uppercase font-bold'>
-                                USB
-                              </span>
-                            </div>
-
-                            <div
-                              className='flex flex-col items-center gap-0.5'
-                              title='CCTV'
-                            >
-                              <ShieldCheck
-                                className='h-4 w-4 md:h-5 md:w-5'
-                                color='white'
-                              />
-                              <span className='text-[8px] uppercase font-bold'>
-                                CCTV
-                              </span>
-                            </div>
                           </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setViewingRoute(cab)
-                            }}
-                            className='text-[11px] md:text-xs font-bold text-white hover:text-white transition-colors flex items-center gap-1'
-                          >
-                            See Route <ChevronDown className='h-3 w-3' />
-                          </button>
                         </div>
+
                       </CardContent>
                     </Card>
                   )
@@ -2151,9 +2072,9 @@ export const BookingSteps: React.FC = () => {
                             ₹
                             {Math.round(
                               fareBreakdown.baseFare +
-                                fareBreakdown.gst +
-                                fareBreakdown.convenienceFee -
-                                fareBreakdown.discount,
+                              fareBreakdown.gst +
+                              fareBreakdown.convenienceFee -
+                              fareBreakdown.discount,
                             )}
                           </p>
                         </div>
@@ -2333,14 +2254,14 @@ export const BookingSteps: React.FC = () => {
             {currentStep === 6
               ? 'Complete'
               : currentStep === 1
-              ? 'Select Cab'
-              : currentStep === 2
-              ? 'Select Seats'
-              : currentStep === 3
-              ? 'Passenger Details'
-              : currentStep === 4
-              ? 'Checkout'
-              : 'Complete Payment'}
+                ? 'Select Cab'
+                : currentStep === 2
+                  ? 'Select Seats'
+                  : currentStep === 3
+                    ? 'Passenger Details'
+                    : currentStep === 4
+                      ? 'Checkout'
+                      : 'Complete Payment'}
             {currentStep < 5 && <ArrowRight className='ml-2 h-4 w-4' />}
           </Button>
         </div>
@@ -2379,14 +2300,14 @@ export const BookingSteps: React.FC = () => {
             {currentStep === 6
               ? 'Complete'
               : currentStep === 1
-              ? 'Select Cab'
-              : currentStep === 2
-              ? 'Select Seats'
-              : currentStep === 3
-              ? 'Passenger Details'
-              : currentStep === 4
-              ? 'Checkout'
-              : 'Complete Payment'}
+                ? 'Select Cab'
+                : currentStep === 2
+                  ? 'Select Seats'
+                  : currentStep === 3
+                    ? 'Passenger Details'
+                    : currentStep === 4
+                      ? 'Checkout'
+                      : 'Complete Payment'}
           </Button>
         </div>
       </div>
