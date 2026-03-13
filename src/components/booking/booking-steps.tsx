@@ -58,12 +58,13 @@ import { LoadingSplash } from '../ui/splashScreen'
 
 declare global {
   interface Window {
-    ZPayments: any;
+    ZPayments: any
   }
 }
 
-const zohoAccountId = import.meta.env.VITE_ZOHO_ACCOUNT_ID as string;
-const zohoApiKey = import.meta.env.VITE_ZOHO_API_KEY as string;
+const zohoAccountId = import.meta.env.VITE_ZOHO_ACCOUNT_ID as string
+const zohoApiKey = import.meta.env.VITE_ZOHO_API_KEY as string
+const phonePeMerchantId = import.meta.env.VITE_PHONEPE_MERCHANT_ID as string
 
 // const GOOGLEMAPSAPIKEY = import.meta.env.VITE_GOOGLEMAPSAPIKEY as string;
 
@@ -168,18 +169,18 @@ const TIMESLOTS_BY_ROUTE: Record<string, string[]> = {
 }
 
 const getNext30Days = () => {
-  const days = [];
+  const days = []
   for (let i = 0; i < 30; i++) {
-    days.push(addDays(new Date(), i));
+    days.push(addDays(new Date(), i))
   }
-  return days;
-};
+  return days
+}
 
 export const BookingSteps: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const preFilledData = location.state
-  const next30Days = useMemo(() => getNext30Days(), []);
+  const next30Days = useMemo(() => getNext30Days(), [])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [currentStep, setCurrentStep] = useState<number>(preFilledData ? 2 : 1)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -229,10 +230,10 @@ export const BookingSteps: React.FC = () => {
     discount: 0,
   })
   const [viewingRoute, setViewingRoute] = useState<any>(null)
-  const [showEcoInfo, setShowEcoInfo] = useState(false);
+  const [showEcoInfo, setShowEcoInfo] = useState(false)
   const timerRef = useRef<NodeJS.Timeout>()
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-  const dateRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const dateRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
   // If the user is coming after selecting source and destination
   useEffect(() => {
@@ -246,15 +247,16 @@ export const BookingSteps: React.FC = () => {
 
   useEffect(() => {
     if (currentStep === 4 && passengers.length > 0) {
-      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0);
+      const baseFare = passengers.reduce((sum, p) => sum + p.fare, 0)
       // Find the current selected cab to get its specific discount
-      const selectedCabData = availableCabs.find((c) => c.id === selectedCab);
-      const dynamicDiscountPerSeat = selectedCabData?.discount || 0;
+      const selectedCabData = availableCabs.find((c) => c.id === selectedCab)
+      const dynamicDiscountPerSeat = selectedCabData?.discount || 0
       setTotalFareSafely({
         baseFare,
         convenienceFee: 12,
         discount: dynamicDiscountPerSeat * passengers.length,
-        gst: (baseFare - (dynamicDiscountPerSeat * passengers.length) + 12) * 0.05
+        gst:
+          (baseFare - dynamicDiscountPerSeat * passengers.length + 12) * 0.05,
       })
     }
   }, [currentStep, passengers, selectedCab, availableCabs])
@@ -264,41 +266,49 @@ export const BookingSteps: React.FC = () => {
   }, [currentStep])
 
   useEffect(() => {
-    if (!selectedDate) return;
+    if (!selectedDate) return
 
-    const key = format(selectedDate, "yyyy-MM-dd");
-    const el = dateRefs.current[key];
-    const container = scrollRef.current;
+    const key = format(selectedDate, 'yyyy-MM-dd')
+    const el = dateRefs.current[key]
+    const container = scrollRef.current
 
     if (el && container) {
-      const containerRect = container.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
 
-      const offset =
-        el.offsetLeft -
-        containerRect.width / 2 +
-        elRect.width / 2;
+      const offset = el.offsetLeft - containerRect.width / 2 + elRect.width / 2
 
       container.scrollTo({
         left: offset,
-        behavior: "smooth",
-      });
+        behavior: 'smooth',
+      })
     }
-  }, [selectedDate]);
+  }, [selectedDate])
+  useEffect(() => {
+    const platform = Capacitor.getPlatform()
+    if (platform === 'android' || platform === 'ios') {
+      PhonePePaymentPlugin.init({
+        merchantId: phonePeMerchantId,
+        environment: 'PRODUCTION',
+        enableLogging: false,
+        flowId: 'BOOKING_FLOW',
+      }).catch((err) => console.error('PhonePe SDK Init Failed', err))
+    }
+  }, [])
 
   const scrollLeft = () => {
     scrollRef.current?.scrollBy({
       left: -300,
-      behavior: "smooth",
-    });
-  };
+      behavior: 'smooth',
+    })
+  }
 
   const scrollRight = () => {
     scrollRef.current?.scrollBy({
       left: 300,
-      behavior: "smooth",
-    });
-  };
+      behavior: 'smooth',
+    })
+  }
 
   const generateStrongOrderId = (): string => {
     const timestamp = Date.now().toString(36)
@@ -310,14 +320,14 @@ export const BookingSteps: React.FC = () => {
   }
 
   const fetchRoutesAndAvailability = async (specificDate?: Date) => {
-    setIsLoading(true); // Start loading
-    const minimumDelay = new Promise(resolve => setTimeout(resolve, 900));
-    const useDate = specificDate || selectedDate;
+    setIsLoading(true) // Start loading
+    const minimumDelay = new Promise((resolve) => setTimeout(resolve, 900))
+    const useDate = specificDate || selectedDate
     try {
       const [routes] = await Promise.all([
         fetchRoutes(useDate, selectedDestination, selectedSource),
-        minimumDelay
-      ]);
+        minimumDelay,
+      ])
 
       const cabsWithAvailabilityPromises = routes.map(async (route: any) => {
         let seatsAvailable: SeatAvailability[] = []
@@ -347,13 +357,14 @@ export const BookingSteps: React.FC = () => {
         const arrivalTime = route.schedule?.[0]?.arrivalTime || ''
 
         // DYNAMIC DISCOUNT LOGIC:
-        // Fetch the first object from the discounts array. 
+        // Fetch the first object from the discounts array.
         // Per your request, treat 'percentage' field as the flat amount to subtract.
-        const firstDiscount = route.pricing?.discounts && route.pricing.discounts.length > 0
-          ? route.pricing.discounts[0]
-          : null;
+        const firstDiscount =
+          route.pricing?.discounts && route.pricing.discounts.length > 0
+            ? route.pricing.discounts[0]
+            : null
 
-        const discountAmount = firstDiscount ? firstDiscount.percentage : 0;
+        const discountAmount = firstDiscount ? firstDiscount.percentage : 0
 
         return {
           id: route._id,
@@ -382,11 +393,10 @@ export const BookingSteps: React.FC = () => {
       if (cabsWithAvailability.length > 0) {
         console.log('Fetched cabs with availability', cabsWithAvailability[0])
       }
-
     } catch (error) {
       console.error('Failed to fetch route or availability data', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -607,29 +617,30 @@ export const BookingSteps: React.FC = () => {
   }
 
   const initiatePaymentFlow = () => {
-    const platform = Capacitor.getPlatform();
+    const platform = Capacitor.getPlatform()
 
     if (platform === 'android' || platform === 'ios') {
-      startMobilePayment();
+      startMobilePayment()
     } else {
-      setShowPaymentModal(true);
+      setShowPaymentModal(true)
     }
   }
 
   const handlePaymentSelection = async () => {
-    const platform = Capacitor.getPlatform();
+    const platform = Capacitor.getPlatform()
 
     if (platform === 'android' || platform === 'ios') {
-      await startMobilePayment();
+      await startMobilePayment()
     } else {
-      await makePayment();
+      await makePayment()
     }
-  };
+  }
 
   const startMobilePayment = async () => {
     const totalAmount = totalFare
     const merchantOrderId = generateStrongOrderId()
     const bookingPayload = getBookingPayload()
+
     const apiRes = await api.post('/phonePePayments/createOrderForSdk', {
       amount: totalAmount,
       merchantOrderId,
@@ -675,53 +686,62 @@ export const BookingSteps: React.FC = () => {
     return `INV-${(timestamp + random + micro).toUpperCase().slice(0, 12)}`
   }
   const zohoPayment = async () => {
-    const bookingPayload = getBookingPayload();
-    const paymentSessionRes = await api.post('/zohoPayments/create-payment-session', {
-      "amount": totalFare.toFixed(2),
-      "currency": "INR",
-      "expires_in": 900,
-      "meta_data": [
-        {
-          "key": "Mobile Number",
-          "value": passengers[0]?.phone || ''
-        }
-      ],
-      "description": `Payment for booking capsule cab by ${passengers[0]?.name || 'customer'}`,
-      "invoice_number": "INV-" + generateStrongInvoiceNumber(),
-      "reference_number": `REF-${passengers[0]?.phone || 'unknown'}`,
-      bookingPayload
-    });
+    const bookingPayload = getBookingPayload()
+    const paymentSessionRes = await api.post(
+      '/zohoPayments/create-payment-session',
+      {
+        amount: totalFare.toFixed(2),
+        currency: 'INR',
+        expires_in: 900,
+        meta_data: [
+          {
+            key: 'Mobile Number',
+            value: passengers[0]?.phone || '',
+          },
+        ],
+        description: `Payment for booking capsule cab by ${
+          passengers[0]?.name || 'customer'
+        }`,
+        invoice_number: 'INV-' + generateStrongInvoiceNumber(),
+        reference_number: `REF-${passengers[0]?.phone || 'unknown'}`,
+        bookingPayload,
+      },
+    )
 
-    console.log('Payment session zoho: ', paymentSessionRes);
+    console.log('Payment session zoho: ', paymentSessionRes)
     const config = {
       account_id: zohoAccountId,
-      domain: "IN",
+      domain: 'IN',
       otherOptions: {
         api_key: zohoApiKey,
-        is_test_mode: false
-      }
-    };
+        is_test_mode: false,
+      },
+    }
 
-    const instance = new window.ZPayments(config);
+    const instance = new window.ZPayments(config)
     const options = {
       // amount: totalFare.toFixed(2).toString(),
       amount: '1.00',
-      currency_code: "INR",
-      payments_session_id: paymentSessionRes?.data?.payments_session?.payments_session_id,
-      description: `Booking for ${selectedCab} on ${format(selectedDate!, 'dd MMM yyyy')}`,
-      business: "Capsule Cabs",
+      currency_code: 'INR',
+      payments_session_id:
+        paymentSessionRes?.data?.payments_session?.payments_session_id,
+      description: `Booking for ${selectedCab} on ${format(
+        selectedDate!,
+        'dd MMM yyyy',
+      )}`,
+      business: 'Capsule Cabs',
       address: {
-        name: passengers[0]?.name || "",
-        email: passengers[0]?.email || "",
-        phone: passengers[0]?.phone || ""
-      }
-    };
+        name: passengers[0]?.name || '',
+        email: passengers[0]?.email || '',
+        phone: passengers[0]?.phone || '',
+      },
+    }
 
-    console.log('OPTIONS: ', options);
+    console.log('OPTIONS: ', options)
 
     try {
-      const response: any = await instance.requestPaymentMethod(options);
-      console.log('Zoho Payment Response:', response);
+      const response: any = await instance.requestPaymentMethod(options)
+      console.log('Zoho Payment Response:', response)
 
       localStorage.setItem(
         'pending_booking',
@@ -732,33 +752,35 @@ export const BookingSteps: React.FC = () => {
           response,
           paymentDoneBy: 'ZOHO',
         }),
-      );
+      )
 
       if (response.payment_id) {
-        console.log('Payment successful with Zoho, payment ID:', response.payment_id);
-        window.location.href = '/booking-status';
+        console.log(
+          'Payment successful with Zoho, payment ID:',
+          response.payment_id,
+        )
+        window.location.href = '/booking-status'
       }
-
     } catch (error) {
       if (error.code !== 'Widget_closed') {
-        console.log('Zoho Payment Error:', error);
+        console.log('Zoho Payment Error:', error)
       }
     } finally {
-      await instance.close();
+      await instance.close()
     }
   }
 
   const phonePePayments = async () => {
     const totalAmount = totalFare
-    const merchantOrderId = generateStrongOrderId();
+    const merchantOrderId = generateStrongOrderId()
 
-    const bookingPayload = getBookingPayload();
+    const bookingPayload = getBookingPayload()
     const response = await api.post('/phonePePayments/createOrder', {
       amount: totalAmount,
       merchantOrderId,
       phone: user?.phone,
       bookingPayload,
-    });
+    })
 
     localStorage.setItem(
       'pending_booking',
@@ -782,10 +804,11 @@ export const BookingSteps: React.FC = () => {
     setShowPaymentModal(false)
     try {
       if (selectedGateway === 'ZOHO') {
-        await zohoPayment();
-        return;
-      } else { // PHONEPE
-        await phonePePayments();
+        await zohoPayment()
+        return
+      } else {
+        // PHONEPE
+        await phonePePayments()
       }
     } catch (error: any) {
       console.log('Payment initation failed', error)
@@ -855,9 +878,9 @@ export const BookingSteps: React.FC = () => {
   }
 
   const handleDateChange = async (date: Date) => {
-    setSelectedDate(date);
-    await fetchRoutesAndAvailability(date);
-  };
+    setSelectedDate(date)
+    await fetchRoutesAndAvailability(date)
+  }
 
   const renderLoginModal = () => {
     if (!showLoginModal) return null
@@ -958,7 +981,7 @@ export const BookingSteps: React.FC = () => {
   }
 
   const renderPaymentSelectionModal = () => {
-    if (!showPaymentModal) return null;
+    if (!showPaymentModal) return null
 
     // Dynamic Theme Mapping
     const themes = {
@@ -966,39 +989,42 @@ export const BookingSteps: React.FC = () => {
         primary: 'bg-[#6739b7]', // UPI / Zoho Purple
         accent: 'ring-purple-500',
         shadow: 'shadow-purple-500/20',
-        glow: 'rgba(103, 57, 183, 0.4)'
+        glow: 'rgba(103, 57, 183, 0.4)',
       },
       PHONEPE: {
         primary: 'bg-[#0070e0]', // Card / Blue theme
         accent: 'ring-blue-500',
         shadow: 'shadow-blue-500/20',
-        glow: 'rgba(0, 112, 224, 0.4)'
+        glow: 'rgba(0, 112, 224, 0.4)',
       },
       default: {
         primary: 'bg-zinc-900',
         accent: 'ring-emerald-500',
         shadow: 'shadow-emerald-500/20',
-        glow: 'rgba(16, 185, 129, 0.4)'
-      }
-    };
+        glow: 'rgba(16, 185, 129, 0.4)',
+      },
+    }
 
-    const currentTheme = themes[selectedGateway] || themes.default;
+    const currentTheme = themes[selectedGateway] || themes.default
 
     return (
       <div className='fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-xl p-4 transition-all duration-500'>
-        <div className={`relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500`}>
-
+        <div
+          className={`relative w-full max-w-sm overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-500`}
+        >
           {/* Dynamic Header Branding Area */}
-          <div className={`transition-colors duration-700 ${currentTheme.primary} p-8 pb-14 flex justify-between items-start relative overflow-hidden`}>
+          <div
+            className={`transition-colors duration-700 ${currentTheme.primary} p-8 pb-14 flex justify-between items-start relative overflow-hidden`}
+          >
             {/* Subtle Abstract Background Glow */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+            <div className='absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl' />
 
-            <div className="relative z-10">
+            <div className='relative z-10'>
               <h2 className='text-2xl font-black text-white tracking-tight'>
                 Checkout
               </h2>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
+              <div className='flex items-center gap-2 mt-1'>
+                <div className='h-1 w-1 rounded-full bg-emerald-400 animate-pulse' />
                 <p className='text-white/60 text-[10px] font-bold uppercase tracking-[0.2em]'>
                   Secure Transaction
                 </p>
@@ -1015,30 +1041,48 @@ export const BookingSteps: React.FC = () => {
 
           {/* Payment Options Container */}
           <div className='px-5 -mt-8 space-y-3 pb-8 relative z-20'>
-
             {/* UPI Option */}
             <button
               onClick={() => setSelectedGateway('ZOHO')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'ZOHO'
-                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
-                : 'hover:bg-zinc-50 border border-transparent'
-                }`}
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${
+                selectedGateway === 'ZOHO'
+                  ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                  : 'hover:bg-zinc-50 border border-transparent'
+              }`}
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:rotate-3 transition-transform'>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg" alt="UPI" className="w-10 h-10 object-contain" />
+                  <img
+                    src='https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo-vector.svg'
+                    alt='UPI'
+                    className='w-10 h-10 object-contain'
+                  />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-black text-xl tracking-tight'>UPI</p>
+                  <p className='font-black text-black text-xl tracking-tight'>
+                    UPI
+                  </p>
                   <div className='flex items-center gap-2 mt-1'>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" className="h-3 grayscale opacity-70 group-hover:grayscale-0 transition-all" alt="GPay" />
-                    <div className="w-[1px] h-2 bg-zinc-300" />
-                    <span className="text-[10px] text-white-400 font-bold uppercase">PhonePe & more</span>
+                    <img
+                      src='https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg'
+                      className='h-3 grayscale opacity-70 group-hover:grayscale-0 transition-all'
+                      alt='GPay'
+                    />
+                    <div className='w-[1px] h-2 bg-zinc-300' />
+                    <span className='text-[10px] text-white-400 font-bold uppercase'>
+                      PhonePe & more
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'ZOHO' ? 'border-purple-600' : 'border-zinc-200'}`}>
+              <div
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  selectedGateway === 'ZOHO'
+                    ? 'border-purple-600'
+                    : 'border-zinc-200'
+                }`}
+              >
                 {selectedGateway === 'ZOHO' && (
                   <div className='w-3 h-3 rounded-full bg-purple-600 animate-in zoom-in duration-300' />
                 )}
@@ -1048,26 +1092,50 @@ export const BookingSteps: React.FC = () => {
             {/* Other Payment Methods */}
             <button
               onClick={() => setSelectedGateway('PHONEPE')}
-              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${selectedGateway === 'PHONEPE'
-                ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
-                : 'hover:bg-zinc-50 border border-transparent'
-                }`}
+              className={`w-full group flex items-center justify-between p-4 rounded-[1.8rem] bg-white transition-all duration-500 shadow-xl ${
+                selectedGateway === 'PHONEPE'
+                  ? `ring-[3px] ${currentTheme.accent} ring-offset-4 ring-offset-zinc-950 scale-[1.02]`
+                  : 'hover:bg-zinc-50 border border-transparent'
+              }`}
             >
               <div className='flex items-center gap-4'>
                 <div className='relative w-14 h-14 flex-shrink-0 flex items-center justify-center bg-zinc-100 rounded-2xl group-hover:-rotate-3 transition-transform'>
-                  <CreditCard className="w-7 h-7 text-blue-600" strokeWidth={2.5} />
+                  <CreditCard
+                    className='w-7 h-7 text-blue-600'
+                    strokeWidth={2.5}
+                  />
                 </div>
                 <div className='text-left'>
-                  <p className='font-black text-black text-lg tracking-tight'>Other Methods</p>
+                  <p className='font-black text-black text-lg tracking-tight'>
+                    Other Methods
+                  </p>
                   <div className='flex items-center gap-2 mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity'>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-2" alt="Visa" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-4" alt="MC" />
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/d/d1/RuPay.svg" className="h-2" alt="RuPay" />
+                    <img
+                      src='https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg'
+                      className='h-2'
+                      alt='Visa'
+                    />
+                    <img
+                      src='https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg'
+                      className='h-4'
+                      alt='MC'
+                    />
+                    <img
+                      src='https://upload.wikimedia.org/wikipedia/commons/d/d1/RuPay.svg'
+                      className='h-2'
+                      alt='RuPay'
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${selectedGateway === 'PHONEPE' ? 'border-blue-600' : 'border-zinc-200'}`}>
+              <div
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                  selectedGateway === 'PHONEPE'
+                    ? 'border-blue-600'
+                    : 'border-zinc-200'
+                }`}
+              >
                 {selectedGateway === 'PHONEPE' && (
                   <div className='w-3 h-3 rounded-full bg-blue-600 animate-in zoom-in duration-300' />
                 )}
@@ -1075,21 +1143,22 @@ export const BookingSteps: React.FC = () => {
             </button>
 
             {/* Proceed Button */}
-            <div className="pt-2">
+            <div className='pt-2'>
               <Button
                 onClick={handlePaymentSelection}
                 disabled={isAuthLoading || !selectedGateway}
-                className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${selectedGateway
-                  ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
-                  : 'bg-zinc-800 text-white-500'
-                  }`}
+                className={`w-full h-16 rounded-[1.5rem] transition-all duration-500 font-black text-lg shadow-2xl active:scale-95 flex items-center justify-center gap-3 ${
+                  selectedGateway
+                    ? `${currentTheme.primary} text-white ${currentTheme.shadow}`
+                    : 'bg-zinc-800 text-white-500'
+                }`}
               >
                 {isAuthLoading ? (
                   <Loader2 className='animate-spin h-6 w-6' />
                 ) : (
                   <>
                     <span>PROCEED TO PAY ₹{selectedSeats.length * 550}</span>
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className='w-5 h-5' />
                   </>
                 )}
               </Button>
@@ -1097,13 +1166,13 @@ export const BookingSteps: React.FC = () => {
           </div>
         </div>
       </div>
-    );
-  };
+    )
+  }
   const renderSeatLayout = () => {
     if (!selectedCab) return null
 
-    const cab = availableCabs.find((c) => c.id === selectedCab);
-    const currentDiscount = cab?.discount || 0;
+    const cab = availableCabs.find((c) => c.id === selectedCab)
+    const currentDiscount = cab?.discount || 0
 
     if (!cab) return null
 
@@ -1217,7 +1286,8 @@ export const BookingSteps: React.FC = () => {
     seatNum: string
     seatObj?: SeatAvailability
     dynamicDiscount: number // Add this prop
-  }> = ({ seatNum, seatObj, dynamicDiscount }) => { // Destructure it here
+  }> = ({ seatNum, seatObj, dynamicDiscount }) => {
+    // Destructure it here
     if (!seatObj) return <div className='min-w-[52px] min-h-[42px]' />
 
     const isBooked = seatObj.status === 'booked'
@@ -1244,12 +1314,12 @@ export const BookingSteps: React.FC = () => {
           isFemaleBooked
             ? 'border-fuchsia-500 bg-fuchsia-500/25 text-fuchsia-100 cursor-not-allowed'
             : isBooked
-              ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
-              : isLocked
-                ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
-                : isSelected
-                  ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
-                  : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
+            ? 'border-red-500/70 bg-red-500/15 text-red-200 cursor-not-allowed'
+            : isLocked
+            ? 'border-amber-500/70 bg-amber-500/15 text-amber-100 cursor-not-allowed'
+            : isSelected
+            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-50 scale-[1.02] shadow-emerald-500/30'
+            : 'border-white/15 bg-white/5 text-white/80 hover:border-emerald-400/70 hover:bg-emerald-500/10',
         ].join(' ')}
         disabled={isBooked || isLocked}
         onClick={() => {
@@ -1354,9 +1424,7 @@ export const BookingSteps: React.FC = () => {
           <div className='w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500'>
             {/* 1. Header Section - Clean & Centered */}
             <div className='text-center space-y-2 mb-8'>
-              <h3 className='text-xl font-black text-white'>
-                Select Journey
-              </h3>
+              <h3 className='text-xl font-black text-white'>Select Journey</h3>
               <p className='text-zinc-500 text-[10px] font-bold uppercase tracking-widest'>
                 Where and when are you traveling?
               </p>
@@ -1365,34 +1433,44 @@ export const BookingSteps: React.FC = () => {
             {/* 2. Route Selection - Full width on mobile, constrained on laptop */}
             <div className='w-full max-w-md space-y-6 px-4 sm:px-0'>
               <div className='grid grid-cols-2 gap-3'>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-1">From</label>
+                <div className='space-y-1.5'>
+                  <label className='text-[10px] font-black text-zinc-500 uppercase ml-1'>
+                    From
+                  </label>
                   <select
                     value={selectedSource || ''}
                     onChange={(e) => setSelectedSource(e.target.value)}
                     className='w-full h-12 px-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none'
                   >
-                    <option value='' className="bg-zinc-950">Source</option>
+                    <option value='' className='bg-zinc-950'>
+                      Source
+                    </option>
                     {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
-                      <option key={city} value={city} className="bg-zinc-950">{city}</option>
+                      <option key={city} value={city} className='bg-zinc-950'>
+                        {city}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase ml-1">To</label>
+                <div className='space-y-1.5'>
+                  <label className='text-[10px] font-black text-zinc-500 uppercase ml-1'>
+                    To
+                  </label>
                   <select
                     value={selectedDestination || ''}
                     onChange={(e) => setSelectedDestination(e.target.value)}
                     disabled={!selectedSource}
                     className='w-full h-12 px-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-bold text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all appearance-none disabled:opacity-40'
                   >
-                    <option value='' className="bg-zinc-950">{selectedSource ? 'Destination' : '---'}</option>
+                    <option value='' className='bg-zinc-950'>
+                      {selectedSource ? 'Destination' : '---'}
+                    </option>
                     {['Agra', 'Gurugram', 'Delhi', 'Noida'].map((city) => (
                       <option
                         key={city}
                         value={city}
-                        className="bg-zinc-950"
+                        className='bg-zinc-950'
                         disabled={city === selectedSource}
                       >
                         {city}
@@ -1404,7 +1482,9 @@ export const BookingSteps: React.FC = () => {
 
               {/* 3. Calendar Wrapper - Centers the calendar exactly */}
               <div className='flex flex-col items-center space-y-3 pt-4'>
-                <label className="text-[10px] font-black text-zinc-500 uppercase">Select Travel Date</label>
+                <label className='text-[10px] font-black text-zinc-500 uppercase'>
+                  Select Travel Date
+                </label>
                 <div className='inline-block p-4 bg-zinc-900/40 border border-white/5 rounded-[2rem] backdrop-blur-md'>
                   <Calendar
                     mode='single'
@@ -1424,24 +1504,29 @@ export const BookingSteps: React.FC = () => {
                     }
                     className='p-0'
                     classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center text-white font-bold uppercase text-xs tracking-widest",
-                      caption_label: "text-sm font-black",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-white",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-zinc-500 rounded-md w-9 font-black text-[10px] uppercase",
-                      row: "flex w-full mt-2",
-                      cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-                      day: "h-9 w-9 p-0 font-bold aria-selected:opacity-100 hover:bg-white/10 rounded-xl transition-all",
-                      day_selected: "!bg-emerald-500 !text-black hover:!bg-emerald-400 focus:!bg-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]",
-                      day_today: "bg-zinc-800 text-emerald-400",
-                      day_outside: "text-zinc-700 opacity-50",
-                      day_disabled: "text-zinc-800 opacity-20",
+                      months:
+                        'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+                      month: 'space-y-4',
+                      caption:
+                        'flex justify-center pt-1 relative items-center text-white font-bold uppercase text-xs tracking-widest',
+                      caption_label: 'text-sm font-black',
+                      nav: 'space-x-1 flex items-center',
+                      nav_button:
+                        'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-white',
+                      nav_button_previous: 'absolute left-1',
+                      nav_button_next: 'absolute right-1',
+                      table: 'w-full border-collapse space-y-1',
+                      head_row: 'flex',
+                      head_cell:
+                        'text-zinc-500 rounded-md w-9 font-black text-[10px] uppercase',
+                      row: 'flex w-full mt-2',
+                      cell: 'h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20',
+                      day: 'h-9 w-9 p-0 font-bold aria-selected:opacity-100 hover:bg-white/10 rounded-xl transition-all',
+                      day_selected:
+                        '!bg-emerald-500 !text-black hover:!bg-emerald-400 focus:!bg-emerald-500 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]',
+                      day_today: 'bg-zinc-800 text-emerald-400',
+                      day_outside: 'text-zinc-700 opacity-50',
+                      day_disabled: 'text-zinc-800 opacity-20',
                     }}
                   />
                 </div>
@@ -1451,9 +1536,10 @@ export const BookingSteps: React.FC = () => {
               <div className='h-8 flex items-center justify-center'>
                 {selectedSource && selectedDestination && selectedDate && (
                   <div className='flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-in zoom-in duration-300'>
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
                     <span className='text-emerald-500 text-[10px] font-black uppercase tracking-tighter'>
-                      {selectedSource} to {selectedDestination} • {format(selectedDate, 'MMM dd')}
+                      {selectedSource} to {selectedDestination} •{' '}
+                      {format(selectedDate, 'MMM dd')}
                     </span>
                   </div>
                 )}
@@ -1466,12 +1552,11 @@ export const BookingSteps: React.FC = () => {
         return (
           <div className='w-full max-w-4xl mx-auto px-2 py-6 space-y-4'>
             {/* DATE SLIDER */}
-            <div className="relative w-full mb-5">
-
+            <div className='relative w-full mb-5'>
               {/* LEFT ARROW */}
               <button
                 onClick={scrollLeft}
-                className="
+                className='
                   hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-20
                   h-11 w-11 items-center justify-center
                   rounded-full
@@ -1484,16 +1569,15 @@ export const BookingSteps: React.FC = () => {
                   hover:scale-105
                   hover:shadow-lg hover:shadow-black/40
                   active:scale-95
-                  "
+                  '
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className='h-5 w-5' />
               </button>
-
 
               {/* RIGHT ARROW */}
               <button
                 onClick={scrollRight}
-                className="
+                className='
                   hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-20
                   h-11 w-11 items-center justify-center
                   rounded-full
@@ -1506,23 +1590,24 @@ export const BookingSteps: React.FC = () => {
                   hover:scale-105
                   hover:shadow-lg hover:shadow-black/40
                   active:scale-95
-                  "
+                  '
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className='h-5 w-5' />
               </button>
 
               {/* EDGE GRADIENTS */}
-              <div className="pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent " />
-              <div className="pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent" />
+              <div className='pointer-events-none absolute left-0 top-0 h-full w-16 bg-gradient-to-r from-black to-transparent ' />
+              <div className='pointer-events-none absolute right-0 top-0 h-full w-16 bg-gradient-to-l from-black to-transparent' />
 
               {/* SCROLL CONTAINER */}
               <div
                 ref={scrollRef}
-                className="flex gap-3 overflow-x-auto no-scrollbar px-12 py-2 scroll-smooth"
+                className='flex gap-3 overflow-x-auto no-scrollbar px-12 py-2 scroll-smooth'
               >
                 {next30Days.map((date) => {
-                  const key = format(date, "yyyy-MM-dd");
-                  const isSelected = selectedDate && isSameDay(date, selectedDate);
+                  const key = format(date, 'yyyy-MM-dd')
+                  const isSelected =
+                    selectedDate && isSameDay(date, selectedDate)
 
                   return (
                     <button
@@ -1530,24 +1615,25 @@ export const BookingSteps: React.FC = () => {
                       ref={(el) => (dateRefs.current[key] = el)}
                       onClick={() => handleDateChange(date)}
                       className={`flex flex-col items-center justify-center min-w-[82px] h-[66px] rounded-xl border transition-all duration-300
-                      ${isSelected
-                          ? "bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105"
-                          : "bg-zinc-900 border-white/10 text-white hover:bg-zinc-800"
-                        }`}
+                      ${
+                        isSelected
+                          ? 'bg-emerald-500 text-black border-emerald-400 shadow-lg shadow-emerald-500/20 scale-105'
+                          : 'bg-zinc-900 border-white/10 text-white hover:bg-zinc-800'
+                      }`}
                     >
-                      <span className="text-[10px] font-bold uppercase">
-                        {format(date, "EEE")}
+                      <span className='text-[10px] font-bold uppercase'>
+                        {format(date, 'EEE')}
                       </span>
 
-                      <span className="text-lg font-black leading-none">
-                        {format(date, "dd")}
+                      <span className='text-lg font-black leading-none'>
+                        {format(date, 'dd')}
                       </span>
 
-                      <span className="text-[10px] opacity-70">
-                        {format(date, "MMM")}
+                      <span className='text-[10px] opacity-70'>
+                        {format(date, 'MMM')}
                       </span>
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -1560,46 +1646,46 @@ export const BookingSteps: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className='grid grid-cols-1 gap-4'>
               {availableCabs.length > 0 ? (
                 availableCabs.map((cab) => {
-                  const selected = selectedCab === cab.id;
-                  const isAvailable = cab.available;
-                  console.log('CAB: ', cab);
+                  const selected = selectedCab === cab.id
+                  const isAvailable = cab.available
+                  console.log('CAB: ', cab)
                   return (
                     <Card
                       key={cab.id}
-                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${selected
-                        ? 'ring-1 ring-emerald-500 border-emerald-500/50'
-                        : 'border-white/10 hover:border-white/20'
-                        } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`relative overflow-hidden transition-all duration-300 cursor-pointer bg-zinc-950/50 backdrop-blur-xl border rounded-2xl ${
+                        selected
+                          ? 'ring-1 ring-emerald-500 border-emerald-500/50'
+                          : 'border-white/10 hover:border-white/20'
+                      } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => {
                         if (isAvailable) {
-                          setSelectedCab(cab.id);
-                          setSelectedTime(cab.departureTime);
+                          setSelectedCab(cab.id)
+                          setSelectedTime(cab.departureTime)
                         }
                       }}
                     >
                       {/* Header Section: Badge & CNG Info */}
-                      <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
-                        <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-wider">
+                      <div className='bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5'>
+                        <span className='text-[10px] md:text-xs font-bold text-white uppercase tracking-wider'>
                           {cab.capacity || 6} Seater {cab.routeCode}
                         </span>
-                        <div className="relative flex items-center gap-1.5 text-emerald-400">
-
+                        <div className='relative flex items-center gap-1.5 text-emerald-400'>
                           <button
                             onClick={(e) => {
-                              e.stopPropagation();
-                              setShowEcoInfo((prev) => !prev);
+                              e.stopPropagation()
+                              setShowEcoInfo((prev) => !prev)
                             }}
-                            className="flex items-center justify-center h-5 w-5 rounded-full hover:bg-emerald-500/10 transition"
+                            className='flex items-center justify-center h-5 w-5 rounded-full hover:bg-emerald-500/10 transition'
                           >
-                            <Leaf className="h-3.5 w-3.5" />
+                            <Leaf className='h-3.5 w-3.5' />
                           </button>
 
                           {showEcoInfo && (
                             <div
-                              className="
+                              className='
                                 absolute top-7 right-0
                                 bg-zinc-900 border border-emerald-500/20
                                 text-emerald-400
@@ -1609,7 +1695,7 @@ export const BookingSteps: React.FC = () => {
                                 shadow-lg
                                 animate-in fade-in zoom-in-95
                                 whitespace-nowrap
-                                "
+                                '
                             >
                               25% less CO₂ than typical rides
                             </div>
@@ -1620,19 +1706,22 @@ export const BookingSteps: React.FC = () => {
                       <CardContent className='p-2 md:p-6'>
                         {/* Desktop: Horizontal | Mobile: Vertical Stacking */}
                         <div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
-
                           {/* Time & Path Section */}
                           <div className='flex items-center justify-between md:justify-start gap-4 md:gap-8'>
                             <div className='flex flex-col'>
                               <span className='text-2xl md:text-3xl font-black text-white leading-none'>
                                 {cab.departureTime || '18:00'}
                               </span>
-                              <span className='text-[10px] font-bold text-emerald-500 mt-1 uppercase'>Available</span>
+                              <span className='text-[10px] font-bold text-emerald-500 mt-1 uppercase'>
+                                Available
+                              </span>
                             </div>
 
                             {/* Visual Path (Dotted line with duration) */}
                             <div className='flex-1 md:flex-none flex flex-col items-center min-w-[80px]'>
-                              <span className='text-[10px] text-white-500 font-bold mb-1'>(4h 55m)</span>
+                              <span className='text-[10px] text-white-500 font-bold mb-1'>
+                                (4h 55m)
+                              </span>
                               <div className='flex items-center w-full gap-1'>
                                 <div className='h-1.5 w-1.5 rounded-full border border-emerald-500' />
                                 <div className='flex-1 border-t border-dotted border-zinc-700' />
@@ -1651,23 +1740,34 @@ export const BookingSteps: React.FC = () => {
                           {/* Price & Action Section */}
                           <div className='flex items-center justify-between md:justify-end w-full md:w-auto gap-4 md:gap-8'>
                             <div className='flex flex-col'>
-                              <span className='text-[9px] text-white font-bold uppercase'>Starting From</span>
+                              <span className='text-[9px] text-white font-bold uppercase'>
+                                Starting From
+                              </span>
                               <div className='flex items-baseline gap-1.5'>
-                                <span className='text-white-500 line-through text-xs'>₹500</span>
-                                <span className='text-2xl md:text-3xl font-black text-emerald-400'>₹{cab.price || 399}</span>
-                                <span className='text-[10px] text-white-500'>+GST</span>
+                                <span className='text-white-500 line-through text-xs'>
+                                  ₹500
+                                </span>
+                                <span className='text-2xl md:text-3xl font-black text-emerald-400'>
+                                  ₹{cab.price || 399}
+                                </span>
+                                <span className='text-[10px] text-white-500'>
+                                  +GST
+                                </span>
                               </div>
                               <div className='flex items-center gap-1 mt-1 text-emerald-500 font-bold'>
                                 <Tag className='h-3 w-3' />
-                                <span className='text-[9px] uppercase tracking-tight'>Welcome100 Applied</span>
+                                <span className='text-[9px] uppercase tracking-tight'>
+                                  Welcome100 Applied
+                                </span>
                               </div>
                             </div>
 
                             <button
-                              className={`px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${selected
-                                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                                : 'bg-zinc-800 text-white hover:bg-zinc-700'
-                                }`}
+                              className={`px-6 py-3 md:py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${
+                                selected
+                                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+                                  : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                              }`}
                             >
                               {selected ? 'Selected' : 'Select Cab'}
                               {/* <ChevronRight className="h-4 w-4" /> */}
@@ -1677,49 +1777,81 @@ export const BookingSteps: React.FC = () => {
 
                         <div className='flex items-center justify-between mt-2 pt-4 border-t border-white/5'>
                           <div className='flex items-center gap-4 text-white-500'>
-                            <div className='flex flex-col items-center gap-0.5' title='AC'>
-                              <Wind className='h-4 w-4 md:h-5 md:w-5' color='white' />
-                              <span className='text-[8px] uppercase font-bold'>AC</span>
+                            <div
+                              className='flex flex-col items-center gap-0.5'
+                              title='AC'
+                            >
+                              <Wind
+                                className='h-4 w-4 md:h-5 md:w-5'
+                                color='white'
+                              />
+                              <span className='text-[8px] uppercase font-bold'>
+                                AC
+                              </span>
                             </div>
 
-                            <div className='flex flex-col items-center gap-0.5' title='Water Bottle'>
-                              <GlassWater className='h-4 w-4 md:h-5 md:w-5' color='white' />
-                              <span className='text-[8px] uppercase font-bold'>Water</span>
+                            <div
+                              className='flex flex-col items-center gap-0.5'
+                              title='Water Bottle'
+                            >
+                              <GlassWater
+                                className='h-4 w-4 md:h-5 md:w-5'
+                                color='white'
+                              />
+                              <span className='text-[8px] uppercase font-bold'>
+                                Water
+                              </span>
                             </div>
 
-                            <div className='flex flex-col items-center gap-0.5' title='USB'>
-                              <Usb className='h-4 w-4 md:h-5 md:w-5' color='white' />
-                              <span className='text-[8px] uppercase font-bold'>USB</span>
+                            <div
+                              className='flex flex-col items-center gap-0.5'
+                              title='USB'
+                            >
+                              <Usb
+                                className='h-4 w-4 md:h-5 md:w-5'
+                                color='white'
+                              />
+                              <span className='text-[8px] uppercase font-bold'>
+                                USB
+                              </span>
                             </div>
 
-                            <div className='flex flex-col items-center gap-0.5' title='CCTV'>
-                              <ShieldCheck className='h-4 w-4 md:h-5 md:w-5' color='white' />
-                              <span className='text-[8px] uppercase font-bold'>CCTV</span>
+                            <div
+                              className='flex flex-col items-center gap-0.5'
+                              title='CCTV'
+                            >
+                              <ShieldCheck
+                                className='h-4 w-4 md:h-5 md:w-5'
+                                color='white'
+                              />
+                              <span className='text-[8px] uppercase font-bold'>
+                                CCTV
+                              </span>
                             </div>
                           </div>
 
                           <button
                             onClick={(e) => {
-                              e.stopPropagation();
-                              setViewingRoute(cab);
+                              e.stopPropagation()
+                              setViewingRoute(cab)
                             }}
                             className='text-[11px] md:text-xs font-bold text-white hover:text-white transition-colors flex items-center gap-1'
                           >
-                            See Route <ChevronDown className="h-3 w-3" />
+                            See Route <ChevronDown className='h-3 w-3' />
                           </button>
                         </div>
                       </CardContent>
                     </Card>
-                  );
+                  )
                 })
               ) : (
-                <div className="text-white text-center p-12 bg-zinc-950/50 rounded-2xl border border-white/5">
+                <div className='text-white text-center p-12 bg-zinc-950/50 rounded-2xl border border-white/5'>
                   No cabs available at this time.
                 </div>
               )}
             </div>
           </div>
-        );
+        )
 
       case 3:
         return (
@@ -1735,48 +1867,69 @@ export const BookingSteps: React.FC = () => {
         return (
           <div className='max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500'>
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
-
               {/* LEFT COLUMN: Passenger Details & Points (8 Units wide on Desktop) */}
               <div className='lg:col-span-8 space-y-8 order-2 lg:order-1'>
-
                 {/* Pickup & Drop Selection Group */}
                 <div className='bg-zinc-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl'>
                   <div className='flex items-center gap-3 mb-6'>
                     <div className='h-6 w-1 bg-emerald-500 rounded-full' />
-                    <h3 className='text-lg font-bold text-white'>Boarding & Dropping</h3>
+                    <h3 className='text-lg font-bold text-white'>
+                      Boarding & Dropping
+                    </h3>
                   </div>
 
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className="space-y-2">
+                    <div className='space-y-2'>
                       <label className='text-[10px] font-bold text-white-500 uppercase tracking-widest ml-1'>
                         Pickup Point
                       </label>
-                      <Select value={globalPickup || ''} onValueChange={(val) => {
-                        setGlobalPickup(val);
-                        setPassengers(passengers.map(p => ({ ...p, pickupAddress: val })));
-                      }}>
+                      <Select
+                        value={globalPickup || ''}
+                        onValueChange={(val) => {
+                          setGlobalPickup(val)
+                          setPassengers(
+                            passengers.map((p) => ({
+                              ...p,
+                              pickupAddress: val,
+                            })),
+                          )
+                        }}
+                      >
                         <SelectTrigger className='h-12 bg-black/40 border-white/5 rounded-xl text-white'>
                           <SelectValue placeholder='Select Point' />
                         </SelectTrigger>
                         <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                          {pickupOptions.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                          {pickupOptions.map((p) => (
+                            <SelectItem key={p.name} value={p.name}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className='space-y-2'>
                       <label className='text-[10px] font-bold text-white-500 uppercase tracking-widest ml-1'>
                         Drop Point
                       </label>
-                      <Select value={globalDrop || ''} onValueChange={(val) => {
-                        setGlobalDrop(val);
-                        setPassengers(passengers.map(p => ({ ...p, dropAddress: val })));
-                      }}>
+                      <Select
+                        value={globalDrop || ''}
+                        onValueChange={(val) => {
+                          setGlobalDrop(val)
+                          setPassengers(
+                            passengers.map((p) => ({ ...p, dropAddress: val })),
+                          )
+                        }}
+                      >
                         <SelectTrigger className='h-12 bg-black/40 border-white/5 rounded-xl text-white'>
                           <SelectValue placeholder='Select Point' />
                         </SelectTrigger>
                         <SelectContent className='bg-zinc-900 border-white/10 text-white'>
-                          {dropOptions.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                          {dropOptions.map((p) => (
+                            <SelectItem key={p.name} value={p.name}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1787,22 +1940,29 @@ export const BookingSteps: React.FC = () => {
                 <div className='bg-zinc-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 lg:p-8 shadow-xl'>
                   <div className='flex items-center gap-3 mb-8'>
                     <div className='h-6 w-1 bg-emerald-500 rounded-full' />
-                    <h3 className='text-lg font-bold text-white'>Passenger Details</h3>
+                    <h3 className='text-lg font-bold text-white'>
+                      Passenger Details
+                    </h3>
                   </div>
 
                   <div className='space-y-10'>
                     {passengers.map((passenger, idx) => (
-                      <div key={passenger.seatNumber} className='relative group'>
+                      <div
+                        key={passenger.seatNumber}
+                        className='relative group'
+                      >
                         <div className='absolute -top-3 left-4 px-3 py-0.5 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-full z-10'>
-                          Seat {passenger.seatNumber} {idx === 0 ? '• Primary' : ''}
+                          Seat {passenger.seatNumber}{' '}
+                          {idx === 0 ? '• Primary' : ''}
                         </div>
 
                         {/* Changed grid-cols-1 to grid-cols-2 to allow Age/Gender to sit side-by-side on mobile */}
                         <div className='grid grid-cols-2 md:grid-cols-12 gap-x-4 gap-y-6 pt-6 pb-2 border-b border-white/5 group-last:border-0'>
-
                           {/* Name takes full width (2 columns) on mobile, 7 columns on desktop */}
                           <div className='col-span-2 md:col-span-7'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Full Name</label>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>
+                              Full Name
+                            </label>
                             <div className='relative'>
                               <User className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400' />
                               <input
@@ -1810,9 +1970,9 @@ export const BookingSteps: React.FC = () => {
                                 placeholder='Full Name'
                                 value={passenger.name}
                                 onChange={(e) => {
-                                  const newPax = [...passengers];
-                                  newPax[idx].name = e.target.value;
-                                  setPassengers(newPax);
+                                  const newPax = [...passengers]
+                                  newPax[idx].name = e.target.value
+                                  setPassengers(newPax)
                                 }}
                                 className='w-full pl-10 pr-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:ring-1 focus:ring-emerald-500/50 transition-all outline-none'
                               />
@@ -1821,14 +1981,16 @@ export const BookingSteps: React.FC = () => {
 
                           {/* Age takes 1 column on mobile, 2 on desktop */}
                           <div className='col-span-1 md:col-span-2'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Age</label>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>
+                              Age
+                            </label>
                             <input
                               type='number'
                               value={passenger.age || ''}
                               onChange={(e) => {
-                                const newPax = [...passengers];
-                                newPax[idx].age = Number(e.target.value);
-                                setPassengers(newPax);
+                                const newPax = [...passengers]
+                                newPax[idx].age = Number(e.target.value)
+                                setPassengers(newPax)
                               }}
                               className='w-full py-3 bg-white/5 border border-white/5 rounded-xl text-center text-sm text-white outline-none focus:ring-1 focus:ring-emerald-500/50'
                               placeholder='Age'
@@ -1837,12 +1999,17 @@ export const BookingSteps: React.FC = () => {
 
                           {/* Gender takes 1 column on mobile, 3 on desktop */}
                           <div className='col-span-1 md:col-span-3'>
-                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Gender</label>
-                            <Select value={passenger.gender} onValueChange={(val) => {
-                              const newPax = [...passengers];
-                              newPax[idx].gender = val;
-                              setPassengers(newPax);
-                            }}>
+                            <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>
+                              Gender
+                            </label>
+                            <Select
+                              value={passenger.gender}
+                              onValueChange={(val) => {
+                                const newPax = [...passengers]
+                                newPax[idx].gender = val
+                                setPassengers(newPax)
+                              }}
+                            >
                               <SelectTrigger className='h-[46px] bg-white/5 border-white/5 rounded-xl text-white'>
                                 <SelectValue placeholder='Select' />
                               </SelectTrigger>
@@ -1857,30 +2024,36 @@ export const BookingSteps: React.FC = () => {
                           {idx === 0 && (
                             <div className='col-span-2 md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6 mt-2'>
                               <div>
-                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Phone</label>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>
+                                  Contact Phone
+                                </label>
                                 <input
                                   type='tel'
                                   maxLength={10}
                                   placeholder='Enter contact to get ticket details'
                                   value={passenger.phone ?? ''}
                                   onChange={(e) => {
-                                    const newPax = [...passengers];
-                                    newPax[idx].phone = e.target.value.replace(/\D/g, '').slice(0, 10);
-                                    setPassengers(newPax);
+                                    const newPax = [...passengers]
+                                    newPax[idx].phone = e.target.value
+                                      .replace(/\D/g, '')
+                                      .slice(0, 10)
+                                    setPassengers(newPax)
                                   }}
                                   className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
                                 />
                               </div>
                               <div>
-                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>Contact Email</label>
+                                <label className='text-[9px] font-bold text-zinc-500 uppercase tracking-widest block mb-2'>
+                                  Contact Email
+                                </label>
                                 <input
                                   type='email'
                                   placeholder='Enter email to get ticket details'
                                   value={passenger.email ?? ''}
                                   onChange={(e) => {
-                                    const newPax = [...passengers];
-                                    newPax[idx].email = e.target.value;
-                                    setPassengers(newPax);
+                                    const newPax = [...passengers]
+                                    newPax[idx].email = e.target.value
+                                    setPassengers(newPax)
                                   }}
                                   className='w-full px-4 py-3 bg-white/5 border border-white/5 rounded-xl text-sm text-white outline-none'
                                 />
@@ -1897,18 +2070,24 @@ export const BookingSteps: React.FC = () => {
               {/* RIGHT COLUMN: Fare Breakdown (4 Units wide - STICKY) */}
               <div className='lg:col-span-4 order-1 lg:order-2'>
                 <div className='lg:sticky lg:top-24 space-y-4'>
-
                   {/* Journey Summary */}
                   <div className='bg-zinc-900/60 border border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden group'>
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                      <MapPin className="h-12 w-12 text-emerald-500" />
+                    <div className='absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform'>
+                      <MapPin className='h-12 w-12 text-emerald-500' />
                     </div>
-                    <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3'>Route Summary</p>
+                    <p className='text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-3'>
+                      Route Summary
+                    </p>
                     <h4 className='text-lg font-bold text-white mb-2 leading-tight'>
-                      {globalPickup || 'Origin'} <ArrowRight className="inline h-4 w-4 mx-1 text-white-500" /> {globalDrop || 'Destination'}
+                      {globalPickup || 'Origin'}{' '}
+                      <ArrowRight className='inline h-4 w-4 mx-1 text-white-500' />{' '}
+                      {globalDrop || 'Destination'}
                     </h4>
                     <div className='flex flex-wrap gap-2 mt-4'>
-                      <Badge variant='outline' className='bg-emerald-500/5 border-emerald-500/20 text-emerald-400'>
+                      <Badge
+                        variant='outline'
+                        className='bg-emerald-500/5 border-emerald-500/20 text-emerald-400'
+                      >
                         {selectedSeats.length} Seats: {selectedSeats.join(', ')}
                       </Badge>
                     </div>
@@ -1916,50 +2095,65 @@ export const BookingSteps: React.FC = () => {
 
                   {/* Fare Details */}
                   <div className='bg-zinc-900 border border-white/10 rounded-3xl p-6 shadow-2xl relative'>
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+                    <div className='absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent' />
 
-                    <h3 className='text-sm font-bold text-white uppercase tracking-tighter mb-6'>Payment Details</h3>
+                    <h3 className='text-sm font-bold text-white uppercase tracking-tighter mb-6'>
+                      Payment Details
+                    </h3>
 
                     <div className='space-y-4'>
                       {/* Base Fare */}
                       <div className='flex justify-between text-sm'>
-                        <span className='text-white-500'>Base Fare ({passengers.length}x)</span>
-                        <span className='text-white font-medium'>₹{fareBreakdown.baseFare}</span>
+                        <span className='text-white-500'>
+                          Base Fare ({passengers.length}x)
+                        </span>
+                        <span className='text-white font-medium'>
+                          ₹{fareBreakdown.baseFare}
+                        </span>
                       </div>
 
                       {/* Dynamic Discount */}
                       {fareBreakdown.discount > 0 && (
                         <div className='flex justify-between text-sm items-center'>
-                          <div className="flex items-center gap-1.5 text-emerald-400">
-                            <Tag className="h-3.5 w-3.5" />
-                            <span className="font-medium">Route Discount</span>
+                          <div className='flex items-center gap-1.5 text-emerald-400'>
+                            <Tag className='h-3.5 w-3.5' />
+                            <span className='font-medium'>Route Discount</span>
                           </div>
-                          <span className='text-emerald-400 font-bold'>- ₹{fareBreakdown.discount}</span>
+                          <span className='text-emerald-400 font-bold'>
+                            - ₹{fareBreakdown.discount}
+                          </span>
                         </div>
                       )}
 
                       {/* Separated Convenience Fee */}
                       <div className='flex justify-between text-sm'>
                         <span className='text-white-500'>Convenience Fee</span>
-                        <span className='text-white font-medium'>₹{fareBreakdown.convenienceFee}</span>
+                        <span className='text-white font-medium'>
+                          ₹{fareBreakdown.convenienceFee}
+                        </span>
                       </div>
 
                       {/* Separated GST */}
                       <div className='flex justify-between text-sm'>
                         <span className='text-white-500'>GST (5%)</span>
-                        <span className='text-white font-medium'>₹{fareBreakdown.gst.toFixed(2)}</span>
+                        <span className='text-white font-medium'>
+                          ₹{fareBreakdown.gst.toFixed(2)}
+                        </span>
                       </div>
 
                       {/* Final Total */}
                       <div className='pt-6 mt-2 border-t border-white/5 flex justify-between items-end'>
                         <div>
-                          <p className='text-[10px] font-bold text-white-500 uppercase tracking-widest'>Final Total</p>
+                          <p className='text-[10px] font-bold text-white-500 uppercase tracking-widest'>
+                            Final Total
+                          </p>
                           <p className='text-3xl font-black text-white tracking-tighter'>
-                            ₹{Math.round(
+                            ₹
+                            {Math.round(
                               fareBreakdown.baseFare +
-                              fareBreakdown.gst +
-                              fareBreakdown.convenienceFee -
-                              fareBreakdown.discount
+                                fareBreakdown.gst +
+                                fareBreakdown.convenienceFee -
+                                fareBreakdown.discount,
                             )}
                           </p>
                         </div>
@@ -1971,7 +2165,6 @@ export const BookingSteps: React.FC = () => {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         )
@@ -2076,39 +2269,36 @@ export const BookingSteps: React.FC = () => {
   }
 
   return (
-    <div className="w-full text-white flex flex-col relative">
+    <div className='w-full text-white flex flex-col relative'>
       {/* Loading overlay */}
       {isLoading && <LoadingSplash />}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col gap-6">
+      <div className='flex-1 flex flex-col gap-6'>
         {/* Timer Section */}
         {timerActive && (
-          <div className="flex justify-center">
-            <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono">
+          <div className='flex justify-center'>
+            <div className='bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-2 rounded-full text-sm font-mono'>
               {Math.floor(timerSeconds / 60)
                 .toString()
-                .padStart(2, "0")}
-              :
-              {(timerSeconds % 60).toString().padStart(2, "0")}
-              <span className="ml-1 text-xs">Seat lock expires</span>
+                .padStart(2, '0')}
+              :{(timerSeconds % 60).toString().padStart(2, '0')}
+              <span className='ml-1 text-xs'>Seat lock expires</span>
             </div>
           </div>
         )}
 
         {/* Step content – NO background card wrapper */}
-        <div className="flex-1">
-          {renderStepContent()}
-        </div>
+        <div className='flex-1'>{renderStepContent()}</div>
       </div>
 
       {/* Desktop navigation buttons (inline) */}
       {/* Navigation Buttons (Desktop Only) */}
       <div className='hidden md:flex flex-col items-center w-full max-w-2xl mx-auto mt-8 pb-12'>
         {/* Divider Line */}
-        <div className="w-full h-px bg-white/5 mb-8" />
+        <div className='w-full h-px bg-white/5 mb-8' />
 
-        <div className="flex justify-between w-full px-4">
+        <div className='flex justify-between w-full px-4'>
           <Button
             variant='outline'
             onClick={prevStep}
@@ -2123,31 +2313,47 @@ export const BookingSteps: React.FC = () => {
             disabled={
               currentStep === 6 ||
               (currentStep === 1 && !selectedDate) ||
-              (currentStep === 2 && (availableCabs.length === 0 || !selectedCab)) ||
+              (currentStep === 2 &&
+                (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
                 passengers.some(
-                  (p) => !p.name || !p.age || !p.gender || !globalPickup || !globalDrop
+                  (p) =>
+                    !p.name ||
+                    !p.age ||
+                    !p.gender ||
+                    !globalPickup ||
+                    !globalDrop,
                 ) &&
                 (!passengers[0].phone || !passengers[0].email)) ||
-              (currentStep === 5)
+              currentStep === 5
             }
             className='rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 font-black h-12 px-10 transition-all active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
           >
-            {currentStep === 6 ? 'Complete' : currentStep === 1 ? 'Select Cab' : currentStep === 2 ? 'Select Seats' : currentStep === 3 ? 'Passenger Details' : currentStep === 4 ? 'Checkout' : 'Complete Payment'}
+            {currentStep === 6
+              ? 'Complete'
+              : currentStep === 1
+              ? 'Select Cab'
+              : currentStep === 2
+              ? 'Select Seats'
+              : currentStep === 3
+              ? 'Passenger Details'
+              : currentStep === 4
+              ? 'Checkout'
+              : 'Complete Payment'}
             {currentStep < 5 && <ArrowRight className='ml-2 h-4 w-4' />}
           </Button>
         </div>
       </div>
 
       {/* Sticky Navigation Footer – Mobile only */}
-      <div className="md:hidden fixed bg-black bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg">
-        <div className="flex justify-between gap-4 p-4">
+      <div className='md:hidden fixed bg-black bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-lg'>
+        <div className='flex justify-between gap-4 p-4'>
           <Button
-            variant="outline"
+            variant='outline'
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="flex-1 rounded-full border-white/20 text-white bg-transparent h-12"
+            className='flex-1 rounded-full border-white/20 text-white bg-transparent h-12'
           >
             Previous
           </Button>
@@ -2161,31 +2367,37 @@ export const BookingSteps: React.FC = () => {
                 (availableCabs.length === 0 || !selectedCab)) ||
               (currentStep === 3 && selectedSeats.length === 0) ||
               (currentStep === 4 &&
-                (passengers.some(
-                  (p) => !p.name || !p.age || !p.gender
-                ) ||
+                (passengers.some((p) => !p.name || !p.age || !p.gender) ||
                   !globalPickup ||
                   !globalDrop ||
                   !passengers[0]?.phone ||
-                  !passengers[0]?.email))
-              ||
-              (currentStep === 5)
+                  !passengers[0]?.email)) ||
+              currentStep === 5
             }
-            className="flex-1 rounded-full bg-emerald-500 text-black font-bold h-12"
+            className='flex-1 rounded-full bg-emerald-500 text-black font-bold h-12'
           >
-            {currentStep === 6 ? 'Complete' : currentStep === 1 ? 'Select Cab' : currentStep === 2 ? 'Select Seats' : currentStep === 3 ? 'Passenger Details' : currentStep === 4 ? 'Checkout' : 'Complete Payment'}
+            {currentStep === 6
+              ? 'Complete'
+              : currentStep === 1
+              ? 'Select Cab'
+              : currentStep === 2
+              ? 'Select Seats'
+              : currentStep === 3
+              ? 'Passenger Details'
+              : currentStep === 4
+              ? 'Checkout'
+              : 'Complete Payment'}
           </Button>
         </div>
       </div>
 
       {/* Spacer so content doesn't sit under the mobile footer */}
-      <div className="h-20 md:hidden" />
+      <div className='h-20 md:hidden' />
 
       {/* Modals & popups */}
       {renderLoginModal()}
       {renderPaymentSelectionModal()}
       {renderRoutePopup()}
     </div>
-  );
-
+  )
 }
