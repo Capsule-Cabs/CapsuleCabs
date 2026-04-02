@@ -1744,7 +1744,7 @@ export const BookingSteps: React.FC = () => {
                               }}
                               className='text-[11px] md:text-xs font-semibold text-zinc-300 flex items-center gap-1 hover:text-white'
                             >
-                              Bus Details
+                              Cab Details
                               <ChevronDown className='h-3 w-3' />
                             </button>
 
