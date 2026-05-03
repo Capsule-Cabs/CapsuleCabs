@@ -95,6 +95,7 @@
     "vite": "^5.4.19"
   },
   "reactSnap": {
+    "source": "dist",
     "inlineCss": true,
     "puppeteerArgs": [
       "--no-sandbox",
