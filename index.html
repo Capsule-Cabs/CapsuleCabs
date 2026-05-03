@@ -14,6 +14,7 @@
     />
     <meta name="author" content="Capsule Cabs" />
 
+    <!-- Favicons -->
     <link
       rel="icon"
       type="image/png"
@@ -29,6 +30,7 @@
     <link rel="shortcut icon" href="/favicon.ico?v=2" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
 
+    <!-- Open Graph -->
     <meta property="og:title" content="Capsule Cabs" />
     <meta
       property="og:description"
@@ -37,8 +39,11 @@
     <meta property="og:url" content="https://www.capsulecabs.com" />
     <meta property="og:type" content="website" />
 
-    <!-- Optional but recommended -->
-    <!-- <meta property="og:image" content="https://www.capsulecabs.com/og-image.png" /> -->
+    <!-- Optional but STRONGLY recommended -->
+    <meta
+      property="og:image"
+      content="https://www.capsulecabs.com/og-image.png"
+    />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -47,26 +52,10 @@
   </head>
 
   <body>
-    <!-- React App -->
+    <!-- React App Root -->
     <div id="root"></div>
 
-    <div>
-      <h1>Capsule Cabs</h1>
-      <p>
-        Capsule Cabs is a reliable cab booking service offering safe and
-        affordable rides.
-      </p>
-      <p>Book your ride easily with our platform.</p>
-      <p>Contact: support@capsulecabs.com</p>
-    </div>
-
-    <!-- No-JS fallback -->
-    <noscript>
-      <h1>Capsule Cabs</h1>
-      <p>Please enable JavaScript to use the full application.</p>
-    </noscript>
-
-    <!-- Your scripts (unchanged) -->
+    <!-- Entry -->
     <script type="module" src="/src/main.tsx"></script>
     <script src="https://static.zohocdn.com/zpay/zpay-js/v1/zpayments.js"></script>
   </body>
